@@ -161,9 +161,9 @@ export default function EmailComposer() {
       <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto space-y-4">
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Email Composer</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
           {/* Users Pool */}
-          <section className="rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
+          <section className="order-1 xl:order-1 rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
             <div className="flex items-center justify-between mb-3 gap-2">
               <h2 className="font-medium">Users Pool</h2>
               <div className="flex items-center gap-2">
@@ -254,7 +254,7 @@ export default function EmailComposer() {
 
           {/* Recipients */}
           <section
-            className="rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+            className="order-2 xl:order-2 rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
             onDrop={onDropRecipient}
             onDragOver={onDragOverRecipient}
           >
@@ -303,7 +303,7 @@ export default function EmailComposer() {
           </section>
 
           {/* Email */}
-          <section className="md:col-span-2 xl:col-span-1 rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)] space-y-3">
+          <section className="order-3 md:col-span-2 xl:col-span-2 rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)] space-y-3">
             <h2 className="font-medium">Email</h2>
             <div className="space-y-2">
               <label className="text-sm text-slate-300">Title</label>
