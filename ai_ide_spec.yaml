@@ -1,0 +1,647 @@
+meta:
+  name: Task-Tracking Web App
+  owner: Stonegate / Internal Tools
+  summary: >-
+    Full-stack task tracking and comms app with Admin vs User dashboards, Kanban-style
+    task board (with cross-team assistance requests), Announcement board with comments
+    and emoji reactions, and a priority Email Composer featuring drag-and-drop user
+    selection and rich-content emails. Built for Supabase + Next.js + SMTP, styled
+    70% professional / 30% high-tech with glassmorphism accent.
+  priorities:
+    - P0 Email Composer (Users Pool ↔ Recipients DnD + Rich Email)
+    - P1 Task Management (Kanban + Assistance Requests)
+    - P2 Announcements (CRUD by Admin, comments/reactions by users)
+  style_guidance:
+    professional: 0.7
+    techy: 0.3
+    glassmorphism: true
+  accounts_confirmed:
+    supabase: true
+    vercel: true
+    github: true
+    smtp_service: true
+
+stack:
+  frontend:
+    framework: Next.js
+    language: TypeScript
+    ui:
+      - Tailwind CSS
+      - shadcn/ui
+      - lucide-react
+    state:
+      - React Query (TanStack Query)
+      - Zustand (lightweight global state)
+    editors:
+      - TipTap (rich text: text, lists, links, images, embeds/video, emoji)
+    drag_and_drop:
+      primary: '@dnd-kit/core'
+      fallback: 'Native HTML5 DnD'
+    emoji: emoji-mart
+  backend:
+    runtime: Next.js API Routes (or Route Handlers in app/)
+    db: Supabase Postgres + RLS
+    auth: Supabase Auth
+    storage: Supabase Storage (images/video embeds)
+    email: nodemailer via SMTP
+    validation: zod
+    schema_migrations: Supabase SQL migrations
+  infra:
+    hosting: Vercel (frontend + edge funcs)
+    database: Supabase Project (Postgres + Auth + Storage + Realtime)
+
+env:
+  required:
+    - NEXT_PUBLIC_SUPABASE_URL
+    - NEXT_PUBLIC_SUPABASE_ANON_KEY
+    - SUPABASE_SERVICE_ROLE_KEY
+    - SMTP_HOST
+    - SMTP_PORT
+    - SMTP_USER
+    - SMTP_PASSWORD
+    - SMTP_FROM
+
+rbac:
+  roles:
+    - admin        # full access across teams
+    - leader       # team-scoped elevated privileges (approve assistance requests, assign)
+    - member       # team-scoped standard user
+  notes: >-
+    Use Supabase RLS to enforce team scoping. Admin bypasses team scope through policies
+    checking profile.role = 'admin'. Leaders can update assistance-request approvals.
+
+ux:
+  layout:
+    navbar:
+      admin_tabs: [Dashboard, Tasks, Announcements, Email, Users, Settings]
+      user_tabs:  [Dashboard, Tasks, Announcements, Email]
+    left_sidebar:
+      - Team switcher (if multiple)
+      - Filters (status, assignee, deadline)
+      - Quick actions
+  design_system:
+    colors:
+      primary: '#F1592A'   # accent
+      surface: '#0F1220'
+      surface-2: '#13172A'
+      text-primary: '#EAEAF0'
+      text-muted: '#9AA0B4'
+      glass_tint: 'rgba(255,255,255,0.08)'
+    effects:
+      card_glass: 'backdrop-blur-md bg-white/5 border border-white/10 shadow-lg'
+      hover_glow: 'ring-1 ring-white/10 hover:ring-white/20 transition-shadow'
+    components:
+      - Card (glass)
+      - Badge (status + meta)
+      - Tabs (Tasks/Announcements/Email)
+      - Drawer/Sheet (Task details)
+      - Dialogs (compose email, confirm send)
+
+workflows:
+  tasks:
+    editor_features: [text, lists, links, images, emoji, video]
+    statuses:
+      # Canonical set with mapping from initial wording
+      - awaiting_approval   # (request tasks) — maps from "awaiting approval"
+      - approved            # maps from "approve for proceed"
+      - in_progress
+      - pending_review
+      - recab               # spelled per spec
+      - finished
+      - blocked             # extra
+      - on_hold             # extra
+      - cancelled           # extra
+    transitions:
+      awaiting_approval: [approved]
+      approved: [in_progress, on_hold, cancelled]
+      in_progress: [pending_review, blocked, on_hold]
+      pending_review: [finished, recab]
+      recab: [in_progress, cancelled]
+      blocked: [in_progress, cancelled]
+      on_hold: [in_progress, cancelled]
+      finished: []
+      cancelled: []
+    assistance_request:
+      summary: >-
+        Other teams can add a request task on a team's board with status 'awaiting_approval'.
+        The target team's leader approves → status becomes 'approved' (assignee optional),
+        then it behaves like a normal task.
+      fields:
+        - requester_team_id
+        - target_team_id
+        - is_assistance_request (boolean)
+        - approved_by (nullable)
+        - approved_at (nullable)
+  announcements:
+    admin: [create, update, delete, publish]
+    users: [read, comment, react]
+    reactions: emoji
+  email_composer:
+    panes:
+      - users_pool
+      - recipients
+      - email_editor
+    users_pool:
+      show:
+        - name
+        - email
+        - badges: [occupation, department, location]
+      actions: [add_all, add]
+      dnd: true
+    recipients:
+      drop_zone: true
+      actions: [remove_all, remove]
+      dedupe: email_address
+    email_editor:
+      fields: [title, subject, content]
+      rich_content: [text, images, links, lists, tables, emoji, video]
+      timestamp: add on send and save
+    delivery:
+      smtp: true
+      log_status: [queued, sent, failed]
+
+ui_routes:
+  - path: '/login'        
+  - path: '/dashboard'    
+  - path: '/tasks'        
+  - path: '/announcements'
+  - path: '/email'        
+  - path: '/settings'     
+
+api_routes:
+  - method: POST
+    path: /api/email/send
+    body_schema:
+      to: 'EmailRecipient[]'
+      cc: 'EmailRecipient[] | optional'
+      bcc: 'EmailRecipient[] | optional'
+      subject: string
+      title: string
+      html: string
+      text: 'string | optional'
+      attachments: 'Array<{ filename: string; content: string(base64) }>'
+    response: { id: string, status: 'queued' | 'sent' | 'failed' }
+  - method: GET
+    path: /api/email/:id
+    response: { id: string, status: string, created_at: string, sent_at: string | null }
+  - method: POST
+    path: /api/tasks
+  - method: PATCH
+    path: /api/tasks/:id
+  - method: POST
+    path: /api/announcements
+  - method: POST
+    path: /api/announcements/:id/comments
+  - method: POST
+    path: /api/announcements/:id/reactions
+
+validation_schemas:
+  EmailRecipient:
+    - email: string (RFC5322)
+    - name: string | optional
+    - role: 'to' | 'cc' | 'bcc'
+  Task:
+    - title: string(min:1,max:140)
+    - description: richtext
+    - deadline: timestamp | optional
+    - status: enum[awaiting_approval, approved, in_progress, pending_review, recab, finished, blocked, on_hold, cancelled]
+    - assignee_id: uuid | optional
+    - team_id: uuid
+    - created_by: uuid
+    - is_assistance_request: boolean
+    - requester_team_id: uuid | optional
+    - target_team_id: uuid | optional
+
+supabase:
+  schema_sql: |
+    -- Profiles mirror auth.users
+    create table if not exists public.profiles (
+      id uuid primary key references auth.users(id) on delete cascade,
+      full_name text,
+      email text unique,
+      avatar_url text,
+      role text check (role in ('admin','leader','member')) default 'member',
+      occupation text,
+      department text,
+      location text,
+      created_at timestamptz default now()
+    );
+
+    create table if not exists public.teams (
+      id uuid primary key default gen_random_uuid(),
+      name text not null,
+      created_at timestamptz default now()
+    );
+
+    create table if not exists public.team_memberships (
+      id uuid primary key default gen_random_uuid(),
+      team_id uuid not null references public.teams(id) on delete cascade,
+      user_id uuid not null references public.profiles(id) on delete cascade,
+      role text check (role in ('leader','member')) default 'member',
+      unique(team_id, user_id)
+    );
+
+    create table if not exists public.tasks (
+      id uuid primary key default gen_random_uuid(),
+      team_id uuid not null references public.teams(id) on delete cascade,
+      title text not null,
+      description jsonb default '{}'::jsonb, -- TipTap JSON
+      deadline timestamptz,
+      status text not null check (status in (
+        'awaiting_approval','approved','in_progress','pending_review','recab','finished','blocked','on_hold','cancelled'
+      )) default 'approved',
+      assignee_id uuid references public.profiles(id) on delete set null,
+      created_by uuid not null references public.profiles(id) on delete cascade,
+      is_assistance_request boolean default false,
+      requester_team_id uuid references public.teams(id) on delete set null,
+      target_team_id uuid references public.teams(id) on delete set null,
+      approved_by uuid references public.profiles(id) on delete set null,
+      approved_at timestamptz,
+      created_at timestamptz default now(),
+      updated_at timestamptz default now()
+    );
+
+    create table if not exists public.task_comments (
+      id uuid primary key default gen_random_uuid(),
+      task_id uuid not null references public.tasks(id) on delete cascade,
+      author_id uuid not null references public.profiles(id) on delete cascade,
+      content jsonb not null, -- TipTap JSON
+      created_at timestamptz default now()
+    );
+
+    create table if not exists public.task_attachments (
+      id uuid primary key default gen_random_uuid(),
+      task_id uuid not null references public.tasks(id) on delete cascade,
+      file_url text not null,
+      mime_type text,
+      created_at timestamptz default now()
+    );
+
+    create table if not exists public.task_activity_log (
+      id bigint generated always as identity primary key,
+      task_id uuid not null references public.tasks(id) on delete cascade,
+      actor_id uuid not null references public.profiles(id) on delete cascade,
+      action text not null,
+      meta jsonb,
+      created_at timestamptz default now()
+    );
+
+    create table if not exists public.announcements (
+      id uuid primary key default gen_random_uuid(),
+      created_by uuid not null references public.profiles(id) on delete cascade,
+      title text not null,
+      content jsonb not null, -- TipTap JSON
+      published boolean default false,
+      published_at timestamptz,
+      created_at timestamptz default now(),
+      updated_at timestamptz default now()
+    );
+
+    create table if not exists public.announcement_comments (
+      id uuid primary key default gen_random_uuid(),
+      announcement_id uuid not null references public.announcements(id) on delete cascade,
+      author_id uuid not null references public.profiles(id) on delete cascade,
+      content jsonb not null,
+      created_at timestamptz default now()
+    );
+
+    create table if not exists public.announcement_reactions (
+      announcement_id uuid references public.announcements(id) on delete cascade,
+      user_id uuid references public.profiles(id) on delete cascade,
+      emoji text not null,
+      created_at timestamptz default now(),
+      primary key (announcement_id, user_id, emoji)
+    );
+
+    create table if not exists public.emails (
+      id uuid primary key default gen_random_uuid(),
+      created_by uuid not null references public.profiles(id) on delete cascade,
+      title text,
+      subject text not null,
+      html text not null,
+      text text,
+      status text check (status in ('queued','sent','failed')) default 'queued',
+      created_at timestamptz default now(),
+      sent_at timestamptz
+    );
+
+    create table if not exists public.email_recipients (
+      email_id uuid references public.emails(id) on delete cascade,
+      recipient_email text not null,
+      recipient_name text,
+      role text check (role in ('to','cc','bcc')) default 'to',
+      primary key (email_id, recipient_email, role)
+    );
+
+    -- RLS
+    alter table public.profiles enable row level security;
+    alter table public.teams enable row level security;
+    alter table public.team_memberships enable row level security;
+    alter table public.tasks enable row level security;
+    alter table public.task_comments enable row level security;
+    alter table public.task_attachments enable row level security;
+    alter table public.task_activity_log enable row level security;
+    alter table public.announcements enable row level security;
+    alter table public.announcement_comments enable row level security;
+    alter table public.announcement_reactions enable row level security;
+    alter table public.emails enable row level security;
+    alter table public.email_recipients enable row level security;
+
+    -- Helper: is_admin()
+    create or replace function public.is_admin(uid uuid) returns boolean language sql stable as $$
+      select exists(select 1 from public.profiles p where p.id = uid and p.role = 'admin');
+    $$;
+
+    -- Helper: is_member_of(team uuid, uid uuid)
+    create or replace function public.is_member_of(team_id uuid, uid uuid) returns boolean language sql stable as $$
+      select exists(select 1 from public.team_memberships tm where tm.team_id = team_id and tm.user_id = uid);
+    $$;
+
+    -- Profiles policies
+    create policy profiles_self on public.profiles for select using (auth.uid() = id or public.is_admin(auth.uid()));
+    create policy profiles_self_upd on public.profiles for update using (auth.uid() = id or public.is_admin(auth.uid()));
+
+    -- Teams: members can select their teams; admin all
+    create policy teams_select on public.teams for select using (
+      public.is_admin(auth.uid()) or exists(select 1 from public.team_memberships tm where tm.team_id = id and tm.user_id = auth.uid())
+    );
+
+    -- Team memberships: restricted
+    create policy tm_select on public.team_memberships for select using (
+      public.is_admin(auth.uid()) or user_id = auth.uid() or exists(select 1 from public.team_memberships t2 where t2.team_id = team_id and t2.user_id = auth.uid())
+    );
+
+    -- Tasks: team-scoped
+    create policy tasks_select on public.tasks for select using (
+      public.is_admin(auth.uid()) or public.is_member_of(team_id, auth.uid())
+    );
+    create policy tasks_insert on public.tasks for insert with check (
+      public.is_admin(auth.uid()) or public.is_member_of(team_id, auth.uid())
+    );
+    create policy tasks_update on public.tasks for update using (
+      public.is_admin(auth.uid()) or public.is_member_of(team_id, auth.uid())
+    );
+
+    -- Comments/attachments/activity: same scope as task via join
+    create policy task_comments_rw on public.task_comments for all using (
+      exists(select 1 from public.tasks t where t.id = task_id and (public.is_admin(auth.uid()) or public.is_member_of(t.team_id, auth.uid())))
+    ) with check (
+      exists(select 1 from public.tasks t where t.id = task_id and (public.is_admin(auth.uid()) or public.is_member_of(t.team_id, auth.uid())))
+    );
+
+    create policy task_attachments_rw on public.task_attachments for all using (
+      exists(select 1 from public.tasks t where t.id = task_id and (public.is_admin(auth.uid()) or public.is_member_of(t.team_id, auth.uid())))
+    ) with check (
+      exists(select 1 from public.tasks t where t.id = task_id and (public.is_admin(auth.uid()) or public.is_member_of(t.team_id, auth.uid())))
+    );
+
+    create policy task_activity_log_r on public.task_activity_log for select using (
+      exists(select 1 from public.tasks t where t.id = task_id and (public.is_admin(auth.uid()) or public.is_member_of(t.team_id, auth.uid())))
+    );
+
+    -- Announcements: read for all authenticated; write admin only
+    create policy ann_select on public.announcements for select using (true);
+    create policy ann_crud on public.announcements for all using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
+
+    create policy ann_comments_rw on public.announcement_comments for all using (auth.uid() is not null) with check (auth.uid() is not null);
+    create policy ann_reactions_rw on public.announcement_reactions for all using (auth.uid() is not null) with check (auth.uid() is not null);
+
+    -- Emails: creator can read; admin can read all
+    create policy emails_rw on public.emails for all using (
+      public.is_admin(auth.uid()) or created_by = auth.uid()
+    ) with check (
+      public.is_admin(auth.uid()) or created_by = auth.uid()
+    );
+
+    create policy email_recipients_r on public.email_recipients for select using (
+      exists(select 1 from public.emails e where e.id = email_id and (public.is_admin(auth.uid()) or e.created_by = auth.uid()))
+    );
+
+  storage:
+    buckets:
+      - tasks
+      - announcements
+      - email_assets
+
+setup_commands:
+  - npx create-next-app@latest task-tracking --ts --eslint --app --tailwind --src-dir --import-alias "@/*"
+  - cd task-tracking
+  - pnpm add @supabase/supabase-js @tanstack/react-query zustand zod nodemailer @tiptap/react @tiptap/starter-kit @tiptap/extension-link @tiptap/extension-image @tiptap/extension-youtube emoji-mart @dnd-kit/core @dnd-kit/sortable @dnd-kit/modifiers lucide-react class-variance-authority tailwind-merge
+  - pnpm dlx shadcn@latest init -d
+  - pnpm dlx shadcn@latest add button card badge dialog input textarea tabs sheet dropdown-menu avatar textarea tooltip scroll-area separator toast
+  - pnpm add -D @types/nodemailer @types/node
+
+files:
+  - path: README.md
+    content: |
+      # Task-Tracking Web App
+      
+      **Priorities**: Email Composer → Tasks → Announcements.
+      
+      **Stack**: Next.js (TS) + Supabase (Auth, Postgres, Storage) + SMTP (nodemailer).
+      
+      ## Dev Setup
+      1. Create a Supabase project, set env vars in `.env.local`.
+      2. Run SQL in `supabase/migrations/0001_schema.sql`.
+      3. `pnpm dev` to start.
+      
+      ## Docs
+      - See `docs/DEVLOG.md` and `docs/CHANGELOG.md`.
+
+  - path: docs/DEVLOG.md
+    content: |
+      # DEVLOG
+      
+      ## v0.1.0 (init)
+      - Bootstrap Next.js app & Tailwind.
+      - Added shadcn/ui primitives.
+      - Added database schema + RLS.
+      - Implemented SMTP route skeleton.
+
+  - path: docs/CHANGELOG.md
+    content: |
+      # Changelog
+      
+      ## [0.1.0] - Initial scaffolding
+      - Schema, RLS, Email send route stub, UI shells.
+
+  - path: supabase/migrations/0001_schema.sql
+    content: |
+      -- See supabase.schema_sql above. Copy that block into this file when generating.
+
+  - path: app/api/email/send/route.ts
+    content: |
+      import { NextRequest, NextResponse } from 'next/server'
+      import nodemailer from 'nodemailer'
+      import { z } from 'zod'
+
+      const Recipient = z.object({ email: z.string().email(), name: z.string().optional() })
+      const Body = z.object({
+        to: z.array(Recipient),
+        cc: z.array(Recipient).optional(),
+        bcc: z.array(Recipient).optional(),
+        subject: z.string().min(1),
+        title: z.string().optional(),
+        html: z.string().min(1),
+        text: z.string().optional(),
+        attachments: z.array(z.object({ filename: z.string(), content: z.string() })).optional()
+      })
+
+      export async function POST(req: NextRequest) {
+        const parsed = Body.safeParse(await req.json())
+        if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
+        const data = parsed.data
+
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT || 587),
+          secure: false,
+          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
+        })
+
+        try {
+          await transporter.sendMail({
+            from: process.env.SMTP_FROM,
+            to: data.to.map(r => r.name ? `${r.name} <${r.email}>` : r.email).join(', '),
+            cc: data.cc?.map(r => r.name ? `${r.name} <${r.email}>` : r.email).join(', '),
+            bcc: data.bcc?.map(r => r.name ? `${r.name} <${r.email}>` : r.email).join(', '),
+            subject: data.subject,
+            html: data.html,
+            text: data.text,
+            attachments: data.attachments?.map(a => ({ filename: a.filename, content: Buffer.from(a.content, 'base64') }))
+          })
+          return NextResponse.json({ status: 'sent' })
+        } catch (e: any) {
+          return NextResponse.json({ status: 'failed', error: e?.message }, { status: 500 })
+        }
+      }
+
+  - path: app/(authed)/layout.tsx
+    content: |
+      import './globals.css'
+      import React from 'react'
+
+      export default function AuthedLayout({ children }: { children: React.ReactNode }) {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-[#171527] via-[#221c3a] to-[#2e294e] text-[#EAEAF0]">
+            <div className="mx-auto max-w-7xl px-4 py-6">
+              <div className="grid grid-cols-12 gap-6">
+                <aside className="col-span-12 lg:col-span-3 space-y-4">
+                  <div className="rounded-2xl p-4 border border-white/10 bg-white/5 backdrop-blur-md">Sidebar</div>
+                </aside>
+                <main className="col-span-12 lg:col-span-9 space-y-6">{children}</main>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+  - path: app/(authed)/email/page.tsx
+    content: |
+      'use client'
+      import React from 'react'
+
+      export default function EmailPage() {
+        return (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold">Email Composer</h1>
+            <div className="grid grid-cols-12 gap-4">
+              <section className="col-span-12 md:col-span-4 rounded-2xl p-4 border border-white/10 bg-white/5 backdrop-blur-md">Users Pool</section>
+              <section className="col-span-12 md:col-span-4 rounded-2xl p-4 border border-white/10 bg-white/5 backdrop-blur-md">Recipients</section>
+              <section className="col-span-12 md:col-span-4 rounded-2xl p-4 border border-white/10 bg-white/5 backdrop-blur-md">Email Editor</section>
+            </div>
+          </div>
+        )
+      }
+
+  - path: app/(authed)/tasks/page.tsx
+    content: |
+      'use client'
+      import React from 'react'
+
+      export default function TasksPage() {
+        return (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold">Tasks</h1>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {['awaiting_approval','approved','in_progress','pending_review'].map(c => (
+                <div key={c} className="rounded-2xl p-4 border border-white/10 bg-white/5 backdrop-blur-md">
+                  <div className="font-medium capitalize">{c.replaceAll('_',' ')}</div>
+                  <div className="mt-2 min-h-[300px]">{/* Kanban column */}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+  - path: app/(authed)/announcements/page.tsx
+    content: |
+      'use client'
+      import React from 'react'
+
+      export default function AnnouncementsPage() {
+        return (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold">Announcements</h1>
+            <div className="rounded-2xl p-4 border border-white/10 bg-white/5 backdrop-blur-md">Board</div>
+          </div>
+        )
+      }
+
+  - path: app/globals.css
+    content: |
+      @tailwind base;
+      @tailwind components;
+      @tailwind utilities;
+
+      :root { color-scheme: dark; }
+
+      .card-glass { @apply backdrop-blur-md bg-white/5 border border-white/10 shadow-lg rounded-2xl; }
+      .hover-glow { @apply ring-1 ring-white/10 hover:ring-white/20 transition-shadow; }
+
+  - path: app/page.tsx
+    content: |
+      import React from 'react'
+      import Link from 'next/link'
+
+      export default function HomePage() {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-[#171527] via-[#221c3a] to-[#2e294e] text-[#EAEAF0]">
+            <div className="mx-auto max-w-4xl px-6 py-20 text-center">
+              <h1 className="text-4xl font-bold">Task-Tracking Web App</h1>
+              <p className="mt-4 text-[#9AA0B4]">Email → Tasks → Announcements. Glassy, fast, production-ready.</p>
+              <div className="mt-10 flex justify-center gap-4">
+                <Link href="/email" className="rounded-xl px-4 py-2 bg-[#F1592A] text-black font-medium">Open Email</Link>
+                <Link href="/tasks" className="rounded-xl px-4 py-2 border border-white/10">Tasks</Link>
+                <Link href="/announcements" className="rounded-xl px-4 py-2 border border-white/10">Announcements</Link>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+  - path: app/(auth)/login/page.tsx
+    content: |
+      export default function LoginPage(){
+        return <div className="min-h-screen grid place-items-center">TODO: Supabase Auth</div>
+      }
+
+notes:
+  production:
+    - Use Vercel env vars for SMTP and Supabase keys.
+    - Enforce HTTPS-only cookies for Supabase Auth.
+    - Enable Supabase Storage public-read only for specific buckets as needed; prefer signed URLs.
+    - Log email delivery results to `emails.status` and keep immutable `email_recipients`.
+  responsive:
+    - 3-column Email layout collapses to vertical stack below md.
+    - Kanban columns become horizontal scroll on small screens.
+  accessibility:
+    - Provide keyboard DnD fallbacks and ARIA live regions for status updates.
+  telemetry:
+    - Optional: Vercel Analytics; log task mutations to `task_activity_log`.
+versioning:
+  scheme: semver
+  initial: 0.1.0
+  change_rules:
+    - Only add new markdown files when necessary; otherwise edit/rename existing per spec.

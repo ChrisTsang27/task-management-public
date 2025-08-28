@@ -1,0 +1,32 @@
+You need to build a task tracking system on web app. The logic is a dashboard view, where there are different view for admin login and user login. 
+
+In the admin dashboard view, there are some important tabs, such as task management, announcement, email composer, and etc... on the main view port. Then put something related on the left side bar. For tabs on the main view port, I would like grids and cards layout. The design should be professional and stylish, feel free to refer other design online. The style and color should be techy, and I am kind of like the glassmorphism style. 
+
+*** Task management logic ***:
+User within the same team, can add a task to the task board (kanban style), task includes who put up this, title, description, deadline, who responsible for this (optional, can leave blank), task status (approve for procee, in progress, pending review, recab, finish), etc...(add some more if you deem fits). Then there are other options. Such as request assistance, this function's logic as follow. When other teams request an assistant from this team, they can add a request task on this team task board, then the status of this request task will be awaiting approval. Then this team's leader will review it, after that, leader can change the request task awaiting approval to approved. Then assign to some in the team or leave blank. The request task then will have the same status as normal tasks. I will need the task board available for text, lists, images, links, emojis and videos if possible, on the description input box, feel free to use any available open-source libraries for rich text editors. For the status, I want something like badges, multi-stages swith style if possible. I think that's it so far, might add more features in the future.
+
+*** Announcement logic ***:
+This function is pretty straight forward. Admin can CRUD an announcement on the announcement board. Users can only read and leave comments and reactions (emoji) under the announcements from announcement board. 
+
+*** Email Composer logic ***:
+This function takes priority, should complete first. The email composer has three parts, first is users pool, second is recipients part, third is the email part. In the first users pool part and the second recipients part, I would love a drag and drop function, in case of react dnd not working properly, you can use HTML5 drag and drop function. 
+
+In the users pool, user name, user email should display as text. User occupation (e.g. memeber, manager and etc...), user department (e.g. sales, marketing, IT, etc...), user work locaiton (e.g. SGI Coopers Plains, SGI Brendale, SGI Gold Coast, SGI Toowoomba, SGI Melbourne, KAYO Coopers Plains), should display as badges with color coded under the user name and user email. Then it should have add all button on top, and add button next to each user in the pool, in case drag and drop not working properly at some points. 
+
+In the recipients, should have an area for dropping the users from users pool with clear indication. Then it should have remove all button on top if there are any users in recipients, and remove button next to the users from users pool if there are any in the recipients.
+
+In the email, it should give title, subject, content. You can use rich text editor for content if needed. Because the email should be able to sent text, images, links, lists, tables, emojis, possibily videos. And add timestamp for the email.
+
+*** RULES ***
+1. you can use any frameworks, any libraries, any apis, any services if needed.
+2. Prefer use: React, Next, Typescript, Vue & Vite(if you think the outcome is better in optimization, style, look). PostgreSQL, Supabase, SMTP service.
+3. The style should be 70% professional and 30% high tech style.
+4. The glassmorphism style is a plus.
+5. All the tech stacks mentioned above is not a must, you are free to use any.
+6. Please use open-source first, if there are none, then use online services.
+7. For clearer speaking, please use Supabase as the database, you are confirmed to have the supabase account and project setup. SMTP service for email handling.
+8. You are confirmed to have github, vercel account as well. 
+9. Make sure you develop the code in safe and consistent manner, keep record on developing progress and the developed version. Give markdown file for those info as well. 
+10. Please keep in mind, generate new markdown files ONLY necessary. Otherwise, just edit the old one and rename that.
+11. Please keep in mind for the responsive design.
+12. You will need to deploy this project, so keep in mind for the production level design and develop.
