@@ -1,29 +1,24 @@
 name: Mirror to public (manual)
-
 on:
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: Branch to mirror
-        required: true
-        default: main
-
+workflow_dispatch: {}
+permissions:
+contents: read
 jobs:
-  mirror:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.branch }}
-
-      - name: Push to public
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-
-          git fetch --tags --force
-          git remote remove public || true
-          git remote add public "https://x-access-token:${{ secrets.PUBLIC_REPO_TOKEN }}@github.com/ChrisTsang27/task-management-public.git"
-          git push public "refs/heads/${{ inputs.branch }}:refs/heads/${{ inputs.branch }}"
-          git push public --tags
+mirror:
+runs-on: ubuntu-latest
+steps:
+- name: Checkout main
+uses: actions/checkout@v4
+with:
+fetch-depth: 0
+ref: main
+- name: Push to public
+shell: bash
+run: |
+set -euo pipefail
+git config user.name "github-actions[bot]"
+git config user.email "github-actions[bot]@users.noreply.github.com"
+git remote remove public 2>/dev/null || true
+git remote add public https://x-access-token:${{ secrets.PUBLIC_REPO_TOKEN }}@github.com/ChrisTsang27/task-management-public.git
+git push public refs/heads/main:refs/heads/main
+git push public --tags
