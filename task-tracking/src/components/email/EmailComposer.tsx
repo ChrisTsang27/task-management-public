@@ -2,6 +2,7 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import RichTextEditor from "@/components/email/RichTextEditor";
+import RdxSelect from "@/components/ui/RdxSelect";
 
 type User = {
   id: string;
@@ -59,19 +60,26 @@ export default function EmailComposer() {
   const [occFilter, setOccFilter] = useState<string>("all");
   const [deptFilter, setDeptFilter] = useState<string>("all");
   const [locFilter, setLocFilter] = useState<string>("all");
+  const [userQuery, setUserQuery] = useState("");
 
   const recipientIds = useMemo(() => new Set(recipients.map((r) => r.id)), [recipients]);
 
   // Available users = USERS - recipients - not matching filters
   const availableUsers = useMemo(() => {
+    const q = userQuery.trim().toLowerCase();
     return USERS.filter((u) => {
       if (recipientIds.has(u.id)) return false;
       if (occFilter !== "all" && String(u.occupation) !== occFilter) return false;
       if (deptFilter !== "all" && String(u.department) !== deptFilter) return false;
       if (locFilter !== "all" && String(u.location) !== locFilter) return false;
+      if (q) {
+        const hay =
+          `${u.name} ${u.email} ${String(u.occupation)} ${String(u.department)} ${String(u.location)}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [recipientIds, occFilter, deptFilter, locFilter]);
+  }, [recipientIds, occFilter, deptFilter, locFilter, userQuery]);
 
   const addRecipient = useCallback((user: User) => {
     setRecipients((prev) => (prev.find((u) => u.id === user.id) ? prev : [...prev, user]));
@@ -153,7 +161,7 @@ export default function EmailComposer() {
       <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto space-y-4">
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Email Composer</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Users Pool */}
           <section className="rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
             <div className="flex items-center justify-between mb-3 gap-2">
@@ -176,38 +184,39 @@ export default function EmailComposer() {
               </div>
             </div>
 
+            {/* Search */}
+            <div className="mb-3">
+              <input
+                value={userQuery}
+                onChange={(e) => setUserQuery(e.target.value)}
+                className="w-full rounded-lg bg-black/30 ring-1 ring-white/10 px-3 py-2 outline-none focus:ring-white/30"
+                placeholder="Search users (name, email, role, department, location)"
+                aria-label="Search users"
+              />
+            </div>
             {/* Filters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-              <select
-                className="rounded-lg bg-black/30 ring-1 ring-white/10 px-2 py-2 text-sm"
+              <RdxSelect
                 value={occFilter}
-                onChange={(e) => setOccFilter(e.target.value)}
-              >
-                <option value="all">All roles</option>
-                {occupations.map((o) => (
-                  <option key={o} value={o}>{o}</option>
-                ))}
-              </select>
-              <select
-                className="rounded-lg bg-black/30 ring-1 ring-white/10 px-2 py-2 text-sm"
+                onValueChange={setOccFilter}
+                ariaLabel="Filter by role"
+                placeholder="All roles"
+                items={[{ value: 'all', label: 'All roles' }, ...occupations.map(o => ({ value: o, label: o }))]}
+              />
+              <RdxSelect
                 value={deptFilter}
-                onChange={(e) => setDeptFilter(e.target.value)}
-              >
-                <option value="all">All departments</option>
-                {departments.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-              <select
-                className="rounded-lg bg-black/30 ring-1 ring-white/10 px-2 py-2 text-sm"
+                onValueChange={setDeptFilter}
+                ariaLabel="Filter by department"
+                placeholder="All departments"
+                items={[{ value: 'all', label: 'All departments' }, ...departments.map(d => ({ value: d, label: d }))]}
+              />
+              <RdxSelect
                 value={locFilter}
-                onChange={(e) => setLocFilter(e.target.value)}
-              >
-                <option value="all">All locations</option>
-                {locations.map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
+                onValueChange={setLocFilter}
+                ariaLabel="Filter by location"
+                placeholder="All locations"
+                items={[{ value: 'all', label: 'All locations' }, ...locations.map(l => ({ value: l, label: l }))]}
+              />
             </div>
 
             <div className="space-y-3 max-h-[58vh] overflow-auto pr-1">
@@ -294,7 +303,7 @@ export default function EmailComposer() {
           </section>
 
           {/* Email */}
-          <section className="rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)] space-y-3">
+          <section className="md:col-span-2 xl:col-span-1 rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)] space-y-3">
             <h2 className="font-medium">Email</h2>
             <div className="space-y-2">
               <label className="text-sm text-slate-300">Title</label>
@@ -322,7 +331,7 @@ export default function EmailComposer() {
             <button
               disabled={sending || recipients.length === 0 || !subject.trim() || contentIsEmpty}
               onClick={handleSend}
-              className="w-full rounded-lg px-4 py-2 bg-emerald-500/20 text-emerald-200 ring-1 ring-emerald-500/30 hover:bg-emerald-500/30 disabled:opacity-50"
+              className="w-full rounded-lg px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-600 text-white text-glow drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] font-semibold ring-1 ring-cyan-300 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300 shadow-[0_10px_30px_-12px_rgba(16,185,129,.45)] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {sending ? "Sending..." : `Send to ${recipients.length} recipient(s)`}
             </button>

@@ -1,0 +1,64 @@
+"use client";
+
+import * as Select from "@radix-ui/react-select";
+import { clsx } from "clsx";
+import React from "react";
+
+type Item = { value: string; label: string };
+
+export default function RdxSelect({
+  value,
+  onValueChange,
+  items,
+  ariaLabel,
+  placeholder,
+  className,
+}: {
+  value: string;
+  onValueChange: (v: string) => void;
+  items: Item[];
+  ariaLabel: string;
+  placeholder?: string;
+  className?: string;
+}) {
+  return (
+    <Select.Root value={value} onValueChange={onValueChange}>
+      <Select.Trigger
+        aria-label={ariaLabel}
+        className={clsx(
+          "w-full h-10 px-3 rounded-lg text-sm",
+          "bg-[linear-gradient(180deg,rgba(7,20,30,.95),rgba(9,36,50,.9))]",
+          "text-cyan-50 ring-1 ring-cyan-400/60 hover:ring-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-300",
+          "shadow-[inset_0_0_0_1px_rgba(34,211,238,.35)]",
+          className
+        )}
+      >
+        <Select.Value placeholder={placeholder} />
+        <Select.Icon className="ml-2">▾</Select.Icon>
+      </Select.Trigger>
+      <Select.Portal>
+        <Select.Content
+          className="z-[1000] overflow-hidden rounded-md ring-1 ring-cyan-400/40 bg-[#0b1e2a]/95 backdrop-blur-md"
+          position="popper"
+        >
+          <Select.ScrollUpButton className="px-2 py-1 text-cyan-200/80">▲</Select.ScrollUpButton>
+          <Select.Viewport className="p-1 max-h-[240px]">
+            {items.map((it) => (
+              <Select.Item
+                key={it.value}
+                value={it.value}
+                className={clsx(
+                  "select-none rounded-md px-2 py-2 text-sm cursor-pointer",
+                  "text-cyan-50 data-[highlighted]:bg-cyan-500/20 data-[highlighted]:outline-none"
+                )}
+              >
+                <Select.ItemText>{it.label}</Select.ItemText>
+              </Select.Item>
+            ))}
+          </Select.Viewport>
+          <Select.ScrollDownButton className="px-2 py-1 text-cyan-200/80">▼</Select.ScrollDownButton>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
+  );
+}
