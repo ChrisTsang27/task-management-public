@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { EditorContent, useEditor } from "@tiptap/react";
+import React, { useMemo, useRef, useState } from "react";
+import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
@@ -14,6 +14,7 @@ import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
+import CharacterCount from "@tiptap/extension-character-count";
 
 type Props = {
   value?: string;
@@ -21,27 +22,52 @@ type Props = {
   placeholder?: string;
 };
 
+const CONTENT_LIMIT = 10000;
+
+// Basic safe URL check: only http/https allowed
+function isSafeHttpUrl(url: string) {
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export default function RichTextEditor({ value, onChange, placeholder }: Props) {
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const onUpdateDebounced = (html: string) => {
+    if (!onChange) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => onChange(html), 300);
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3, 4] },
-        // keep lists, code, codeBlock, blockquote, hr from StarterKit
       }),
       Underline,
       Subscript,
       Superscript,
-      Link.configure({ autolink: true, openOnClick: false }),
-      Image.configure({ inline: false, allowBase64: true }),
+      Link.configure({
+        autolink: true,
+        openOnClick: false,
+        validate: (href) => isSafeHttpUrl(href),
+      }),
+      // Disallow base64 to reduce payload/risks; URL validation is enforced
+      Image.configure({ inline: false, allowBase64: false }),
       Placeholder.configure({ placeholder: placeholder || "Write your content..." }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Table.configure({ resizable: false }),
       TableRow,
       TableHeader,
       TableCell,
+      CharacterCount.configure({ limit: CONTENT_LIMIT }),
     ],
     content: value || "",
-    onUpdate: ({ editor }) => onChange?.(editor.getHTML()),
+    onUpdate: ({ editor }) => onUpdateDebounced(editor.getHTML()),
     editorProps: {
       attributes: {
         class:
@@ -53,17 +79,46 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
 
   if (!editor) return null;
 
+  const counts = {
+    words: (() => {
+      try {
+        
+        return editor.storage.characterCount.words();
+      } catch {
+        return editor.getText().trim().split(/\s+/).filter(Boolean).length;
+      }
+    })(),
+    chars: (() => {
+      try {
+        
+        return editor.storage.characterCount.characters();
+      } catch {
+        return editor.getText().length;
+      }
+    })(),
+  };
+
+  const nearLimit = counts.chars > CONTENT_LIMIT * 0.95;
+  const overLimit = counts.chars > CONTENT_LIMIT;
+
   return (
     <div className="space-y-2">
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />
+      <div className="flex items-center justify-end gap-3 text-xs text-slate-300">
+        <span>Words: {counts.words}</span>
+        <span className={`${overLimit ? "text-rose-300" : nearLimit ? "text-amber-300" : "text-slate-300"}`}>
+          Characters: {counts.chars}/{CONTENT_LIMIT}
+        </span>
+      </div>
     </div>
   );
 }
 
-function Toolbar({ editor }: { editor: any }) {
+function Toolbar({ editor }: { editor: Editor }) {
   const [openHead, setOpenHead] = useState(false);
   const [openAdd, setOpenAdd] = useState(false);
+  const [openTable, setOpenTable] = useState(false);
 
   const currentBlock = useMemo<"p" | "h1" | "h2" | "h3" | "h4">(() => {
     if (editor.isActive("heading", { level: 1 })) return "h1";
@@ -82,7 +137,6 @@ function Toolbar({ editor }: { editor: any }) {
 
   const toggleBullet = () => {
     const chain = editor.chain().focus();
-    // ensure not inside codeBlock
     if (editor.isActive("codeBlock")) chain.toggleCodeBlock().run();
     chain.toggleBulletList().run();
   };
@@ -97,14 +151,14 @@ function Toolbar({ editor }: { editor: any }) {
     editor.chain().focus().setTextAlign(val).run();
 
   const promptForLink = () => {
-    const url = window.prompt("Enter URL");
-    if (!url) return;
+    const url = window.prompt("Enter URL (http/https only)");
+    if (!url || !isSafeHttpUrl(url)) return;
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
   const promptForImage = () => {
-    const url = window.prompt("Enter image URL");
-    if (!url) return;
+    const url = window.prompt("Enter image URL (http/https only)");
+    if (!url || !isSafeHttpUrl(url)) return;
     editor.chain().focus().setImage({ src: url, alt: "" }).run();
     setOpenAdd(false);
   };
@@ -119,11 +173,17 @@ function Toolbar({ editor }: { editor: any }) {
     setOpenAdd(false);
   };
 
+  const inTable = editor.isActive("table");
+
   return (
     <div className="relative z-[100]">
-      <div className="flex items-center flex-wrap gap-1 rounded-lg bg-black/70 ring-1 ring-white/20 p-1">
-        <Btn onAction={() => editor.chain().focus().undo().run()}>↶</Btn>
-        <Btn onAction={() => editor.chain().focus().redo().run()}>↷</Btn>
+      <div
+        role="toolbar"
+        aria-label="Rich text editor toolbar"
+        className="flex items-center flex-wrap gap-1 rounded-lg bg-black/70 ring-1 ring-white/20 p-1"
+      >
+        <Btn onAction={() => editor.chain().focus().undo().run()} ariaLabel="Undo">↶</Btn>
+        <Btn onAction={() => editor.chain().focus().redo().run()} ariaLabel="Redo">↷</Btn>
         <Divider />
 
         {/* Heading dropdown */}
@@ -132,12 +192,14 @@ function Toolbar({ editor }: { editor: any }) {
             onAction={() => {
               setOpenHead((v) => !v);
               setOpenAdd(false);
+              setOpenTable(false);
             }}
+            ariaLabel="Block type"
           >
             {currentBlock === "p" ? "Normal" : currentBlock.toUpperCase()} <span className="ml-1">▾</span>
           </Btn>
           {openHead && (
-            <Menu onClose={() => setOpenHead(false)}>
+            <Menu onClose={() => setOpenHead(false)} ariaLabel="Block types">
               <MenuItem onAction={() => setHeading("p")} active={currentBlock === "p"}>
                 Normal
               </MenuItem>
@@ -159,61 +221,91 @@ function Toolbar({ editor }: { editor: any }) {
 
         <Divider />
 
-        <Btn onAction={toggleBullet} active={editor.isActive("bulletList")}>•</Btn>
-        <Btn onAction={toggleOrdered} active={editor.isActive("orderedList")}>1.</Btn>
+        <Btn onAction={toggleBullet} active={editor.isActive("bulletList")} ariaLabel="Bulleted list">•</Btn>
+        <Btn onAction={toggleOrdered} active={editor.isActive("orderedList")} ariaLabel="Numbered list">1.</Btn>
 
         <Divider />
 
-        <Btn onAction={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")}>B</Btn>
-        <Btn onAction={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")}>I</Btn>
-        <Btn onAction={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive("strike")}>S</Btn>
-        <Btn onAction={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")}>U</Btn>
+        <Btn onAction={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} ariaLabel="Bold">B</Btn>
+        <Btn onAction={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} ariaLabel="Italic">I</Btn>
+        <Btn onAction={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive("strike")} ariaLabel="Strikethrough">S</Btn>
+        <Btn onAction={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} ariaLabel="Underline">U</Btn>
 
         {/* Code block (</>) */}
-        <Btn onAction={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive("codeBlock")}>
+        <Btn onAction={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive("codeBlock")} ariaLabel="Code block">
           {"</>"}
         </Btn>
 
         <Divider />
 
-        <Btn onAction={promptForLink} active={editor.isActive("link")}>🔗</Btn>
-        <Btn onAction={() => editor.chain().focus().unsetLink().run()} disabled={!editor.isActive("link")}>Unlink</Btn>
+        <Btn onAction={promptForLink} active={editor.isActive("link")} ariaLabel="Insert link" title="Insert link">🔗</Btn>
+        <Btn onAction={() => editor.chain().focus().unsetLink().run()} disabled={!editor.isActive("link")} ariaLabel="Remove link">
+          Unlink
+        </Btn>
 
         <Divider />
 
-        <Btn onAction={() => align("left")} active={editor.isActive({ textAlign: "left" })}>≡</Btn>
-        <Btn onAction={() => align("center")} active={editor.isActive({ textAlign: "center" })}>≣</Btn>
-        <Btn onAction={() => align("right")} active={editor.isActive({ textAlign: "right" })}>≡</Btn>
-        <Btn onAction={() => align("justify")} active={editor.isActive({ textAlign: "justify" })}>≋</Btn>
+        <Btn onAction={() => align("left")} active={editor.isActive({ textAlign: "left" })} ariaLabel="Align left">L</Btn>
+        <Btn onAction={() => align("center")} active={editor.isActive({ textAlign: "center" })} ariaLabel="Align center">C</Btn>
+        <Btn onAction={() => align("right")} active={editor.isActive({ textAlign: "right" })} ariaLabel="Align right">R</Btn>
+        <Btn onAction={() => align("justify")} active={editor.isActive({ textAlign: "justify" })} ariaLabel="Justify">J</Btn>
 
         <Divider />
 
-        <Btn onAction={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive("superscript")}>x²</Btn>
-        <Btn onAction={() => editor.chain().focus().toggleSubscript().run()} active={editor.isActive("subscript")}>x₂</Btn>
+        <Btn onAction={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive("superscript")} ariaLabel="Superscript">x²</Btn>
+        <Btn onAction={() => editor.chain().focus().toggleSubscript().run()} active={editor.isActive("subscript")} ariaLabel="Subscript">x₂</Btn>
 
         <Divider />
 
         {/* Add dropdown */}
         <div className="relative">
-          <Btn onAction={() => { setOpenAdd((v) => !v); setOpenHead(false); }}>Add ▾</Btn>
+          <Btn onAction={() => { setOpenAdd((v) => !v); setOpenHead(false); setOpenTable(false); }} ariaLabel="Add menu">Add ▾</Btn>
           {openAdd && (
-            <Menu onClose={() => setOpenAdd(false)}>
+            <Menu onClose={() => setOpenAdd(false)} ariaLabel="Insert elements">
               <MenuItem onAction={promptForImage}>Image…</MenuItem>
               <MenuItem onAction={insertTable}>Table 3×3</MenuItem>
               <MenuItem onAction={insertHR}>Horizontal rule</MenuItem>
             </Menu>
           )}
         </div>
+
+        {/* Table menu (visible only when in a table) */}
+        {inTable && (
+          <>
+            <Divider />
+            <div className="relative">
+              <Btn onAction={() => { setOpenTable((v) => !v); setOpenAdd(false); setOpenHead(false); }} ariaLabel="Table menu">Table ▾</Btn>
+              {openTable && (
+                <Menu onClose={() => setOpenTable(false)} ariaLabel="Table actions">
+                  <MenuItem onAction={() => editor.chain().focus().addRowBefore().run()}>Add row above</MenuItem>
+                  <MenuItem onAction={() => editor.chain().focus().addRowAfter().run()}>Add row below</MenuItem>
+                  <MenuItem onAction={() => editor.chain().focus().addColumnBefore().run()}>Add column left</MenuItem>
+                  <MenuItem onAction={() => editor.chain().focus().addColumnAfter().run()}>Add column right</MenuItem>
+                  <MenuItem onAction={() => editor.chain().focus().deleteRow().run()}>Delete row</MenuItem>
+                  <MenuItem onAction={() => editor.chain().focus().deleteColumn().run()}>Delete column</MenuItem>
+                  <MenuItem onAction={() => editor.chain().focus().mergeCells().run()}>Merge cells</MenuItem>
+                  <MenuItem onAction={() => editor.chain().focus().splitCell().run()}>Split cell</MenuItem>
+                  <MenuItem onAction={() => editor.chain().focus().deleteTable().run()}>Delete table</MenuItem>
+                </Menu>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-function Menu({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+function Menu({ children, onClose, ariaLabel }: { children: React.ReactNode; onClose: () => void; ariaLabel: string }) {
   return (
     <div
       className="absolute left-0 top-full mt-1 min-w-36 rounded-md bg-black/90 ring-1 ring-white/20 p-1 z-[1000]"
+      role="menu"
+      aria-label={ariaLabel}
       onMouseLeave={onClose}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
     >
       {children}
     </div>
@@ -232,6 +324,7 @@ function MenuItem({
   return (
     <button
       type="button"
+      role="menuitem"
       onMouseDown={(e) => {
         e.preventDefault();
         onAction();
@@ -254,11 +347,15 @@ function Btn({
   onAction,
   active,
   disabled,
+  ariaLabel,
+  title,
 }: {
   children: React.ReactNode;
   onAction: () => void;
   active?: boolean;
   disabled?: boolean;
+  ariaLabel?: string;
+  title?: string;
 }) {
   return (
     <button
@@ -267,6 +364,9 @@ function Btn({
         e.preventDefault();
         if (!disabled) onAction();
       }}
+      aria-label={ariaLabel}
+      aria-pressed={active ? true : undefined}
+      title={title}
       disabled={disabled}
       className={`text-xs px-2 py-1 rounded-md transition ${
         disabled
