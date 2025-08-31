@@ -43,7 +43,7 @@ export function useSupabaseProfile(enabled = true) {
           setError(err.message);
           setProfile(null);
         } else {
-          setProfile((data as any) ?? null);
+          setProfile(data ?? null);
         }
       } else {
         setProfile(null);
@@ -54,7 +54,7 @@ export function useSupabaseProfile(enabled = true) {
 
     load();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
       // Re-run on changes
       load();
     });

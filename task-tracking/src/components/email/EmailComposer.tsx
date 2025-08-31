@@ -33,19 +33,19 @@ const USERS: User[] = [
 
 const badgeClx = "px-2 py-0.5 rounded-full text-xs";
 const occColor: Record<string, string> = {
-  member: "bg-blue-500/20 text-blue-300 ring-1 ring-inset ring-blue-500/30",
-  manager: "bg-amber-500/20 text-amber-300 ring-1 ring-inset ring-amber-500/30",
-  lead: "bg-purple-500/20 text-purple-300 ring-1 ring-inset ring-purple-500/30",
-  admin: "bg-rose-500/20 text-rose-300 ring-1 ring-inset ring-rose-500/30",
+  member: "bg-gradient-to-r from-blue-600 to-blue-700 text-white border border-blue-500/50",
+  manager: "bg-gradient-to-r from-amber-600 to-amber-700 text-white border border-amber-500/50",
+  lead: "bg-gradient-to-r from-purple-600 to-purple-700 text-white border border-purple-500/50",
+  admin: "bg-gradient-to-r from-rose-600 to-rose-700 text-white border border-rose-500/50",
 };
 const deptColor: Record<string, string> = {
-  sales: "bg-emerald-500/20 text-emerald-300 ring-1 ring-inset ring-emerald-500/30",
-  marketing: "bg-pink-500/20 text-pink-300 ring-1 ring-inset ring-pink-500/30",
-  it: "bg-cyan-500/20 text-cyan-300 ring-1 ring-inset ring-cyan-500/30",
-  hr: "bg-indigo-500/20 text-indigo-300 ring-1 ring-inset ring-indigo-500/30",
-  ops: "bg-fuchsia-500/20 text-fuchsia-300 ring-1 ring-inset ring-fuchsia-500/30",
+  sales: "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/50",
+  marketing: "bg-gradient-to-r from-pink-600 to-pink-700 text-white border border-pink-500/50",
+  it: "bg-gradient-to-r from-cyan-600 to-cyan-700 text-white border border-cyan-500/50",
+  hr: "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white border border-indigo-500/50",
+  ops: "bg-gradient-to-r from-fuchsia-600 to-fuchsia-700 text-white border border-fuchsia-500/50",
 };
-const locColor = "bg-slate-500/20 text-slate-200 ring-1 ring-inset ring-slate-400/30";
+const locColor = "bg-gradient-to-r from-slate-600 to-slate-700 text-white border border-slate-500/50";
 
 export default function EmailComposer() {
   const [recipients, setRecipients] = useState<User[]>([]);
@@ -135,8 +135,9 @@ export default function EmailComposer() {
       });
       const data = await res.json();
       setStatus({ ok: res.ok, msg: data.message || (res.ok ? "Sent" : "Failed") });
-    } catch (err: any) {
-      setStatus({ ok: false, msg: err?.message || "Send failed" });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Send failed";
+      setStatus({ ok: false, msg: errorMessage });
     } finally {
       setSending(false);
     }
@@ -157,13 +158,13 @@ export default function EmailComposer() {
   );
 
   return (
-    <div className="min-h-[calc(100vh-6rem)] p-4 md:p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-900 to-black text-slate-100">
+    <div className="min-h-[calc(100vh-6rem)] p-4 md:p-6 text-white">
       <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto space-y-4">
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Email Composer</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Users Pool */}
-          <section className="order-1 xl:order-1 rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
+          <section className="rounded-2xl p-6 bg-gradient-to-br from-slate-600 to-slate-800 border border-slate-500/60 shadow-2xl ring-1 ring-slate-400/20">
             <div className="flex items-center justify-between mb-3 gap-2">
               <h2 className="font-medium">Users Pool</h2>
               <div className="flex items-center gap-2">
@@ -171,13 +172,13 @@ export default function EmailComposer() {
                   onClick={() => {
                     setOccFilter("all"); setDeptFilter("all"); setLocFilter("all");
                   }}
-                  className="text-xs px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 ring-1 ring-white/10"
+                  className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-400 hover:to-slate-500 border border-slate-400/60 transition-all shadow-md hover:shadow-lg ring-1 ring-slate-300/10"
                 >
                   Clear filters
                 </button>
                 <button
                   onClick={addAll}
-                  className="text-sm px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 ring-1 ring-white/10"
+                  className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border border-blue-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-blue-400/20 text-white font-medium"
                 >
                   Add all
                 </button>
@@ -189,7 +190,7 @@ export default function EmailComposer() {
               <input
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
-                className="w-full rounded-lg bg-black/30 ring-1 ring-white/10 px-3 py-2 outline-none focus:ring-white/30"
+                className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
                 placeholder="Search users (name, email, role, department, location)"
                 aria-label="Search users"
               />
@@ -226,7 +227,7 @@ export default function EmailComposer() {
               {availableUsers.map((u) => (
                 <div
                   key={u.id}
-                  className="rounded-xl p-3 bg-white/5 ring-1 ring-white/10 hover:bg-white/10 transition flex flex-col gap-2"
+                  className="rounded-xl p-4 bg-gradient-to-br from-slate-500 to-slate-700 border border-slate-400/60 hover:from-slate-400 hover:to-slate-600 transition-all flex flex-col gap-2 shadow-lg hover:shadow-xl ring-1 ring-slate-300/10 hover:ring-slate-300/20 cursor-grab active:cursor-grabbing"
                   draggable
                   onDragStart={(e) => onUserDragStart(e, u.id)}
                 >
@@ -237,7 +238,7 @@ export default function EmailComposer() {
                     </div>
                     <button
                       onClick={() => addRecipient(u)}
-                      className="text-xs px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30 hover:bg-emerald-500/30"
+                      className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/60 hover:from-emerald-500 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg ring-1 ring-emerald-400/20 font-medium"
                     >
                       Add
                     </button>
@@ -254,7 +255,7 @@ export default function EmailComposer() {
 
           {/* Recipients */}
           <section
-            className="order-2 xl:order-2 rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+            className="rounded-2xl p-6 bg-gradient-to-br from-slate-600 to-slate-800 border border-slate-500/60 shadow-2xl ring-1 ring-slate-400/20"
             onDrop={onDropRecipient}
             onDragOver={onDragOverRecipient}
           >
@@ -263,17 +264,17 @@ export default function EmailComposer() {
               {recipients.length > 0 && (
                 <button
                   onClick={removeAll}
-                  className="text-sm px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 ring-1 ring-white/10"
+                  className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 border border-rose-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 text-white font-medium"
                 >
                   Remove all
                 </button>
               )}
             </div>
             <div
-              className={`min-h-[260px] rounded-xl p-3 ring-1 transition ${
+              className={`min-h-[260px] rounded-xl p-4 border transition-all ${
                 recipients.length === 0
-                  ? "ring-dashed ring-white/20 bg-white/5 text-slate-400 flex items-center justify-center"
-                  : "ring-white/10 bg-white/5"
+                  ? "border-dashed border-slate-400/60 bg-gradient-to-br from-slate-500 to-slate-700 text-slate-300 flex items-center justify-center shadow-inner ring-1 ring-slate-400/10"
+                  : "border-slate-400/60 bg-gradient-to-br from-slate-500 to-slate-700 shadow-inner ring-1 ring-slate-400/10"
               }`}
             >
               {recipients.length === 0 ? (
@@ -283,18 +284,18 @@ export default function EmailComposer() {
                   {recipients.map((u) => (
                     <div
                       key={u.id}
-                      className="flex items-center justify-between gap-2 rounded-lg bg-white/5 ring-1 ring-white/10 px-3 py-2"
+                      className="flex items-center justify-between gap-2 rounded-lg bg-gradient-to-r from-slate-400 to-slate-600 border border-slate-300/60 px-4 py-3 shadow-md hover:shadow-lg transition-all ring-1 ring-slate-300/10"
                     >
                       <div>
                         <div className="text-sm font-medium">{u.name}</div>
                         <div className="text-xs text-slate-300">{u.email}</div>
                       </div>
                       <button
-                        onClick={() => removeRecipient(u.id)}
-                        className="text-xs px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/30 hover:bg-rose-500/30"
-                      >
-                        Remove
-                      </button>
+                          onClick={() => removeRecipient(u.id)}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 text-white border border-rose-500/60 hover:from-rose-500 hover:to-rose-600 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 font-medium"
+                        >
+                          Remove
+                        </button>
                     </div>
                   ))}
                 </div>
@@ -302,15 +303,16 @@ export default function EmailComposer() {
             </div>
           </section>
 
-          {/* Email */}
-          <section className="order-3 md:col-span-2 xl:col-span-2 rounded-2xl p-4 backdrop-blur-xl bg-white/5 ring-1 ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)] space-y-3">
-            <h2 className="font-medium">Email</h2>
+        </div>
+        
+        {/* Email Section - Outside the grid */}
+        <section className="rounded-2xl p-6 bg-gradient-to-br from-slate-600 to-slate-800 border border-slate-500/60 shadow-2xl ring-1 ring-slate-400/20 space-y-3">
             <div className="space-y-2">
               <label className="text-sm text-slate-300">Title</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-lg bg-black/30 ring-1 ring-white/10 px-3 py-2 outline-none focus:ring-white/30"
+                className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
                 placeholder="Internal title"
               />
             </div>
@@ -319,7 +321,7 @@ export default function EmailComposer() {
               <input
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full rounded-lg bg-black/30 ring-1 ring-white/10 px-3 py-2 outline-none focus:ring-white/30"
+                className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
                 placeholder="Email subject"
               />
             </div>
@@ -337,17 +339,16 @@ export default function EmailComposer() {
             </button>
             {status && (
               <div
-                className={`text-sm mt-1 px-3 py-2 rounded-lg ring-1 ${
+                className={`text-sm mt-1 px-3 py-2 rounded-lg border ${
                   status.ok
-                    ? "bg-emerald-500/15 text-emerald-200 ring-emerald-500/30"
-                    : "bg-rose-500/15 text-rose-200 ring-rose-500/30"
+                    ? "bg-gradient-to-r from-emerald-700 to-emerald-800 text-emerald-200 border-emerald-500/50"
+                    : "bg-gradient-to-r from-rose-700 to-rose-800 text-rose-200 border-rose-500/50"
                 }`}
               >
                 {status.msg}
               </div>
             )}
-          </section>
-        </div>
+        </section>
       </div>
     </div>
   );

@@ -136,7 +136,8 @@ export async function POST(req: Request) {
       },
       { status: 200 }
     );
-  } catch (e: any) {
-    return NextResponse.json({ message: e?.message || "Unexpected error" }, { status: 500 });
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : "Unexpected error";
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }

@@ -28,9 +28,9 @@ export default function RdxSelect({
         className={clsx(
           "w-full h-10 min-h-10 px-3 py-0 rounded-lg text-sm",
           "flex items-center justify-between gap-2 whitespace-nowrap min-w-0",
-          "bg-[linear-gradient(180deg,rgba(7,20,30,.95),rgba(9,36,50,.9))]",
-          "text-cyan-50 ring-1 ring-cyan-400/60 hover:ring-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-300",
-          "shadow-[inset_0_0_0_1px_rgba(34,211,238,.35)]",
+          "bg-gradient-to-br from-slate-700 to-slate-800",
+          "text-cyan-50 border border-cyan-500/50 hover:border-cyan-400/70 focus:outline-none focus:border-cyan-400 transition-all",
+          "shadow-lg",
           className
         )}
       >
@@ -46,7 +46,7 @@ export default function RdxSelect({
           align="start"
           sideOffset={6}
           avoidCollisions
-          className="z-[1000] overflow-hidden rounded-md ring-1 ring-cyan-400/40 bg-[#0b1e2a]/95 backdrop-blur-md w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
+          className="z-[1000] overflow-hidden rounded-md border border-cyan-500/50 bg-gradient-to-br from-slate-800 to-slate-900 w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] shadow-xl"
         >
           <Select.ScrollUpButton className="px-2 py-1 text-cyan-200/80">▲</Select.ScrollUpButton>
           <Select.Viewport className="p-1 max-h-[280px] w-full">
@@ -56,7 +56,7 @@ export default function RdxSelect({
                 value={it.value}
                 className={clsx(
                   "select-none rounded-md px-2 h-9 text-sm cursor-pointer whitespace-nowrap truncate",
-                  "text-cyan-50 data-[highlighted]:bg-cyan-500/20 data-[highlighted]:outline-none"
+                  "text-cyan-50 data-[highlighted]:bg-gradient-to-r data-[highlighted]:from-cyan-600 data-[highlighted]:to-cyan-700 data-[highlighted]:outline-none"
                 )}
               >
                 <Select.ItemText>{it.label}</Select.ItemText>

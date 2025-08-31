@@ -19,12 +19,12 @@ export default function SignOutPage() {
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl p-6 bg-white/5 ring-1 ring-white/10 text-slate-100">
+      <div className="w-full max-w-md rounded-2xl p-6 bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/50 shadow-xl text-slate-100">
         <h1 className="text-xl font-semibold mb-4">Sign out</h1>
         <button
           onClick={onSignOut}
           disabled={loading}
-          className="w-full rounded-lg px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-600 text-white font-semibold ring-1 ring-cyan-300 hover:brightness-110 disabled:opacity-60"
+          className="w-full rounded-lg px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-600 text-white font-semibold border border-cyan-400/50 hover:brightness-110 disabled:opacity-60 transition-all"
         >
           {loading ? "Signing out..." : "Sign out"}
         </button>

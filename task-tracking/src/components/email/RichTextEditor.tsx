@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
@@ -77,7 +77,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
     editorProps: {
       attributes: {
         class:
-          "min-h-[260px] w-full rounded-lg bg-black/30 ring-1 ring-white/10 px-3 py-2 outline-none focus:ring-white/30 max-w-none rte",
+          "min-h-[260px] w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all max-w-none rte",
       },
     },
     immediatelyRender: false,
@@ -91,7 +91,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
 
   if (!editor) return null;
 
-  const characterCount = (editor.storage as any)?.characterCount;
+  const characterCount = editor.storage.characterCount as { words?: () => number; characters?: () => number } | undefined;
   const counts = {
     words:
       typeof characterCount?.words === "function"
@@ -156,7 +156,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
         <div
           role="toolbar"
           aria-label="Rich text editor toolbar"
-          className="flex items-center flex-wrap gap-1 rounded-lg bg-black/70 ring-1 ring-white/20 p-1"
+          className="flex items-center flex-wrap gap-1 rounded-lg bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600/50 shadow-lg p-1"
         >
           <Btn onAction={() => editor.chain().focus().undo().run()} ariaLabel="Undo">↶</Btn>
           <Btn onAction={() => editor.chain().focus().redo().run()} ariaLabel="Redo">↷</Btn>
@@ -307,7 +307,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
 function Menu({ children, onClose, ariaLabel }: { children: React.ReactNode; onClose: () => void; ariaLabel: string }) {
   return (
     <div
-      className="absolute left-0 top-full mt-1 min-w-36 rounded-md bg-black/90 ring-1 ring-white/20 p-1 z-[1000]"
+      className="absolute left-0 top-full mt-1 min-w-36 rounded-md bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-600/50 shadow-xl p-1 z-[1000]"
       role="menu"
       aria-label={ariaLabel}
       onMouseLeave={onClose}
@@ -338,7 +338,7 @@ function MenuItem({
         onAction();
       }}
       className={`w-full text-left text-xs px-2 py-1 rounded-md transition ${
-        active ? "bg-white/25 text-white" : "bg-transparent hover:bg-white/10 text-slate-100"
+        active ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white" : "bg-transparent hover:bg-gradient-to-r hover:from-slate-700 hover:to-slate-800 text-slate-100"
       }`}
     >
       {children}
@@ -347,7 +347,7 @@ function MenuItem({
 }
 
 function Divider() {
-  return <span className="mx-1 h-5 w-px bg-white/15 inline-block" />;
+  return <span className="mx-1 h-5 w-px bg-slate-500 inline-block" />;
 }
 
 function Btn({
@@ -378,10 +378,10 @@ function Btn({
       disabled={disabled}
       className={`text-xs px-2 py-1 rounded-md transition ${
         disabled
-          ? "opacity-50 cursor-not-allowed bg-white/5 text-slate-400"
+          ? "opacity-50 cursor-not-allowed bg-gradient-to-r from-slate-700 to-slate-800 text-slate-400"
           : active
-          ? "bg-white/30 text-white"
-          : "bg-white/10 hover:bg-white/15 text-slate-100"
+          ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
+          : "bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 text-slate-100"
       }`}
     >
       {children}
@@ -403,16 +403,16 @@ function LinkModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: (
         placeholder="https://example.com"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        className="w-full rounded-lg bg-black/30 ring-1 ring-white/10 px-3 py-2 outline-none focus:ring-white/30"
+        className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
       />
       {!safe && <p className="text-xs text-rose-300 mt-1">Only http/https URLs are allowed.</p>}
       <div className="flex justify-end gap-2 pt-3">
-        <button type="button" className="px-3 py-1.5 rounded-lg bg-white/10 ring-1 ring-white/10" onClick={onCancel}>
+        <button type="button" className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white border border-slate-500/50 hover:from-slate-500 hover:to-slate-600 transition-all" onClick={onCancel}>
           Cancel
         </button>
         <button
           type="button"
-          className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-200 ring-1 ring-emerald-500/30 disabled:opacity-50"
+          className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/50 hover:from-emerald-500 hover:to-emerald-600 transition-all disabled:opacity-50"
           disabled={!url || !safe}
           onClick={() => onConfirm(url)}
         >
@@ -442,7 +442,7 @@ function ImageModal({
         placeholder="https://example.com/image.jpg"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        className="w-full rounded-lg bg-black/30 ring-1 ring-white/10 px-3 py-2 outline-none focus:ring-white/30"
+        className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
       />
       {!safe && <p className="text-xs text-rose-300 mt-1">Only http/https URLs are allowed.</p>}
       <label className="text-xs text-slate-300 mt-2">Alt text (optional)</label>
@@ -451,15 +451,15 @@ function ImageModal({
         placeholder="Describe the image"
         value={alt}
         onChange={(e) => setAlt(e.target.value)}
-        className="w-full rounded-lg bg-black/30 ring-1 ring-white/10 px-3 py-2 outline-none focus:ring-white/30"
+        className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
       />
       <div className="flex justify-end gap-2 pt-3">
-        <button type="button" className="px-3 py-1.5 rounded-lg bg-white/10 ring-1 ring-white/10" onClick={onCancel}>
+        <button type="button" className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white border border-slate-500/50 hover:from-slate-500 hover:to-slate-600 transition-all" onClick={onCancel}>
           Cancel
         </button>
         <button
           type="button"
-          className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-200 ring-1 ring-emerald-500/30 disabled:opacity-50"
+          className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/50 hover:from-emerald-500 hover:to-emerald-600 transition-all disabled:opacity-50"
           disabled={!url || !safe}
           onClick={() => onConfirm(url, alt)}
         >
@@ -493,7 +493,7 @@ function ModalShell({
       }}
     >
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-2xl backdrop-blur-xl bg-white/10 ring-1 ring-white/20 p-4 text-slate-100">
+      <div className="relative w-full max-w-md rounded-2xl bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/50 shadow-2xl p-4 text-slate-100">
         <h3 className="text-sm font-medium mb-2">{title}</h3>
         <div className="space-y-2">{children}</div>
       </div>
