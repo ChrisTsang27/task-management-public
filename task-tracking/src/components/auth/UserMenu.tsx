@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useSupabaseProfile } from "@/lib/useSupabaseProfile";
+import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 
 export default function UserMenu() {
   const enabled = process.env.NEXT_PUBLIC_USE_SUPABASE_AUTH === "1";
-  const { user, role, loading } = useSupabaseProfile(true);
+  const { user, profile, loading } = useSupabaseProfile();
+  const role = profile?.role;
   
   if (!enabled) return null;
 

@@ -2,12 +2,24 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import EmailComposer from "@/components/email/EmailComposer";
+import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
+import supabase from "@/lib/supabaseBrowserClient";
 
 type Role = "admin" | "user";
 type Tab = "Email" | "Announcements" | "Tasks";
 
 export default function Dashboard() {
-  const [role, setRole] = useState<Role>("admin");
+  const { profile, loading: profileLoading } = useSupabaseProfile();
+  const [role, setRole] = useState<Role>("user");
+  
+  // Update role based on actual user profile
+  useEffect(() => {
+    if (profile?.role === 'admin') {
+      setRole('admin');
+    } else {
+      setRole('user');
+    }
+  }, [profile]);
 
   const allTabs: { key: Tab; roles: Role[] }[] = useMemo(
     () => [
@@ -26,28 +38,40 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
+  // Show loading while profile is being fetched
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white">
       <header className="sticky top-0 z-10 bg-gradient-to-r from-slate-800/95 to-slate-700/95 border-b border-slate-600/50 shadow-lg">
         <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto px-4 py-3 flex items-center justify-between">
           <div className="text-lg font-semibold">Task Tracking Dashboard</div>
-          {/* Role switcher */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-300">Role:</span>
-            <div className="inline-flex rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 border border-slate-500/50 p-0.5">
-              <button
-                onClick={() => setRole("user")}
-                className={`px-2 py-1 text-xs rounded-md transition-all ${role === "user" ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md" : "hover:bg-gradient-to-r hover:from-slate-500 hover:to-slate-600"}`}
-              >
-                User
-              </button>
-              <button
-                onClick={() => setRole("admin")}
-                className={`px-2 py-1 text-xs rounded-md transition-all ${role === "admin" ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md" : "hover:bg-gradient-to-r hover:from-slate-500 hover:to-slate-600"}`}
-              >
-                Admin
-              </button>
+          {/* User info and sign out */}
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-slate-300">
+              Welcome, {profile?.full_name || 'User'}
+              <span className="ml-2 px-2 py-1 text-xs rounded-full bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                {profile?.role || 'member'}
+              </span>
             </div>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = '/auth/sign-in';
+              }}
+              className="px-3 py-1 text-xs rounded-md bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transition-all"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </header>

@@ -2,9 +2,11 @@
 
 import { useEffect } from "react";
 import supabase from "@/lib/supabaseBrowserClient";
+import type { User } from "@supabase/supabase-js";
 
 // Runs once on load to ensure the auth session from the URL hash is captured,
 // then cleans the hash (?/#access_token=...) from the address bar.
+// Also handles automatic profile creation for new signups.
 export default function SupabaseAuthInit() {
   useEffect(() => {
     let cleaned = false;
@@ -21,15 +23,87 @@ export default function SupabaseAuthInit() {
       }
     };
 
+    const createProfileIfNeeded = async (user: User) => {
+      if (!user) return;
+
+      try {
+        // Check if profile already exists
+        const { data: existingProfile } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (existingProfile) {
+          // Profile exists, clean up any pending signup data
+          localStorage.removeItem('pendingSignupData');
+          return;
+        }
+
+        // Check for pending signup data (magic link) or user metadata (password signup)
+        const pendingDataStr = localStorage.getItem('pendingSignupData');
+        let signupData = null;
+        
+        if (pendingDataStr) {
+          // Magic link signup data from localStorage
+          signupData = JSON.parse(pendingDataStr);
+        } else if (user.user_metadata && user.user_metadata.full_name) {
+          // Password signup data from user metadata
+          signupData = {
+            fullName: user.user_metadata.full_name,
+            title: user.user_metadata.title,
+            department: user.user_metadata.department,
+            location: user.user_metadata.location
+          };
+        }
+        
+        if (!signupData) {
+          // No signup data, create basic profile
+          await supabase.from("profiles").insert({
+            id: user.id,
+            full_name: user.email?.split('@')[0] || 'User',
+            role: 'member'
+          });
+          return;
+        }
+
+        // Use signup data to create profile
+        await supabase.from("profiles").insert({
+          id: user.id,
+          full_name: signupData.fullName,
+          title: signupData.title,
+          role: 'member',
+          department: signupData.department,
+          location: signupData.location
+        });
+
+        // Clean up the temporary data if it came from localStorage
+        if (pendingDataStr) {
+          localStorage.removeItem('pendingSignupData');
+        }
+      } catch (error) {
+        console.error('Error creating profile:', error);
+        // Don't throw - let the user continue even if profile creation fails
+      }
+    };
+
     // Touch the session; detectSessionInUrl=true will parse the hash automatically
-    supabase.auth.getSession().finally(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        createProfileIfNeeded(session.user);
+      }
       // Give the client a tick to persist the session before cleaning
       setTimeout(cleanupHash, 0);
     });
 
     // Also listen for auth state changes triggered by hash parsing
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (!cleaned) cleanupHash();
+      
+      // Handle profile creation on sign in and sign up
+      if (event === 'SIGNED_IN' && session?.user) {
+        createProfileIfNeeded(session.user);
+      }
     });
 
     return () => {

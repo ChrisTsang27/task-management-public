@@ -31,7 +31,10 @@ $$ language plpgsql;
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
-  role text check (role in ('admin','manager','lead','member')) default 'member',
+  title text, -- Job title (e.g., Manager, Senior Officer, Team Leader)
+  role text check (role in ('admin','member')) default 'member', -- Application role for permissions
+  department text,
+  location text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -50,7 +53,7 @@ create table public.teams (
 create table public.team_members (
   team_id uuid not null references public.teams(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
-  role text check (role in ('admin','manager','lead','member')) default 'member',
+  role text check (role in ('admin','member')) default 'member', -- Team-specific role
   primary key (team_id, user_id),
   created_at timestamptz not null default now()
 );
@@ -134,12 +137,15 @@ alter table public.email_logs enable row level security;
 
 -- ===== 10) RLS Policies =====
 
--- profiles: self read/update; admins read all
-create policy "profiles_self_read" on public.profiles
-for select using ( auth.uid() = id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin') );
+-- profiles: allow all authenticated users to read profiles (needed for team collaboration)
+create policy "profiles_read_all" on public.profiles
+for select using ( auth.role() = 'authenticated' );
 
 create policy "profiles_self_update" on public.profiles
 for update using ( auth.uid() = id );
+
+create policy "profiles_self_insert" on public.profiles
+for insert with check ( auth.uid() = id );
 
 -- teams: members read
 create policy "teams_member_read" on public.teams

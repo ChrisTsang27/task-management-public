@@ -1,53 +1,77 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import RichTextEditor from "@/components/email/RichTextEditor";
 import RdxSelect from "@/components/ui/RdxSelect";
+import supabase from "@/lib/supabaseBrowserClient";
 
 type User = {
   id: string;
   name: string;
   email: string;
-  occupation: "member" | "manager" | "lead" | "admin" | string;
-  department: "sales" | "marketing" | "it" | "hr" | "ops" | string;
-  location:
-    | "SGI Coopers Plains"
-    | "SGI Brendale"
-    | "SGI Gold Coast"
-    | "SGI Toowoomba"
-    | "SGI Melbourne"
-    | "KAYO Coopers Plains"
-    | string;
+  occupation: string;
+  department: string;
+  location: string;
 };
 
-const USERS: User[] = [
-  { id: "u1", name: "Alice Johnson", email: "alice@corp.com", occupation: "member", department: "sales", location: "SGI Coopers Plains" },
-  { id: "u2", name: "Bob Smith", email: "bob@corp.com", occupation: "manager", department: "marketing", location: "SGI Brendale" },
-  { id: "u3", name: "Carol Lee", email: "carol@corp.com", occupation: "lead", department: "it", location: "SGI Gold Coast" },
-  { id: "u4", name: "David Kim", email: "david@corp.com", occupation: "member", department: "it", location: "SGI Toowoomba" },
-  { id: "u5", name: "Eva Green", email: "eva@corp.com", occupation: "member", department: "hr", location: "SGI Melbourne" },
-  { id: "u6", name: "Frank Moore", email: "frank@corp.com", occupation: "manager", department: "ops", location: "KAYO Coopers Plains" },
-  { id: "u7", name: "Grace Liu", email: "grace@corp.com", occupation: "admin", department: "it", location: "SGI Coopers Plains" },
-  { id: "u8", name: "Henry Zhao", email: "henry@corp.com", occupation: "member", department: "marketing", location: "SGI Gold Coast" },
-];
 
-const badgeClx = "px-2 py-0.5 rounded-full text-xs";
-const occColor: Record<string, string> = {
-  member: "bg-gradient-to-r from-blue-600 to-blue-700 text-white border border-blue-500/50",
-  manager: "bg-gradient-to-r from-amber-600 to-amber-700 text-white border border-amber-500/50",
-  lead: "bg-gradient-to-r from-purple-600 to-purple-700 text-white border border-purple-500/50",
-  admin: "bg-gradient-to-r from-rose-600 to-rose-700 text-white border border-rose-500/50",
-};
-const deptColor: Record<string, string> = {
-  sales: "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/50",
-  marketing: "bg-gradient-to-r from-pink-600 to-pink-700 text-white border border-pink-500/50",
-  it: "bg-gradient-to-r from-cyan-600 to-cyan-700 text-white border border-cyan-500/50",
-  hr: "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white border border-indigo-500/50",
-  ops: "bg-gradient-to-r from-fuchsia-600 to-fuchsia-700 text-white border border-fuchsia-500/50",
-};
-const locColor = "bg-gradient-to-r from-slate-600 to-slate-700 text-white border border-slate-500/50";
+
+// Title/Role colors - maximum contrast across color spectrum
+   const titleColor: Record<string, string> = {
+     "Manager": "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg border border-white/20",
+     "Senior Officer": "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg border border-white/20", 
+     "Team Leader": "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg border border-white/20",
+     "Officer": "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg border border-white/20",
+     "Assistant": "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg border border-white/20",
+     "Coordinator": "bg-gradient-to-r from-pink-600 to-pink-700 text-white shadow-lg border border-white/20",
+     "Specialist": "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg border border-white/20",
+     "Analyst": "bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-lg border border-white/20",
+     "Executive": "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg border border-white/20",
+     "Other": "bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg border border-white/20",
+     // Legacy role mappings for backward compatibility
+     "member": "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg border border-white/20",
+     "manager": "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg border border-white/20",
+     "lead": "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg border border-white/20",
+     "admin": "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg border border-white/20",
+   };
+
+// Department colors - completely distinct color families
+   const deptColor: Record<string, string> = {
+     "Sales": "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg border border-white/20",
+     "Marketing": "bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-lg border border-white/20",
+     "Administration": "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg border border-white/20",
+     "HR": "bg-gradient-to-r from-rose-600 to-rose-700 text-white shadow-lg border border-white/20",
+     "IT": "bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg border border-white/20",
+     "Finance": "bg-gradient-to-r from-lime-600 to-lime-700 text-white shadow-lg border border-white/20",
+     "Operations": "bg-gradient-to-r from-fuchsia-600 to-fuchsia-700 text-white shadow-lg border border-white/20",
+     "Customer Service": "bg-gradient-to-r from-sky-600 to-sky-700 text-white shadow-lg border border-white/20",
+     // Legacy mappings for backward compatibility
+     "sales": "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg border border-white/20",
+     "marketing": "bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-lg border border-white/20",
+     "it": "bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg border border-white/20",
+     "hr": "bg-gradient-to-r from-rose-600 to-rose-700 text-white shadow-lg border border-white/20",
+     "ops": "bg-gradient-to-r from-fuchsia-600 to-fuchsia-700 text-white shadow-lg border border-white/20",
+     "General": "bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg border border-white/20",
+   };
+
+// Location colors - extreme contrast using opposite spectrum colors
+   const locColor: Record<string, string> = {
+     "SGI Gold Coast": "bg-gradient-to-r from-yellow-600 to-yellow-700 text-white shadow-lg border border-white/20",
+     "SGI Melbourne": "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg border border-white/20",
+     "KAYO Coopers Plains": "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg border border-white/20",
+     "KAYO Underwood": "bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-lg border border-white/20",
+     "KAYO Brendale": "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg border border-white/20",
+     "KAYO Yatala": "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg border border-white/20",
+     // Additional SGI locations with unique colors
+     "SGI Coopers Plains": "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg border border-white/20",
+     "SGI Brendale": "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg border border-white/20",
+     "SGI Toowoomba": "bg-gradient-to-r from-pink-600 to-pink-700 text-white shadow-lg border border-white/20",
+     "Office": "bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg border border-white/20",
+   };
 
 export default function EmailComposer() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [recipients, setRecipients] = useState<User[]>([]);
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
@@ -55,6 +79,39 @@ export default function EmailComposer() {
 
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<null | { ok: boolean; msg: string }>(null);
+
+  // Fetch users from database
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        // First check if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          setUsers([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch users with real emails from our API endpoint
+        const response = await fetch('/api/users');
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        
+        const { users } = await response.json();
+        setUsers(users || []);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        // Fallback to empty array if fetch fails
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // Filters
   const [occFilter, setOccFilter] = useState<string>("all");
@@ -64,10 +121,10 @@ export default function EmailComposer() {
 
   const recipientIds = useMemo(() => new Set(recipients.map((r) => r.id)), [recipients]);
 
-  // Available users = USERS - recipients - not matching filters
+  // Available users = users - recipients - not matching filters
   const availableUsers = useMemo(() => {
     const q = userQuery.trim().toLowerCase();
-    return USERS.filter((u) => {
+    return users.filter((u) => {
       if (recipientIds.has(u.id)) return false;
       if (occFilter !== "all" && String(u.occupation) !== occFilter) return false;
       if (deptFilter !== "all" && String(u.department) !== deptFilter) return false;
@@ -79,7 +136,7 @@ export default function EmailComposer() {
       }
       return true;
     });
-  }, [recipientIds, occFilter, deptFilter, locFilter, userQuery]);
+  }, [users, recipientIds, occFilter, deptFilter, locFilter, userQuery]);
 
   const addRecipient = useCallback((user: User) => {
     setRecipients((prev) => (prev.find((u) => u.id === user.id) ? prev : [...prev, user]));
@@ -107,7 +164,7 @@ export default function EmailComposer() {
   const onDropRecipient = (e: React.DragEvent) => {
     e.preventDefault();
     const userId = e.dataTransfer.getData("text/plain");
-    const user = USERS.find((u) => u.id === userId);
+    const user = users.find((u) => u.id === userId);
     if (user && !recipientIds.has(user.id)) addRecipient(user);
   };
   const onDragOverRecipient = (e: React.DragEvent) => {
@@ -143,19 +200,39 @@ export default function EmailComposer() {
     }
   };
 
-  const occupations = useMemo(() => ["member", "manager", "lead", "admin"], []);
-  const departments = useMemo(() => ["sales", "marketing", "it", "hr", "ops"], []);
-  const locations = useMemo(
-    () => [
-      "SGI Coopers Plains",
-      "SGI Brendale",
-      "SGI Gold Coast",
-      "SGI Toowoomba",
-      "SGI Melbourne",
-      "KAYO Coopers Plains",
-    ],
-    []
-  );
+  // Complete lists from signup form
+  const titleOptions = useMemo(() => [
+    "Manager",
+    "Senior Officer", 
+    "Team Leader",
+    "Officer",
+    "Assistant",
+    "Coordinator",
+    "Specialist",
+    "Analyst",
+    "Executive",
+    "Other"
+  ], []);
+  
+  const departmentOptions = useMemo(() => [
+    "Sales",
+    "Marketing", 
+    "Administration",
+    "HR",
+    "IT",
+    "Finance",
+    "Operations",
+    "Customer Service"
+  ], []);
+  
+  const locationOptions = useMemo(() => [
+    "SGI Coopers Plains",
+    "SGI Brendale",
+    "SGI Gold Coast", 
+    "SGI Toowoomba",
+    "SGI Melbourne",
+    "KAYO Coopers Plains"
+  ], []);
 
   return (
     <div className="min-h-[calc(100vh-6rem)] p-4 md:p-6 text-white">
@@ -191,7 +268,7 @@ export default function EmailComposer() {
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
                 className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
-                placeholder="Search users (name, email, role, department, location)"
+                placeholder="Search users (name, email, title, department, location)"
                 aria-label="Search users"
               />
             </div>
@@ -200,31 +277,37 @@ export default function EmailComposer() {
               <RdxSelect
                 value={occFilter}
                 onValueChange={setOccFilter}
-                ariaLabel="Filter by role"
-                placeholder="All roles"
-                items={[{ value: 'all', label: 'All roles' }, ...occupations.map(o => ({ value: o, label: o }))]}
+                ariaLabel="Filter by title"
+                placeholder="All titles"
+                items={[{ value: 'all', label: 'All titles' }, ...titleOptions.map(t => ({ value: t, label: t }))]}
               />
               <RdxSelect
                 value={deptFilter}
                 onValueChange={setDeptFilter}
                 ariaLabel="Filter by department"
                 placeholder="All departments"
-                items={[{ value: 'all', label: 'All departments' }, ...departments.map(d => ({ value: d, label: d }))]}
+                items={[{ value: 'all', label: 'All departments' }, ...departmentOptions.map(d => ({ value: d, label: d }))]}
               />
               <RdxSelect
                 value={locFilter}
                 onValueChange={setLocFilter}
                 ariaLabel="Filter by location"
                 placeholder="All locations"
-                items={[{ value: 'all', label: 'All locations' }, ...locations.map(l => ({ value: l, label: l }))]}
+                items={[{ value: 'all', label: 'All locations' }, ...locationOptions.map(l => ({ value: l, label: l }))]}
               />
             </div>
 
             <div className="space-y-3 max-h-[58vh] overflow-auto pr-1">
-              {availableUsers.length === 0 && (
+              {loading && (
+                <div className="text-sm text-slate-300 flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                  Loading users...
+                </div>
+              )}
+              {!loading && availableUsers.length === 0 && (
                 <div className="text-sm text-slate-300">No users match filters (or already in recipients).</div>
               )}
-              {availableUsers.map((u) => (
+              {!loading && availableUsers.map((u) => (
                 <div
                   key={u.id}
                   className="rounded-xl p-4 bg-gradient-to-br from-slate-500 to-slate-700 border border-slate-400/60 hover:from-slate-400 hover:to-slate-600 transition-all flex flex-col gap-2 shadow-lg hover:shadow-xl ring-1 ring-slate-300/10 hover:ring-slate-300/20 cursor-grab active:cursor-grabbing"
@@ -244,9 +327,9 @@ export default function EmailComposer() {
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <span className={`${badgeClx} ${occColor[u.occupation] || occColor.member}`}>{u.occupation}</span>
-                    <span className={`${badgeClx} ${deptColor[u.department] || deptColor.it}`}>{u.department}</span>
-                    <span className={`${badgeClx} ${locColor}`}>{u.location}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${titleColor[u.occupation] || titleColor.Officer}`}>{u.occupation}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${deptColor[u.department] || deptColor.IT}`}>{u.department}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${locColor[u.location] || locColor.Office}`}>{u.location}</span>
                   </div>
                 </div>
               ))}
