@@ -63,6 +63,7 @@ export async function middleware(req: NextRequest) {
 
   // Define protected routes
   const protectedRoutes = [
+    '/',
     '/dashboard',
     '/teams',
     '/tasks',

@@ -180,16 +180,16 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl p-6 bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/50 shadow-xl text-slate-100">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
+      <div className="w-full max-w-md rounded-2xl p-6 bg-card border border-border shadow-xl text-card-foreground">
         {/* Mode Toggle */}
-        <div className="flex rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 mb-6">
+        <div className="flex rounded-lg bg-muted border border-border mb-6">
           <button
             onClick={() => switchMode("signin")}
             className={`flex-1 px-4 py-2 rounded-l-lg font-medium transition-all ${
               mode === "signin"
-                ? "bg-gradient-to-r from-cyan-500 to-emerald-600 text-white"
-                : "text-slate-300 hover:text-white"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Sign In
@@ -198,8 +198,8 @@ export default function SignInPage() {
             onClick={() => switchMode("signup")}
             className={`flex-1 px-4 py-2 rounded-r-lg font-medium transition-all ${
               mode === "signup"
-                ? "bg-gradient-to-r from-cyan-500 to-emerald-600 text-white"
-                : "text-slate-300 hover:text-white"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Sign Up
@@ -211,13 +211,13 @@ export default function SignInPage() {
         </h1>
         
         {/* Authentication Method Toggle */}
-        <div className="flex rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 mb-4">
+        <div className="flex rounded-lg bg-muted border border-border mb-4">
           <button
             onClick={() => setAuthMethod("password")}
             className={`flex-1 px-3 py-2 rounded-l-lg text-sm font-medium transition-all ${
               authMethod === "password"
-                ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
-                : "text-slate-300 hover:text-white"
+                ? "bg-secondary text-secondary-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Password
@@ -226,15 +226,15 @@ export default function SignInPage() {
             onClick={() => setAuthMethod("magic-link")}
             className={`flex-1 px-3 py-2 rounded-r-lg text-sm font-medium transition-all ${
               authMethod === "magic-link"
-                ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
-                : "text-slate-300 hover:text-white"
+                ? "bg-secondary text-secondary-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Magic Link
           </button>
         </div>
         
-        <p className="text-sm text-slate-300 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           {authMethod === "magic-link"
             ? mode === "signin"
               ? "Enter your email to receive a magic sign-in link."
@@ -250,7 +250,7 @@ export default function SignInPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all mb-3"
+          className="w-full rounded-lg bg-input border border-border px-3 py-2 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-all mb-3 text-foreground placeholder:text-muted-foreground"
         />
 
         {/* Password Fields */}
@@ -261,7 +261,7 @@ export default function SignInPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all mb-3"
+              className="w-full rounded-lg bg-input border border-border px-3 py-2 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-all mb-3 text-foreground placeholder:text-muted-foreground"
             />
             {mode === "signup" && (
               <input
@@ -269,7 +269,7 @@ export default function SignInPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm Password"
-                className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all mb-3"
+                className="w-full rounded-lg bg-input border border-border px-3 py-2 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-all mb-3 text-foreground placeholder:text-muted-foreground"
               />
             )}
           </>
@@ -283,23 +283,16 @@ export default function SignInPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Full Name"
-              className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all mb-3"
+              className="w-full rounded-lg bg-input border border-border px-3 py-2 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-all mb-3 text-foreground placeholder:text-muted-foreground"
             />
             <select
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 pr-10 outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all mb-3 text-white appearance-none cursor-pointer shadow-lg hover:shadow-xl"
-              style={{
-                colorScheme: 'dark',
-                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                backgroundPosition: 'right 0.5rem center',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: '1.5em 1.5em'
-              }}
+              className="w-full rounded-lg bg-input border border-border px-3 py-2 pr-10 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-all mb-3 text-foreground appearance-none cursor-pointer"
             >
-              <option value="" disabled className="bg-slate-800 text-slate-400">Select your title</option>
+              <option value="" disabled>Select your title</option>
               {titleOptions.map((titleOption) => (
-                <option key={titleOption} value={titleOption} className="bg-slate-800 text-white">
+                <option key={titleOption} value={titleOption}>
                   {titleOption}
                 </option>
               ))}
@@ -307,18 +300,11 @@ export default function SignInPage() {
             <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 pr-10 outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all mb-3 text-white appearance-none cursor-pointer shadow-lg hover:shadow-xl"
-              style={{
-                colorScheme: 'dark',
-                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                backgroundPosition: 'right 0.5rem center',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: '1.5em 1.5em'
-              }}
+              className="w-full rounded-lg bg-input border border-border px-3 py-2 pr-10 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-all mb-3 text-foreground appearance-none cursor-pointer"
             >
-              <option value="" disabled className="bg-slate-800 text-slate-400">Select your department</option>
+              <option value="" disabled>Select your department</option>
               {departmentOptions.map((deptOption) => (
-                <option key={deptOption} value={deptOption} className="bg-slate-800 text-white">
+                <option key={deptOption} value={deptOption}>
                   {deptOption}
                 </option>
               ))}
@@ -326,18 +312,11 @@ export default function SignInPage() {
             <select
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 pr-10 outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all mb-3 text-white appearance-none cursor-pointer shadow-lg hover:shadow-xl"
-              style={{
-                colorScheme: 'dark',
-                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                backgroundPosition: 'right 0.5rem center',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: '1.5em 1.5em'
-              }}
+              className="w-full rounded-lg bg-input border border-border px-3 py-2 pr-10 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-all mb-3 text-foreground appearance-none cursor-pointer"
             >
-              <option value="" disabled className="bg-slate-800 text-slate-400">Select your location</option>
+              <option value="" disabled>Select your location</option>
               {locationOptions.map((locOption) => (
-                <option key={locOption} value={locOption} className="bg-slate-800 text-white">
+                <option key={locOption} value={locOption}>
                   {locOption}
                 </option>
               ))}
@@ -354,7 +333,7 @@ export default function SignInPage() {
             (mode === "signup" && (!fullName.trim() || !title.trim() || !department.trim() || !location.trim())) ||
             (mode === "signup" && authMethod === "password" && password !== confirmPassword)
           }
-          className="w-full rounded-lg px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-600 text-white font-semibold border border-cyan-400/50 hover:brightness-110 disabled:opacity-60 transition-all"
+          className="w-full rounded-lg px-4 py-2 bg-primary text-primary-foreground font-semibold border border-border hover:bg-primary/90 disabled:opacity-60 transition-all"
         >
           {loading 
             ? authMethod === "magic-link" ? "Sending..." : "Processing..."
@@ -368,8 +347,8 @@ export default function SignInPage() {
           <div
             className={`mt-3 text-sm px-3 py-2 rounded-lg border ${
               status.ok
-                ? "bg-gradient-to-r from-emerald-700 to-emerald-800 text-emerald-200 border-emerald-500/50"
-                : "bg-gradient-to-r from-rose-700 to-rose-800 text-rose-200 border-rose-500/50"
+                ? "bg-green-500/10 text-green-500 border-green-500/20"
+                : "bg-destructive/10 text-destructive border-destructive/20"
             }`}
           >
             {status.msg}

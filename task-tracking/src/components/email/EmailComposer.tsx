@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import RichTextEditor from "@/components/email/RichTextEditor";
 import RdxSelect from "@/components/ui/RdxSelect";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import supabase from "@/lib/supabaseBrowserClient";
 
 type User = {
@@ -241,10 +242,12 @@ export default function EmailComposer() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Users Pool */}
-          <section className="rounded-2xl p-6 bg-gradient-to-br from-slate-600 to-slate-800 border border-slate-500/60 shadow-2xl ring-1 ring-slate-400/20">
-            <div className="flex items-center justify-between mb-3 gap-2">
-              <h2 className="font-medium">Users Pool</h2>
-              <div className="flex items-center gap-2">
+          <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-600/50 shadow-xl">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-lg">Users Pool</CardTitle>
+                <div className="flex items-center gap-2">
+
                 <button
                   onClick={() => {
                     setOccFilter("all"); setDeptFilter("all"); setLocFilter("all");
@@ -259,15 +262,17 @@ export default function EmailComposer() {
                 >
                   Add all
                 </button>
+                </div>
               </div>
-            </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
 
             {/* Search */}
             <div className="mb-3">
               <input
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
-                className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
+                className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100"
                 placeholder="Search users (name, email, title, department, location)"
                 aria-label="Search users"
               />
@@ -334,41 +339,44 @@ export default function EmailComposer() {
                 </div>
               ))}
             </div>
-          </section>
+          </CardContent>
+        </Card>
 
-          {/* Recipients */}
-          <section
-            className="rounded-2xl p-6 bg-gradient-to-br from-slate-600 to-slate-800 border border-slate-500/60 shadow-2xl ring-1 ring-slate-400/20"
-            onDrop={onDropRecipient}
-            onDragOver={onDragOverRecipient}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-medium">Recipients</h2>
-              {recipients.length > 0 && (
-                <button
-                  onClick={removeAll}
-                  className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 border border-rose-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 text-white font-medium"
-                >
-                  Remove all
-                </button>
-              )}
-            </div>
-            <div
-              className={`min-h-[260px] rounded-xl p-4 border transition-all ${
-                recipients.length === 0
-                  ? "border-dashed border-slate-400/60 bg-gradient-to-br from-slate-500 to-slate-700 text-slate-300 flex items-center justify-center shadow-inner ring-1 ring-slate-400/10"
-                  : "border-slate-400/60 bg-gradient-to-br from-slate-500 to-slate-700 shadow-inner ring-1 ring-slate-400/10"
-              }`}
+        {/* Recipients */}
+          <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-600/50 shadow-xl">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-lg">Recipients</CardTitle>
+                {recipients.length > 0 && (
+                  <button
+                    onClick={removeAll}
+                    className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 border border-rose-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 text-white font-medium"
+                  >
+                    Remove all
+                  </button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent
+              onDrop={onDropRecipient}
+              onDragOver={onDragOverRecipient}
             >
-              {recipients.length === 0 ? (
-                <div>Drag users here or use Add buttons</div>
-              ) : (
-                <div className="space-y-2" onDrop={onDropRecipient} onDragOver={onDragOverRecipient}>
+              <div
+                className={`min-h-[260px] rounded-xl p-4 border transition-all ${
+                  recipients.length === 0
+                    ? "border-dashed border-slate-500/50 bg-slate-700/30 text-slate-300 flex items-center justify-center"
+                    : "border-slate-600/50 bg-slate-700/20"
+                }`}
+              >
+                {recipients.length === 0 ? (
+                  <div>Drag users here or use Add buttons</div>
+                ) : (
+                  <div className="space-y-2" onDrop={onDropRecipient} onDragOver={onDragOverRecipient}>
                   {recipients.map((u) => (
-                    <div
-                      key={u.id}
-                      className="flex items-center justify-between gap-2 rounded-lg bg-gradient-to-r from-slate-400 to-slate-600 border border-slate-300/60 px-4 py-3 shadow-md hover:shadow-lg transition-all ring-1 ring-slate-300/10"
-                    >
+                      <div
+                        key={u.id}
+                        className="flex items-center justify-between gap-2 rounded-lg bg-slate-700/60 border border-slate-600/50 px-4 py-3 shadow-sm hover:shadow-md transition-all hover:bg-slate-600/70"
+                      >
                       <div>
                         <div className="text-sm font-medium">{u.name}</div>
                         <div className="text-xs text-slate-300">{u.email}</div>
@@ -380,36 +388,42 @@ export default function EmailComposer() {
                           Remove
                         </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
         </div>
         
         {/* Email Section - Outside the grid */}
-        <section className="rounded-2xl p-6 bg-gradient-to-br from-slate-600 to-slate-800 border border-slate-500/60 shadow-2xl ring-1 ring-slate-400/20 space-y-3">
+        <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-600/50 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl">Compose Email</CardTitle>
+            <CardDescription>Create and send your email message</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm text-slate-300">Title</label>
+              <label className="text-sm font-medium text-slate-200">Title</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
+                className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100"
                 placeholder="Internal title"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-slate-300">Subject</label>
+              <label className="text-sm font-medium text-slate-200">Subject</label>
               <input
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
+                className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100"
                 placeholder="Email subject"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-slate-300">Content</label>
+              <label className="text-sm font-medium text-slate-200">Content</label>
               <RichTextEditor value={contentHTML} onChange={setContentHTML} placeholder="Write rich content (text, images, links, lists, tables, emojis)..." />
               <p className="text-xs text-slate-400">Timestamp is added on send.</p>
             </div>
@@ -424,14 +438,15 @@ export default function EmailComposer() {
               <div
                 className={`text-sm mt-1 px-3 py-2 rounded-lg border ${
                   status.ok
-                    ? "bg-gradient-to-r from-emerald-700 to-emerald-800 text-emerald-200 border-emerald-500/50"
-                    : "bg-gradient-to-r from-rose-700 to-rose-800 text-rose-200 border-rose-500/50"
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-800"
+                    : "bg-red-50 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-800"
                 }`}
               >
                 {status.msg}
               </div>
             )}
-        </section>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

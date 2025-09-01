@@ -44,10 +44,11 @@ function DashboardContent() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950">
+      <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+        </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
@@ -122,6 +123,7 @@ function DashboardContent() {
             </div>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );
