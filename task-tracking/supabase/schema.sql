@@ -86,8 +86,9 @@ create table public.announcements (
   id uuid primary key default uuid_generate_v4(),
   team_id uuid references public.teams(id) on delete set null,
   title text not null,
-  content_json jsonb,
-  published boolean not null default false,
+  content text not null,
+  priority text check (priority in ('low','medium','high')) default 'medium',
+  expires_at timestamptz,
   created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -183,6 +184,23 @@ create policy "ann_read" on public.announcements
 for select using (
   team_id is null
   or exists (select 1 from public.team_members tm where tm.team_id = announcements.team_id and tm.user_id = auth.uid())
+  or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
+);
+
+create policy "ann_insert" on public.announcements
+for insert with check (
+  exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
+);
+
+create policy "ann_update" on public.announcements
+for update using (
+  created_by = auth.uid()
+  or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
+);
+
+create policy "ann_delete" on public.announcements
+for delete using (
+  created_by = auth.uid()
   or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
 );
 

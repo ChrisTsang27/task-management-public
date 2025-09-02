@@ -168,7 +168,7 @@ export default function EmailComposer() {
     setIsDragging(true);
   };
   
-  const onUserDragEnd = (e: React.DragEvent) => {
+  const onUserDragEnd = (_e: React.DragEvent) => {
     setIsDragging(false);
   };
   const onDropRecipient = (e: React.DragEvent) => {

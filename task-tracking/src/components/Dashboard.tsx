@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import EmailComposer from "@/components/email/EmailComposer";
+import AnnouncementManager from "@/components/announcements/AnnouncementManager";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import supabase from "@/lib/supabaseBrowserClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -228,7 +229,7 @@ export default function Dashboard() {
             {tab === "Email" && role === "admin" && <EmailComposer />}
             
             {tab !== "Email" && (
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-slate-800/50 border-slate-700 overflow-visible">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>{tab}</CardTitle>
@@ -247,31 +248,9 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-10 m-10">
+                <CardContent className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-10 m-10 overflow-visible">
 
-              {tab === "Announcements" && (
-                <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-6 p-8">
-                     {/* Icon */}
-                     <div className="w-20 h-20 rounded-full bg-blue-600/20 flex items-center justify-center shadow-lg">
-                       <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                       </svg>
-                     </div>
-                     
-                     {/* Title */}
-                     <h3 className="text-xl font-semibold text-white mb-2">Team Announcements</h3>
-                     
-                     {/* Description */}
-                     <p className="text-slate-400 max-w-md">
-                       Share important updates and announcements with your team members.
-                     </p>
-                     
-                     {/* Button */}
-                     <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-lg">
-                       New Announcement
-                     </Button>
-                   </div>
-                )}
+              {tab === "Announcements" && <AnnouncementManager />}
 
                 {tab === "Tasks" && (
                   <div className="space-y-3">

@@ -1,5 +1,4 @@
 import {
-  Type,
   TextCursor,
   Hand,
   Grab,
@@ -16,7 +15,6 @@ import {
   PointerOff,
   LucideIcon
 } from 'lucide-react';
-import React from 'react';
 
 // Mapping of cursor names to Lucide icons
 export const cursorIconMap: Record<string, LucideIcon> = {
