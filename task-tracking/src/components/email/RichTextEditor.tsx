@@ -24,6 +24,7 @@ type Props = {
   value?: string;
   onChange?: (html: string) => void;
   placeholder?: string;
+  cursorRef?: React.RefObject<HTMLDivElement | null>;
 };
 
 const CONTENT_LIMIT = 10000;
@@ -38,9 +39,12 @@ function isSafeHttpUrl(url: string) {
   }
 }
 
-export default function RichTextEditor({ value, onChange, placeholder }: Props) {
+export default function RichTextEditor({ value, onChange, placeholder, cursorRef }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const textCursorRef = useLucideCursor<HTMLDivElement>(TextCursor);
+  const internalTextCursorRef = useLucideCursor<HTMLDivElement>(TextCursor, {
+    color: "white", size: 24, strokeWidth: 3, hotspotX: 0, hotspotY: 0
+  });
+  const textCursorRef = cursorRef || internalTextCursorRef;
 
   const onUpdateDebounced = (html: string) => {
     if (!onChange) return;
@@ -80,7 +84,8 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
     editorProps: {
       attributes: {
         class:
-          "min-h-[260px] w-full rounded-lg bg-slate-800/90 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all max-w-none rte",
+          "min-h-[260px] w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all max-w-none rte custom-text-cursor",
+        style: "cursor: inherit !important;",
       },
     },
     immediatelyRender: false,
@@ -91,6 +96,8 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
   const [openTable, setOpenTable] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+
+
 
   if (!editor) return null;
 
@@ -159,7 +166,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
         <div
           role="toolbar"
           aria-label="Rich text editor toolbar"
-          className="flex items-center flex-wrap gap-1 rounded-lg bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600/50 shadow-lg p-1"
+          className="flex items-center flex-wrap gap-2 rounded-xl bg-slate-800/95 backdrop-blur-sm border border-slate-500/30 shadow-2xl p-3"
         >
           <Btn onAction={() => editor.chain().focus().undo().run()} ariaLabel="Undo">↶</Btn>
           <Btn onAction={() => editor.chain().focus().redo().run()} ariaLabel="Redo">↷</Btn>
@@ -273,7 +280,20 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
         </div>
       </div>
 
-      <EditorContent editor={editor} ref={textCursorRef} />
+      <div 
+        ref={textCursorRef}
+        className="[&_.ProseMirror]:!cursor-inherit [&_.ProseMirror_*]:!cursor-inherit [&_*]:!cursor-inherit"
+      >
+        <style jsx global>{`
+          .custom-text-cursor,
+          .custom-text-cursor *,
+          .ProseMirror,
+          .ProseMirror * {
+            cursor: inherit !important;
+          }
+        `}</style>
+        <EditorContent editor={editor} />
+      </div>
 
       <div className="flex items-center justify-end gap-3 text-xs text-slate-300">
         <span>Words: {counts.words}</span>
@@ -310,7 +330,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
 function Menu({ children, onClose, ariaLabel }: { children: React.ReactNode; onClose: () => void; ariaLabel: string }) {
   return (
     <div
-      className="absolute left-0 top-full mt-1 min-w-36 rounded-md bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-600/50 shadow-xl p-1 z-[1000]"
+      className="absolute left-0 top-full mt-2 min-w-40 rounded-xl bg-gradient-to-br from-slate-800/98 via-slate-900/98 to-slate-950/98 backdrop-blur-md border border-slate-500/40 shadow-2xl shadow-black/20 p-2 z-[1000]"
       role="menu"
       aria-label={ariaLabel}
       onMouseLeave={onClose}
@@ -340,8 +360,8 @@ function MenuItem({
         e.preventDefault();
         onAction();
       }}
-      className={`w-full text-left text-xs px-2 py-1 rounded-md transition ${
-        active ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white" : "bg-transparent hover:bg-gradient-to-r hover:from-slate-700 hover:to-slate-800 text-slate-100"
+      className={`w-full text-left text-sm font-medium px-3 py-2.5 rounded-lg transition-all duration-150 ${
+        active ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20" : "bg-transparent hover:bg-gradient-to-r hover:from-slate-700/60 hover:to-slate-800/60 text-slate-100 hover:text-white"
       }`}
     >
       {children}
@@ -350,7 +370,7 @@ function MenuItem({
 }
 
 function Divider() {
-  return <span className="mx-1 h-5 w-px bg-slate-500 inline-block" />;
+  return <span className="mx-2 h-6 w-px bg-gradient-to-b from-transparent via-slate-400/60 to-transparent inline-block" />;
 }
 
 function Btn({
@@ -379,12 +399,12 @@ function Btn({
       aria-pressed={active ? true : undefined}
       title={title}
       disabled={disabled}
-      className={`text-xs px-2 py-1 rounded-md transition ${
+      className={`text-sm font-medium px-3 py-2 rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 ${
         disabled
-          ? "opacity-50 cursor-not-allowed bg-gradient-to-r from-slate-700 to-slate-800 text-slate-400"
+          ? "opacity-40 cursor-not-allowed bg-slate-700/50 text-slate-500 shadow-inner"
           : active
-          ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-          : "bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 text-slate-100"
+          ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25 ring-2 ring-blue-400/30"
+          : "bg-gradient-to-r from-slate-600/80 to-slate-700/80 hover:from-slate-500/90 hover:to-slate-600/90 text-slate-100 shadow-md hover:shadow-lg backdrop-blur-sm border border-slate-500/20 hover:border-slate-400/30"
       }`}
     >
       {children}

@@ -92,7 +92,16 @@ export default function EmailComposer() {
     color: "white", size: 24, strokeWidth: 3, hotspotX: 0, hotspotY: 0,
     hoverIcon: Hand, hoverColor: "white", hoverSize: 24, hoverStrokeWidth: 3
   });
-  const textInputCursorRef = useLucideCursor<HTMLInputElement>(TextCursor, {
+  const titleInputCursorRef = useLucideCursor<HTMLInputElement>(TextCursor, {
+    color: "white", size: 24, strokeWidth: 3, hotspotX: 0, hotspotY: 0
+  });
+  const subjectInputCursorRef = useLucideCursor<HTMLInputElement>(TextCursor, {
+    color: "white", size: 24, strokeWidth: 3, hotspotX: 0, hotspotY: 0
+  });
+  const contentInputCursorRef = useLucideCursor<HTMLDivElement>(TextCursor, {
+    color: "white", size: 24, strokeWidth: 3, hotspotX: 0, hotspotY: 0
+  });
+  const searchInputCursorRef = useLucideCursor<HTMLInputElement>(TextCursor, {
     color: "white", size: 24, strokeWidth: 3, hotspotX: 0, hotspotY: 0
   });
   const dragCursorRef = useLucideCursor<HTMLDivElement>(HandGrab, {
@@ -302,7 +311,7 @@ export default function EmailComposer() {
             {/* Search */}
             <div className="mb-3">
               <input
-                ref={textInputCursorRef}
+                ref={searchInputCursorRef}
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
                 className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100"
@@ -480,7 +489,7 @@ export default function EmailComposer() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-200">Title</label>
               <input
-                ref={textInputCursorRef}
+                ref={titleInputCursorRef}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100"
@@ -490,7 +499,7 @@ export default function EmailComposer() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-200">Subject</label>
               <input
-                ref={textInputCursorRef}
+                ref={subjectInputCursorRef}
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100"
@@ -499,7 +508,7 @@ export default function EmailComposer() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-200">Content</label>
-              <RichTextEditor value={contentHTML} onChange={setContentHTML} placeholder="Write rich content (text, images, links, lists, tables, emojis)..." />
+              <RichTextEditor value={contentHTML} onChange={setContentHTML} placeholder="Write rich content (text, images, links, lists, tables, emojis)..." cursorRef={contentInputCursorRef} />
               <p className="text-xs text-slate-400">Timestamp is added on send.</p>
             </div>
             <button
