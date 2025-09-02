@@ -301,7 +301,7 @@ export default function EmailComposer() {
               />
             </div>
 
-            <div className="space-y-3 max-h-[58vh] overflow-auto pr-1">
+            <div className="space-y-3 max-h-[58vh] overflow-auto pr-1 custom-scrollbar">
               {loading && (
                 <div className="text-sm text-slate-300 flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>

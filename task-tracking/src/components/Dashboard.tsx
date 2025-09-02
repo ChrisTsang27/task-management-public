@@ -79,7 +79,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen text-foreground bg-gradient-to-b from-blue-950 via-slate-900 to-slate-950">
-      <header className="sticky top-0 z-10 bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-slate-900/95 border-b border-slate-600/30 shadow-2xl backdrop-blur-md">
+      <header className="sticky top-0 z-10 bg-gradient-to-r from-slate-900/70 via-slate-800/70 to-slate-900/70 border-b border-slate-600/30 shadow-2xl backdrop-blur-xl backdrop-saturate-150">
         <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -90,10 +90,22 @@ export default function Dashboard() {
             </span>
           </div>
           {/* User info and sign out */}
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-slate-300">
-              Welcome, {profile?.full_name || 'User'}
-              <span className="ml-2 px-2 py-1 text-xs rounded-full bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-slate-600/50 shadow-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
+                  {(profile?.full_name || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-white">
+                    {profile?.full_name || 'User'}
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    Welcome back
+                  </span>
+                </div>
+              </div>
+              <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white border border-emerald-400/30 shadow-sm">
                 {profile?.role || 'member'}
               </span>
             </div>
@@ -102,7 +114,7 @@ export default function Dashboard() {
                 await supabase.auth.signOut();
                 window.location.href = '/auth/sign-in';
               }}
-              className="px-3 py-1 text-xs rounded-md bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transition-all"
+              className="px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl border border-red-400/30 hover:scale-105"
             >
               Sign Out
             </button>
