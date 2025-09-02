@@ -9,8 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import RoleGuard from '@/components/auth/RoleGuard';
 import supabase from '@/lib/supabaseBrowserClient';
 import { UserRole } from '@/hooks/useRoleAccess';
-import { useDualLucideCursor } from '@/hooks/useLucideCursor';
-import { Hand, MousePointer2, Pointer } from 'lucide-react';
+
 
 interface UserProfile {
   id: string;
@@ -25,24 +24,7 @@ function AdminPanelContent() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const selectCursorRef = useDualLucideCursor<HTMLButtonElement>(MousePointer2, {
-    color: '#ffffff',
-    size: 24,
-    strokeWidth: 3,
-    hoverIcon: Pointer,
-    hoverColor: '#ffffff',
-    hoverSize: 24,
-    hoverStrokeWidth: 3
-  });
-  const rowCursorRef = useDualLucideCursor<HTMLTableRowElement>(MousePointer2, {
-    color: '#ffffff',
-    size: 24,
-    strokeWidth: 3,
-    hoverIcon: Pointer,
-    hoverColor: '#ffffff',
-    hoverSize: 24,
-    hoverStrokeWidth: 3
-  });
+
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -170,7 +152,7 @@ function AdminPanelContent() {
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user.id} ref={rowCursorRef} className="hover:bg-gray-50 transition-colors">
+                  <TableRow key={user.id} className="hover:bg-gray-50 transition-colors">
                     <TableCell className="font-medium">
                       {user.full_name || 'Unknown'}
                     </TableCell>
@@ -194,7 +176,7 @@ function AdminPanelContent() {
                           updateUserRole(user.id, newRole)
                         }
                       >
-                        <SelectTrigger className="w-32" ref={selectCursorRef}>
+                        <SelectTrigger className="w-32">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

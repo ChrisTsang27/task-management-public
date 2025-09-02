@@ -17,14 +17,12 @@ import TableCell from "@tiptap/extension-table-cell";
 import CharacterCount from "@tiptap/extension-character-count";
 import Dropcursor from "@tiptap/extension-dropcursor";
 import Gapcursor from "@tiptap/extension-gapcursor";
-import { useLucideCursor } from "@/hooks/useLucideCursor";
-import { TextCursor } from "lucide-react";
+
 
 type Props = {
   value?: string;
   onChange?: (html: string) => void;
   placeholder?: string;
-  cursorRef?: React.RefObject<HTMLDivElement | null>;
 };
 
 const CONTENT_LIMIT = 10000;
@@ -39,12 +37,8 @@ function isSafeHttpUrl(url: string) {
   }
 }
 
-export default function RichTextEditor({ value, onChange, placeholder, cursorRef }: Props) {
+export default function RichTextEditor({ value, onChange, placeholder }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const internalTextCursorRef = useLucideCursor<HTMLDivElement>(TextCursor, {
-    color: "white", size: 24, strokeWidth: 3, hotspotX: 0, hotspotY: 0
-  });
-  const textCursorRef = cursorRef || internalTextCursorRef;
 
   const onUpdateDebounced = (html: string) => {
     if (!onChange) return;
@@ -280,18 +274,7 @@ export default function RichTextEditor({ value, onChange, placeholder, cursorRef
         </div>
       </div>
 
-      <div 
-        ref={textCursorRef}
-        className="[&_.ProseMirror]:!cursor-inherit [&_.ProseMirror_*]:!cursor-inherit [&_*]:!cursor-inherit"
-      >
-        <style jsx global>{`
-          .custom-text-cursor,
-          .custom-text-cursor *,
-          .ProseMirror,
-          .ProseMirror * {
-            cursor: inherit !important;
-          }
-        `}</style>
+      <div>
         <EditorContent editor={editor} />
       </div>
 
@@ -426,16 +409,16 @@ function LinkModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: (
         placeholder="https://example.com"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
+        className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all cursor-text"
       />
       {!safe && <p className="text-xs text-rose-300 mt-1">Only http/https URLs are allowed.</p>}
       <div className="flex justify-end gap-2 pt-3">
-        <button type="button" className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white border border-slate-500/50 hover:from-slate-500 hover:to-slate-600 transition-all" onClick={onCancel}>
+        <button type="button" className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white border border-slate-500/50 hover:from-slate-500 hover:to-slate-600 transition-all cursor-pointer" onClick={onCancel}>
           Cancel
         </button>
         <button
           type="button"
-          className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/50 hover:from-emerald-500 hover:to-emerald-600 transition-all disabled:opacity-50"
+          className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/50 hover:from-emerald-500 hover:to-emerald-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           disabled={!url || !safe}
           onClick={() => onConfirm(url)}
         >
@@ -465,7 +448,7 @@ function ImageModal({
         placeholder="https://example.com/image.jpg"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
+        className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all cursor-text"
       />
       {!safe && <p className="text-xs text-rose-300 mt-1">Only http/https URLs are allowed.</p>}
       <label className="text-xs text-slate-300 mt-2">Alt text (optional)</label>
@@ -474,15 +457,15 @@ function ImageModal({
         placeholder="Describe the image"
         value={alt}
         onChange={(e) => setAlt(e.target.value)}
-        className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all"
+        className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all cursor-text"
       />
       <div className="flex justify-end gap-2 pt-3">
-        <button type="button" className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white border border-slate-500/50 hover:from-slate-500 hover:to-slate-600 transition-all" onClick={onCancel}>
+        <button type="button" className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white border border-slate-500/50 hover:from-slate-500 hover:to-slate-600 transition-all cursor-pointer" onClick={onCancel}>
           Cancel
         </button>
         <button
           type="button"
-          className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/50 hover:from-emerald-500 hover:to-emerald-600 transition-all disabled:opacity-50"
+          className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/50 hover:from-emerald-500 hover:to-emerald-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           disabled={!url || !safe}
           onClick={() => onConfirm(url, alt)}
         >

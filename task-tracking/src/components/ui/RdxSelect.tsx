@@ -49,7 +49,7 @@ export default function RdxSelect({
           className="z-[1000] overflow-hidden rounded-md border border-cyan-500/50 bg-gradient-to-br from-slate-800 to-slate-900 w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] shadow-xl"
         >
           <Select.ScrollUpButton className="px-2 py-1 text-cyan-200/80">▲</Select.ScrollUpButton>
-          <Select.Viewport className="p-1 max-h-[280px] w-full">
+          <Select.Viewport className="p-1 max-h-[280px] w-full custom-scrollbar">
             {items.map((it) => (
               <Select.Item
                 key={it.value}

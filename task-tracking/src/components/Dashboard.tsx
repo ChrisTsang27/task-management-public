@@ -6,8 +6,7 @@ import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import supabase from "@/lib/supabaseBrowserClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useDualLucideCursor } from "@/hooks/useLucideCursor";
-import { MousePointer2, Pointer } from "lucide-react";
+
 
 type Role = "admin" | "user";
 type Tab = "Email" | "Announcements" | "Tasks";
@@ -15,15 +14,7 @@ type Tab = "Email" | "Announcements" | "Tasks";
 export default function Dashboard() {
   const { user, profile, loading: profileLoading, error } = useSupabaseProfile();
   const [role, setRole] = useState<Role>("user");
-  const pointerCursorRef = useDualLucideCursor<HTMLButtonElement>(MousePointer2, {
-    color: '#ffffff',
-    size: 24,
-    strokeWidth: 3,
-    hoverIcon: Pointer,
-    hoverColor: '#ffffff',
-    hoverSize: 24,
-    hoverStrokeWidth: 3
-  });
+
   
   // Update role based on actual user profile
   useEffect(() => {
@@ -121,7 +112,6 @@ export default function Dashboard() {
               </span>
             </div>
             <button
-              ref={pointerCursorRef}
               onClick={async () => {
                 await supabase.auth.signOut();
                 window.location.href = '/auth/sign-in';

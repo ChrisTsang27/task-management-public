@@ -24,7 +24,7 @@ export default function SignOutPage() {
         <button
           onClick={onSignOut}
           disabled={loading}
-          className="w-full rounded-lg px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-600 text-white font-semibold border border-cyan-400/50 hover:brightness-110 disabled:opacity-60 transition-all"
+          className="w-full rounded-lg px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-600 text-white font-semibold border border-cyan-400/50 hover:brightness-110 disabled:opacity-60 transition-all cursor-pointer disabled:cursor-not-allowed"
         >
           {loading ? "Signing out..." : "Sign out"}
         </button>
