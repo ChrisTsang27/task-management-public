@@ -17,6 +17,8 @@ import TableCell from "@tiptap/extension-table-cell";
 import CharacterCount from "@tiptap/extension-character-count";
 import Dropcursor from "@tiptap/extension-dropcursor";
 import Gapcursor from "@tiptap/extension-gapcursor";
+import { useLucideCursor } from "@/hooks/useLucideCursor";
+import { TextCursor } from "lucide-react";
 
 type Props = {
   value?: string;
@@ -38,6 +40,7 @@ function isSafeHttpUrl(url: string) {
 
 export default function RichTextEditor({ value, onChange, placeholder }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textCursorRef = useLucideCursor<HTMLDivElement>(TextCursor);
 
   const onUpdateDebounced = (html: string) => {
     if (!onChange) return;
@@ -270,7 +273,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
         </div>
       </div>
 
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} ref={textCursorRef} />
 
       <div className="flex items-center justify-end gap-3 text-xs text-slate-300">
         <span>Words: {counts.words}</span>

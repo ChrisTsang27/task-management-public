@@ -233,3 +233,8 @@
 .custom-scrollbar::-webkit-scrollbar-corner {
   background: rgba(30, 41, 59, 0.3);
 }
+
+/* Reset to default cursors - will be handled by React components */
+body {
+  cursor: default;
+}

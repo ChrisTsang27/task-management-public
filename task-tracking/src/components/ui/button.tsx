@@ -2,6 +2,8 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import { useDualLucideCursor } from "@/hooks/useLucideCursor";
+import { MousePointer2, Pointer } from "lucide-react";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
@@ -36,15 +38,29 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  disableCursor?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, disableCursor = false, ...props }, ref) => {
+    const pointerCursorRef = useDualLucideCursor<HTMLButtonElement>(MousePointer2, {
+      color: '#ffffff',
+      size: 24,
+      strokeWidth: 3,
+      hoverIcon: Pointer,
+      hoverColor: '#ffffff',
+      hoverSize: 24,
+      hoverStrokeWidth: 3
+    });
     const Comp = asChild ? Slot : "button";
+    
+    // Use custom ref if provided, otherwise use cursor ref (unless disabled)
+    const buttonRef = ref || (!disableCursor ? pointerCursorRef : undefined);
+    
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
+        ref={buttonRef}
         {...props}
       />
     );

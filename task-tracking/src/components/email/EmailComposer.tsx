@@ -5,6 +5,8 @@ import RichTextEditor from "@/components/email/RichTextEditor";
 import RdxSelect from "@/components/ui/RdxSelect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import supabase from "@/lib/supabaseBrowserClient";
+import { useDualLucideCursor, useLucideCursor } from "@/hooks/useLucideCursor";
+import { MousePointer2, Pointer, Hand, HandGrab, TextCursor } from "lucide-react";
 
 type User = {
   id: string;
@@ -80,6 +82,22 @@ export default function EmailComposer() {
 
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<null | { ok: boolean; msg: string }>(null);
+
+  // Cursor refs
+  const buttonCursorRef = useDualLucideCursor<HTMLButtonElement>(MousePointer2, {
+    color: "white", size: 24, strokeWidth: 3, hotspotX: 0, hotspotY: 0,
+    hoverIcon: Pointer, hoverColor: "white", hoverSize: 24, hoverStrokeWidth: 3
+  });
+  const userCardCursorRef = useDualLucideCursor<HTMLDivElement>(MousePointer2, {
+    color: "white", size: 24, strokeWidth: 3, hotspotX: 0, hotspotY: 0,
+    hoverIcon: Hand, hoverColor: "white", hoverSize: 24, hoverStrokeWidth: 3
+  });
+  const textInputCursorRef = useLucideCursor<HTMLInputElement>(TextCursor, {
+    color: "white", size: 24, strokeWidth: 3, hotspotX: 0, hotspotY: 0
+  });
+  const dragCursorRef = useLucideCursor<HTMLDivElement>(HandGrab, {
+    color: "white", size: 24, strokeWidth: 3, hotspotX: 12, hotspotY: 12
+  });
 
   // Fetch users from database
   useEffect(() => {
@@ -161,6 +179,19 @@ export default function EmailComposer() {
   const onUserDragStart = (e: React.DragEvent, userId: string) => {
     e.dataTransfer.setData("text/plain", userId);
     e.dataTransfer.effectAllowed = "copyMove";
+    // Switch to drag cursor
+    const target = e.currentTarget as HTMLElement;
+    if (dragCursorRef.current) {
+      target.style.cursor = dragCursorRef.current.style.cursor;
+    }
+  };
+  
+  const onUserDragEnd = (e: React.DragEvent) => {
+    // Reset to hover cursor
+    const target = e.currentTarget as HTMLElement;
+    if (userCardCursorRef.current) {
+      target.style.cursor = userCardCursorRef.current.style.cursor;
+    }
   };
   const onDropRecipient = (e: React.DragEvent) => {
     e.preventDefault();
@@ -248,6 +279,7 @@ export default function EmailComposer() {
                 <div className="flex items-center gap-2">
 
                 <button
+                  ref={buttonCursorRef}
                   onClick={() => {
                     setOccFilter("all"); setDeptFilter("all"); setLocFilter("all");
                   }}
@@ -256,6 +288,7 @@ export default function EmailComposer() {
                   Clear filters
                 </button>
                 <button
+                  ref={buttonCursorRef}
                   onClick={addAll}
                   className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border border-blue-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-blue-400/20 text-white font-medium"
                 >
@@ -269,6 +302,7 @@ export default function EmailComposer() {
             {/* Search */}
             <div className="mb-3">
               <input
+                ref={textInputCursorRef}
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
                 className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100"
@@ -314,9 +348,11 @@ export default function EmailComposer() {
               {!loading && availableUsers.map((u) => (
                 <div
                   key={u.id}
-                  className="rounded-xl p-4 bg-gradient-to-br from-slate-700/80 to-slate-800/80 border border-slate-400/60 hover:from-slate-500/90 hover:to-slate-600/90 transition-all flex flex-col gap-2 shadow-lg hover:shadow-xl ring-1 ring-slate-300/10 hover:ring-slate-300/20 cursor-grab active:cursor-grabbing"
+                  ref={userCardCursorRef}
+                  className="rounded-xl p-4 bg-gradient-to-br from-slate-700/80 to-slate-800/80 border border-slate-400/60 hover:from-slate-500/90 hover:to-slate-600/90 transition-all flex flex-col gap-2 shadow-lg hover:shadow-xl ring-1 ring-slate-300/10 hover:ring-slate-300/20"
                   draggable
                   onDragStart={(e) => onUserDragStart(e, u.id)}
+                  onDragEnd={onUserDragEnd}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div>
@@ -324,6 +360,7 @@ export default function EmailComposer() {
                       <div className="text-xs text-slate-300">{u.email}</div>
                     </div>
                     <button
+                      ref={buttonCursorRef}
                       onClick={() => addRecipient(u)}
                       className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white border border-blue-500/60 hover:from-blue-500 hover:to-blue-600 transition-all shadow-md hover:shadow-lg ring-1 ring-blue-400/20 font-medium"
                     >
@@ -350,6 +387,7 @@ export default function EmailComposer() {
                 </div>
                 <div className="flex gap-2">
                   <button
+                    ref={buttonCursorRef}
                     onClick={() => {
                       availableUsers.forEach(user => addRecipient(user));
                     }}
@@ -359,6 +397,7 @@ export default function EmailComposer() {
                   </button>
                   {recipients.length > 0 && (
                     <button
+                      ref={buttonCursorRef}
                       onClick={removeAll}
                       className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 border border-rose-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 text-white font-medium"
                     >
@@ -389,6 +428,7 @@ export default function EmailComposer() {
                     {recipients.map((u) => (
                       <div
                         key={u.id}
+                        ref={userCardCursorRef}
                         className="group rounded-lg p-3 bg-blue-900/80 border border-blue-700/50"
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -410,6 +450,7 @@ export default function EmailComposer() {
                             </div>
                           </div>
                           <button
+                            ref={buttonCursorRef}
                             onClick={() => removeRecipient(u.id)}
                             className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-full hover:bg-red-500/20 text-red-400 hover:text-red-300 flex-shrink-0"
                             title="Remove recipient"
@@ -439,6 +480,7 @@ export default function EmailComposer() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-200">Title</label>
               <input
+                ref={textInputCursorRef}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100"
@@ -448,6 +490,7 @@ export default function EmailComposer() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-200">Subject</label>
               <input
+                ref={textInputCursorRef}
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100"
@@ -460,6 +503,7 @@ export default function EmailComposer() {
               <p className="text-xs text-slate-400">Timestamp is added on send.</p>
             </div>
             <button
+              ref={buttonCursorRef}
               disabled={sending || recipients.length === 0 || !subject.trim() || contentIsEmpty}
               onClick={handleSend}
               className="w-full rounded-lg px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-600 text-white text-glow drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] font-semibold ring-1 ring-cyan-300 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300 shadow-[0_10px_30px_-12px_rgba(16,185,129,.45)] disabled:opacity-60 disabled:cursor-not-allowed"
