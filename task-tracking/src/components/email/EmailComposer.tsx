@@ -236,9 +236,8 @@ export default function EmailComposer() {
   ], []);
 
   return (
-    <div className="min-h-[calc(100vh-6rem)] p-4 md:p-6 text-white">
-      <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto space-y-4">
-        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Email Composer</h1>
+    <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto space-y-4 text-white bg-slate-800/60 backdrop-blur-sm border border-slate-600/50 shadow-xl p-6 rounded-xl">
+      <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Email Composer</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Users Pool */}
@@ -480,7 +479,6 @@ export default function EmailComposer() {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }

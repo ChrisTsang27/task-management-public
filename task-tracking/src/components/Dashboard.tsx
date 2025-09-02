@@ -211,28 +211,29 @@ export default function Dashboard() {
 
           {/* Main content */}
           <section className="lg:col-span-9">
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  {tab !== "Email" && <CardTitle>{tab}</CardTitle>}
-                  {/* Top tab buttons for small screens */}
-                  <div className="flex lg:hidden flex-wrap gap-2">
-                    {availableTabs.map((t) => (
-                      <Button
-                        key={t}
-                        onClick={() => setTab(t)}
-                        variant={tab === t ? "default" : "outline"}
-                        size="sm"
-                      >
-                        {t}
-                      </Button>
-                    ))}
+            {tab === "Email" && role === "admin" && <EmailComposer />}
+            
+            {tab !== "Email" && (
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>{tab}</CardTitle>
+                    {/* Top tab buttons for small screens */}
+                    <div className="flex lg:hidden flex-wrap gap-2">
+                      {availableTabs.map((t) => (
+                        <Button
+                          key={t}
+                          onClick={() => setTab(t)}
+                          variant={tab === t ? "default" : "outline"}
+                          size="sm"
+                        >
+                          {t}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-10 m-10">
-
-              {tab === "Email" && role === "admin" && <EmailComposer />}
+                </CardHeader>
+                <CardContent className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-10 m-10">
 
               {tab === "Announcements" && (
                 <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-6 p-8">
@@ -256,22 +257,23 @@ export default function Dashboard() {
                        New Announcement
                      </Button>
                    </div>
-              )}
+                )}
 
-              {tab === "Tasks" && (
-                <div className="space-y-3">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Task Board</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground text-sm">Placeholder – Kanban with assistance workflow next.</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-              </CardContent>
-            </Card>
+                {tab === "Tasks" && (
+                  <div className="space-y-3">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Task Board</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground text-sm">Placeholder – Kanban with assistance workflow next.</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                </CardContent>
+              </Card>
+            )}
           </section>
         </div>
       </main>

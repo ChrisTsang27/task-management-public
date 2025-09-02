@@ -77,7 +77,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
     editorProps: {
       attributes: {
         class:
-          "min-h-[260px] w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all max-w-none rte",
+          "min-h-[260px] w-full rounded-lg bg-slate-800/90 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all max-w-none rte",
       },
     },
     immediatelyRender: false,
