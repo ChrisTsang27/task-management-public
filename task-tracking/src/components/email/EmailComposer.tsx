@@ -19,55 +19,55 @@ type User = {
 
 // Title/Role colors - maximum contrast across color spectrum
    const titleColor: Record<string, string> = {
-     "Manager": "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg border border-white/20",
-     "Senior Officer": "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg border border-white/20", 
-     "Team Leader": "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg border border-white/20",
-     "Officer": "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg border border-white/20",
-     "Assistant": "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg border border-white/20",
-     "Coordinator": "bg-gradient-to-r from-pink-600 to-pink-700 text-white shadow-lg border border-white/20",
-     "Specialist": "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg border border-white/20",
-     "Analyst": "bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-lg border border-white/20",
-     "Executive": "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg border border-white/20",
-     "Other": "bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg border border-white/20",
+     "Manager": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
+     "Senior Officer": "bg-gradient-to-r from-blue-600/60 to-blue-700/60 text-white shadow-lg border border-white/20", 
+     "Team Leader": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
+     "Officer": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
+     "Assistant": "bg-gradient-to-r from-yellow-500/60 to-yellow-600/60 text-white shadow-lg border border-white/20",
+     "Coordinator": "bg-gradient-to-r from-pink-600/60 to-pink-700/60 text-white shadow-lg border border-white/20",
+     "Specialist": "bg-gradient-to-r from-indigo-600/60 to-indigo-700/60 text-white shadow-lg border border-white/20",
+     "Analyst": "bg-gradient-to-r from-teal-600/60 to-teal-700/60 text-white shadow-lg border border-white/20",
+     "Executive": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
+     "Other": "bg-gradient-to-r from-gray-600/60 to-gray-700/60 text-white shadow-lg border border-white/20",
      // Legacy role mappings for backward compatibility
-     "member": "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg border border-white/20",
-     "manager": "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg border border-white/20",
-     "lead": "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg border border-white/20",
-     "admin": "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg border border-white/20",
+     "member": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
+     "manager": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
+     "lead": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
+     "admin": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
    };
 
 // Department colors - completely distinct color families
    const deptColor: Record<string, string> = {
-     "Sales": "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg border border-white/20",
-     "Marketing": "bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-lg border border-white/20",
-     "Administration": "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg border border-white/20",
-     "HR": "bg-gradient-to-r from-rose-600 to-rose-700 text-white shadow-lg border border-white/20",
-     "IT": "bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg border border-white/20",
-     "Finance": "bg-gradient-to-r from-lime-600 to-lime-700 text-white shadow-lg border border-white/20",
-     "Operations": "bg-gradient-to-r from-fuchsia-600 to-fuchsia-700 text-white shadow-lg border border-white/20",
-     "Customer Service": "bg-gradient-to-r from-sky-600 to-sky-700 text-white shadow-lg border border-white/20",
+     "Sales": "bg-gradient-to-r from-emerald-600/60 to-emerald-700/60 text-white shadow-lg border border-white/20",
+     "Marketing": "bg-gradient-to-r from-violet-600/60 to-violet-700/60 text-white shadow-lg border border-white/20",
+     "Administration": "bg-gradient-to-r from-amber-600/60 to-amber-700/60 text-white shadow-lg border border-white/20",
+     "HR": "bg-gradient-to-r from-rose-600/60 to-rose-700/60 text-white shadow-lg border border-white/20",
+     "IT": "bg-gradient-to-r from-cyan-600/60 to-cyan-700/60 text-white shadow-lg border border-white/20",
+     "Finance": "bg-gradient-to-r from-lime-600/60 to-lime-700/60 text-white shadow-lg border border-white/20",
+     "Operations": "bg-gradient-to-r from-fuchsia-600/60 to-fuchsia-700/60 text-white shadow-lg border border-white/20",
+     "Customer Service": "bg-gradient-to-r from-sky-600/60 to-sky-700/60 text-white shadow-lg border border-white/20",
      // Legacy mappings for backward compatibility
-     "sales": "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg border border-white/20",
-     "marketing": "bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-lg border border-white/20",
-     "it": "bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg border border-white/20",
-     "hr": "bg-gradient-to-r from-rose-600 to-rose-700 text-white shadow-lg border border-white/20",
-     "ops": "bg-gradient-to-r from-fuchsia-600 to-fuchsia-700 text-white shadow-lg border border-white/20",
-     "General": "bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg border border-white/20",
+     "sales": "bg-gradient-to-r from-emerald-600/60 to-emerald-700/60 text-white shadow-lg border border-white/20",
+     "marketing": "bg-gradient-to-r from-violet-600/60 to-violet-700/60 text-white shadow-lg border border-white/20",
+     "it": "bg-gradient-to-r from-cyan-600/60 to-cyan-700/60 text-white shadow-lg border border-white/20",
+     "hr": "bg-gradient-to-r from-rose-600/60 to-rose-700/60 text-white shadow-lg border border-white/20",
+     "ops": "bg-gradient-to-r from-fuchsia-600/60 to-fuchsia-700/60 text-white shadow-lg border border-white/20",
+     "General": "bg-gradient-to-r from-slate-600/60 to-slate-700/60 text-white shadow-lg border border-white/20",
    };
 
 // Location colors - extreme contrast using opposite spectrum colors
    const locColor: Record<string, string> = {
-     "SGI Gold Coast": "bg-gradient-to-r from-yellow-600 to-yellow-700 text-white shadow-lg border border-white/20",
-     "SGI Melbourne": "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg border border-white/20",
-     "KAYO Coopers Plains": "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg border border-white/20",
-     "KAYO Underwood": "bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-lg border border-white/20",
-     "KAYO Brendale": "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg border border-white/20",
-     "KAYO Yatala": "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg border border-white/20",
+     "SGI Gold Coast": "bg-gradient-to-r from-yellow-600/60 to-yellow-700/60 text-white shadow-lg border border-white/20",
+     "SGI Melbourne": "bg-gradient-to-r from-indigo-600/60 to-indigo-700/60 text-white shadow-lg border border-white/20",
+     "KAYO Coopers Plains": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
+     "KAYO Underwood": "bg-gradient-to-r from-teal-600/60 to-teal-700/60 text-white shadow-lg border border-white/20",
+     "KAYO Brendale": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
+     "KAYO Yatala": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
      // Additional SGI locations with unique colors
-     "SGI Coopers Plains": "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg border border-white/20",
-     "SGI Brendale": "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg border border-white/20",
-     "SGI Toowoomba": "bg-gradient-to-r from-pink-600 to-pink-700 text-white shadow-lg border border-white/20",
-     "Office": "bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg border border-white/20",
+     "SGI Coopers Plains": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
+     "SGI Brendale": "bg-gradient-to-r from-blue-600/60 to-blue-700/60 text-white shadow-lg border border-white/20",
+     "SGI Toowoomba": "bg-gradient-to-r from-pink-600/60 to-pink-700/60 text-white shadow-lg border border-white/20",
+     "Office": "bg-gradient-to-r from-gray-600/60 to-gray-700/60 text-white shadow-lg border border-white/20",
    };
 
 export default function EmailComposer() {
@@ -315,7 +315,7 @@ export default function EmailComposer() {
               {!loading && availableUsers.map((u) => (
                 <div
                   key={u.id}
-                  className="rounded-xl p-4 bg-gradient-to-br from-slate-500 to-slate-700 border border-slate-400/60 hover:from-slate-400 hover:to-slate-600 transition-all flex flex-col gap-2 shadow-lg hover:shadow-xl ring-1 ring-slate-300/10 hover:ring-slate-300/20 cursor-grab active:cursor-grabbing"
+                  className="rounded-xl p-4 bg-gradient-to-br from-slate-700/80 to-slate-800/80 border border-slate-400/60 hover:from-slate-500/90 hover:to-slate-600/90 transition-all flex flex-col gap-2 shadow-lg hover:shadow-xl ring-1 ring-slate-300/10 hover:ring-slate-300/20 cursor-grab active:cursor-grabbing"
                   draggable
                   onDragStart={(e) => onUserDragStart(e, u.id)}
                 >
@@ -326,7 +326,7 @@ export default function EmailComposer() {
                     </div>
                     <button
                       onClick={() => addRecipient(u)}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/60 hover:from-emerald-500 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg ring-1 ring-emerald-400/20 font-medium"
+                      className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white border border-blue-500/60 hover:from-blue-500 hover:to-blue-600 transition-all shadow-md hover:shadow-lg ring-1 ring-blue-400/20 font-medium"
                     >
                       Add
                     </button>
@@ -346,15 +346,27 @@ export default function EmailComposer() {
           <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-600/50 shadow-xl">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-lg">Recipients</CardTitle>
-                {recipients.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">Recipients ({recipients.length})</CardTitle>
+                </div>
+                <div className="flex gap-2">
                   <button
-                    onClick={removeAll}
-                    className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 border border-rose-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 text-white font-medium"
+                    onClick={() => {
+                      availableUsers.forEach(user => addRecipient(user));
+                    }}
+                    className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 border border-emerald-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-emerald-400/20 text-white font-medium"
                   >
-                    Remove all
+                    Add All
                   </button>
-                )}
+                  {recipients.length > 0 && (
+                    <button
+                      onClick={removeAll}
+                      className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 border border-rose-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 text-white font-medium"
+                    >
+                      Remove All
+                    </button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent
@@ -369,25 +381,46 @@ export default function EmailComposer() {
                 }`}
               >
                 {recipients.length === 0 ? (
-                  <div>Drag users here or use Add buttons</div>
+                  <div className="text-center py-12 text-slate-400">
+                    <div className="text-lg mb-2">📧</div>
+                    <div className="text-sm">Drag users here or use Add buttons</div>
+                  </div>
                 ) : (
-                  <div className="space-y-2" onDrop={onDropRecipient} onDragOver={onDragOverRecipient}>
-                  {recipients.map((u) => (
+                  <div className="grid grid-cols-2 gap-3" onDrop={onDropRecipient} onDragOver={onDragOverRecipient}>
+                    {recipients.map((u) => (
                       <div
                         key={u.id}
-                        className="flex items-center justify-between gap-2 rounded-lg bg-slate-700/60 border border-slate-600/50 px-4 py-3 shadow-sm hover:shadow-md transition-all hover:bg-slate-600/70"
+                        className="group rounded-lg p-3 bg-blue-900/80 border border-blue-700/50"
                       >
-                      <div>
-                        <div className="text-sm font-medium">{u.name}</div>
-                        <div className="text-xs text-slate-300">{u.email}</div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="mb-2">
+                              <div className="text-sm font-medium text-white truncate">{u.name}</div>
+                              <div className="text-xs text-slate-300 truncate">{u.email}</div>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${titleColor[u.occupation] || titleColor["Other"]}`}>
+                                {u.occupation}
+                              </span>
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${deptColor[u.department] || deptColor["General"]}`}>
+                                {u.department}
+                              </span>
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${locColor[u.location] || locColor["Office"]}`}>
+                                {u.location}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => removeRecipient(u.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-full hover:bg-red-500/20 text-red-400 hover:text-red-300 flex-shrink-0"
+                            title="Remove recipient"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                      <button
-                          onClick={() => removeRecipient(u.id)}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 text-white border border-rose-500/60 hover:from-rose-500 hover:to-rose-600 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 font-medium"
-                        >
-                          Remove
-                        </button>
-                    </div>
                     ))}
                   </div>
                 )}
