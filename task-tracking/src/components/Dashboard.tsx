@@ -212,7 +212,7 @@ export default function Dashboard() {
           {/* Main content */}
           <section className="lg:col-span-9">
             <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader className="bg-slate-700/50 border-b border-slate-600/30">
+              <CardHeader>
                 <div className="flex items-center justify-between">
                   {tab !== "Email" && <CardTitle>{tab}</CardTitle>}
                   {/* Top tab buttons for small screens */}
@@ -230,7 +230,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-10 m-10">
 
               {tab === "Email" && role === "admin" && <EmailComposer />}
 
