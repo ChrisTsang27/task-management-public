@@ -155,7 +155,7 @@ export default function AnnouncementReactions({ announcementId }: AnnouncementRe
     <div className="flex flex-wrap items-center gap-3">
       {/* Reaction Buttons */}
       <div className="flex items-center gap-2">
-        {EMOJI_OPTIONS.map(({ emoji, icon: Icon, label }) => {
+        {EMOJI_OPTIONS.map(({ emoji, icon: Icon }) => {
           const count = getReactionCount(emoji)?.count || 0;
           const userReacted = hasUserReacted(emoji);
           const isSubmitting = submittingEmoji === emoji;
