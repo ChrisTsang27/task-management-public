@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo, useCallback } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -41,11 +41,11 @@ function isSafeHttpUrl(url: string) {
 export default function RichTextEditor({ value, onChange, placeholder }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const onUpdateDebounced = (html: string) => {
+  const onUpdateDebounced = useCallback((html: string) => {
     if (!onChange) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => onChange(html), 300);
-  };
+  }, [onChange]);
 
   const editor = useEditor({
     extensions: [
@@ -79,7 +79,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
     editorProps: {
       attributes: {
         class:
-          "min-h-[260px] w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all max-w-none rte custom-text-cursor cursor-text [&_img]:max-w-full [&_img]:max-h-[400px] [&_img]:object-contain [&_img]:rounded-md",
+          "min-h-[260px] w-full rounded-b-xl bg-transparent px-4 py-3 outline-none max-w-none rte custom-text-cursor cursor-text [&_img]:max-w-full [&_img]:max-h-[400px] [&_img]:object-contain [&_img]:rounded-md [&_p]:text-slate-100 [&_h1]:text-slate-50 [&_h2]:text-slate-50 [&_h3]:text-slate-50 [&_h4]:text-slate-50 [&_li]:text-slate-100 [&_blockquote]:text-slate-200 [&_code]:text-violet-300 [&_pre]:bg-slate-800/80",
         style: "cursor: inherit !important;",
       },
     },
@@ -93,21 +93,19 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
   const [showImageModal, setShowImageModal] = useState(false);
   const [isDraggingOverEditor, setIsDraggingOverEditor] = useState(false);
 
-  if (!editor) return null;
-
-  const characterCount = editor.storage.characterCount as { words?: () => number; characters?: () => number } | undefined;
-  const counts = {
+  const characterCount = editor?.storage.characterCount as { words?: () => number; characters?: () => number } | undefined;
+  const counts = useMemo(() => ({
     words:
       typeof characterCount?.words === "function"
         ? characterCount.words()
-        : editor.getText().trim().split(/\s+/).filter(Boolean).length,
+        : editor?.getText().trim().split(/\s+/).filter(Boolean).length || 0,
     chars:
       typeof characterCount?.characters === "function"
         ? characterCount.characters()
-        : editor.getText().length,
-  };
+        : editor?.getText().length || 0,
+  }), [characterCount, editor]);
 
-  const currentBlock: "p" | "h1" | "h2" | "h3" | "h4" =
+  const currentBlock: "p" | "h1" | "h2" | "h3" | "h4" = useMemo(() => 
     editor?.isActive("heading", { level: 1 })
       ? "h1"
       : editor?.isActive("heading", { level: 2 })
@@ -116,59 +114,59 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
       ? "h3"
       : editor?.isActive("heading", { level: 4 })
       ? "h4"
-      : "p";
+      : "p", [editor]);
 
-  const setHeading = (lvl: "p" | 1 | 2 | 3 | 4) => {
-    const chain = editor.chain().focus();
-    if (lvl === "p") chain.setParagraph().run();
-    else chain.toggleHeading({ level: lvl as 1 | 2 | 3 | 4 }).run();
+  const setHeading = useCallback((lvl: "p" | 1 | 2 | 3 | 4) => {
+    const chain = editor?.chain().focus();
+    if (lvl === "p") chain?.setParagraph().run();
+    else chain?.toggleHeading({ level: lvl as 1 | 2 | 3 | 4 }).run();
     setOpenHead(false);
-  };
+  }, [editor]);
 
-  const toggleBullet = () => {
-    const chain = editor.chain().focus();
-    if (editor.isActive("codeBlock")) chain.toggleCodeBlock().run();
-    chain.toggleBulletList().run();
-  };
+  const toggleBullet = useCallback(() => {
+    const chain = editor?.chain().focus();
+    if (editor?.isActive("codeBlock")) chain?.toggleCodeBlock().run();
+    chain?.toggleBulletList().run();
+  }, [editor]);
 
-  const toggleOrdered = () => {
-    const chain = editor.chain().focus();
-    if (editor.isActive("codeBlock")) chain.toggleCodeBlock().run();
-    chain.toggleOrderedList().run();
-  };
+  const toggleOrdered = useCallback(() => {
+    const chain = editor?.chain().focus();
+    if (editor?.isActive("codeBlock")) chain?.toggleCodeBlock().run();
+    chain?.toggleOrderedList().run();
+  }, [editor]);
 
-  const align = (val: "left" | "center" | "right" | "justify") =>
-    editor.chain().focus().setTextAlign(val).run();
+  const align = useCallback((val: "left" | "center" | "right" | "justify") =>
+    editor?.chain().focus().setTextAlign(val).run(), [editor]);
 
-  const insertTable = () => {
-    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  const insertTable = useCallback(() => {
+    editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
     setOpenAdd(false);
-  };
+  }, [editor]);
 
-  const insertHR = () => {
-    editor.chain().focus().setHorizontalRule().run();
+  const insertHR = useCallback(() => {
+    editor?.chain().focus().setHorizontalRule().run();
     setOpenAdd(false);
-  };
+  }, [editor]);
 
-  const inTable = editor.isActive("table");
-  const nearLimit = counts.chars > CONTENT_LIMIT * 0.95;
-  const overLimit = counts.chars > CONTENT_LIMIT;
+  const inTable = useMemo(() => editor?.isActive("table") || false, [editor]);
+  const nearLimit = useMemo(() => counts.chars > CONTENT_LIMIT * 0.95, [counts.chars]);
+  const overLimit = useMemo(() => counts.chars > CONTENT_LIMIT, [counts.chars]);
 
-  const handleEditorDragOver = (e: React.DragEvent) => {
+  const handleEditorDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     const items = Array.from(e.dataTransfer.items);
     const hasImageFile = items.some(item => item.type.startsWith('image/'));
     if (hasImageFile) {
       setIsDraggingOverEditor(true);
     }
-  };
+  }, []);
 
-  const handleEditorDragLeave = (e: React.DragEvent) => {
+  const handleEditorDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOverEditor(false);
-  };
+  }, []);
 
-  const handleEditorDrop = async (e: React.DragEvent) => {
+  const handleEditorDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOverEditor(false);
     
@@ -193,22 +191,36 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
         if (result.urls && result.urls.length > 0) {
           const imageUrl = result.urls[0].url;
           const altText = file.name.split('.')[0];
-          editor.chain().focus().setImage({ src: imageUrl, alt: altText }).run();
+          editor?.chain().focus().setImage({ src: imageUrl, alt: altText }).run();
         }
       }
     } catch (error) {
       console.error('Upload error:', error);
     }
-  };
+  }, [editor]);
+
+  // Conditional return after all hooks have been called
+  if (!editor) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-slate-400">Loading editor...</div>
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider delayDuration={300}>
     <div className="space-y-2">
-      <div className="relative z-[100]">
+      <div 
+        className={`relative rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-850/95 to-slate-900/90 border-2 border-slate-500/60 focus-within:border-violet-400/70 focus-within:ring-2 focus-within:ring-violet-500/20 transition-all duration-300 overflow-visible ${isDraggingOverEditor ? 'ring-2 ring-blue-400 ring-opacity-50' : ''}`}
+        onDragOver={handleEditorDragOver}
+        onDragLeave={handleEditorDragLeave}
+        onDrop={handleEditorDrop}
+      >
         <div
           role="toolbar"
           aria-label="Rich text editor toolbar"
-          className="flex items-center flex-wrap gap-2 rounded-xl bg-slate-800/95 backdrop-blur-sm border border-slate-500/30 shadow-2xl p-3"
+          className="flex items-center flex-wrap gap-2 bg-gradient-to-r from-slate-700/80 via-slate-750/85 to-slate-700/80 backdrop-blur-md border-b border-slate-500/30 rounded-t-xl p-3 relative z-10"
         >
           <Btn onAction={() => editor.chain().focus().undo().run()} ariaLabel="Undo" title="Undo last action">↶</Btn>
           <Btn onAction={() => editor.chain().focus().redo().run()} ariaLabel="Redo" title="Redo last action">↷</Btn>
@@ -321,22 +333,17 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
             </>
           )}
         </div>
-      </div>
-
-      <div 
-        className={`relative ${isDraggingOverEditor ? 'ring-2 ring-blue-400 ring-opacity-50' : ''}`}
-        onDragOver={handleEditorDragOver}
-        onDragLeave={handleEditorDragLeave}
-        onDrop={handleEditorDrop}
-      >
-        <EditorContent editor={editor} />
-        {isDraggingOverEditor && (
-          <div className="absolute inset-0 bg-blue-500/10 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center pointer-events-none">
-            <div className="bg-slate-800/90 px-4 py-2 rounded-lg border border-blue-400/50">
-              <p className="text-blue-300 text-sm font-medium">Drop image here to insert</p>
+        
+        <div className="relative">
+          <EditorContent editor={editor} />
+          {isDraggingOverEditor && (
+            <div className="absolute inset-0 bg-blue-500/10 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center pointer-events-none">
+              <div className="bg-slate-800/90 px-4 py-2 rounded-lg border border-blue-400/50">
+                <p className="text-blue-300 text-sm font-medium">Drop image here to insert</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-end gap-3 text-xs text-slate-300">
@@ -375,7 +382,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
 function Menu({ children, onClose, ariaLabel }: { children: React.ReactNode; onClose: () => void; ariaLabel: string }) {
   return (
     <div
-      className="absolute left-0 top-full mt-2 min-w-40 rounded-xl bg-gradient-to-br from-slate-800/98 via-slate-900/98 to-slate-950/98 backdrop-blur-md border border-slate-500/40 shadow-2xl shadow-black/20 p-2 z-[1000]"
+      className="absolute left-0 top-full mt-2 min-w-40 rounded-xl bg-gradient-to-br from-slate-800/98 via-slate-900/98 to-slate-950/98 backdrop-blur-md border border-slate-500/40 shadow-2xl shadow-black/20 p-2 z-[2000]"
       role="menu"
       aria-label={ariaLabel}
       onMouseLeave={onClose}
@@ -405,9 +412,11 @@ function MenuItem({
         e.preventDefault();
         onAction();
       }}
-      className={`w-full text-left text-sm font-medium px-3 py-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
-        active ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20" : "bg-transparent hover:bg-gradient-to-r hover:from-slate-700/60 hover:to-slate-800/60 text-slate-100 hover:text-white"
-      }`}
+      className={`w-full text-left text-sm font-medium px-3 py-2.5 rounded-lg transition-all duration-150 cursor-pointer group ${
+        active 
+          ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white group-hover:bg-none group-hover:bg-gradient-to-r group-hover:from-slate-700/60 group-hover:to-slate-800/60" 
+          : "bg-transparent text-slate-100"
+      } hover:bg-gradient-to-r hover:from-slate-700/60 hover:to-slate-800/60 hover:text-white`}
     >
       {children}
     </button>

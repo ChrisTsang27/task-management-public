@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState, useEffect } from "react";
+import React, { useCallback, useMemo, useReducer, useEffect } from "react";
 import RichTextEditor from "@/components/email/RichTextEditor";
 import RdxSelect from "@/components/ui/RdxSelect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,82 +20,185 @@ type User = {
 
 
 // Title/Role colors - maximum contrast across color spectrum
-   const titleColor: Record<string, string> = {
-     "Manager": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
-     "Senior Officer": "bg-gradient-to-r from-blue-600/60 to-blue-700/60 text-white shadow-lg border border-white/20", 
-     "Team Leader": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
-     "Officer": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
-     "Assistant": "bg-gradient-to-r from-yellow-500/60 to-yellow-600/60 text-white shadow-lg border border-white/20",
-     "Coordinator": "bg-gradient-to-r from-pink-600/60 to-pink-700/60 text-white shadow-lg border border-white/20",
-     "Specialist": "bg-gradient-to-r from-indigo-600/60 to-indigo-700/60 text-white shadow-lg border border-white/20",
-     "Analyst": "bg-gradient-to-r from-teal-600/60 to-teal-700/60 text-white shadow-lg border border-white/20",
-     "Executive": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
-     "Other": "bg-gradient-to-r from-gray-600/60 to-gray-700/60 text-white shadow-lg border border-white/20",
-     // Legacy role mappings for backward compatibility
-     "member": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
-     "manager": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
-     "lead": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
-     "admin": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
-   };
+const titleColor: Record<string, string> = {
+  "Manager": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
+  "Senior Officer": "bg-gradient-to-r from-blue-600/60 to-blue-700/60 text-white shadow-lg border border-white/20", 
+  "Team Leader": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
+  "Officer": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
+  "Assistant": "bg-gradient-to-r from-yellow-500/60 to-yellow-600/60 text-white shadow-lg border border-white/20",
+  "Coordinator": "bg-gradient-to-r from-pink-600/60 to-pink-700/60 text-white shadow-lg border border-white/20",
+  "Specialist": "bg-gradient-to-r from-indigo-600/60 to-indigo-700/60 text-white shadow-lg border border-white/20",
+  "Analyst": "bg-gradient-to-r from-teal-600/60 to-teal-700/60 text-white shadow-lg border border-white/20",
+  "Executive": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
+  "Other": "bg-gradient-to-r from-gray-600/60 to-gray-700/60 text-white shadow-lg border border-white/20",
+  // Legacy role mappings for backward compatibility
+  "member": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
+  "manager": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
+  "lead": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
+  "admin": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
+};
 
 // Department colors - completely distinct color families
-   const deptColor: Record<string, string> = {
-     "Sales": "bg-gradient-to-r from-emerald-600/60 to-emerald-700/60 text-white shadow-lg border border-white/20",
-     "Marketing": "bg-gradient-to-r from-violet-600/60 to-violet-700/60 text-white shadow-lg border border-white/20",
-     "Administration": "bg-gradient-to-r from-amber-600/60 to-amber-700/60 text-white shadow-lg border border-white/20",
-     "HR": "bg-gradient-to-r from-rose-600/60 to-rose-700/60 text-white shadow-lg border border-white/20",
-     "IT": "bg-gradient-to-r from-cyan-600/60 to-cyan-700/60 text-white shadow-lg border border-white/20",
-     "Finance": "bg-gradient-to-r from-lime-600/60 to-lime-700/60 text-white shadow-lg border border-white/20",
-     "Operations": "bg-gradient-to-r from-fuchsia-600/60 to-fuchsia-700/60 text-white shadow-lg border border-white/20",
-     "Customer Service": "bg-gradient-to-r from-sky-600/60 to-sky-700/60 text-white shadow-lg border border-white/20",
-     // Legacy mappings for backward compatibility
-     "sales": "bg-gradient-to-r from-emerald-600/60 to-emerald-700/60 text-white shadow-lg border border-white/20",
-     "marketing": "bg-gradient-to-r from-violet-600/60 to-violet-700/60 text-white shadow-lg border border-white/20",
-     "it": "bg-gradient-to-r from-cyan-600/60 to-cyan-700/60 text-white shadow-lg border border-white/20",
-     "hr": "bg-gradient-to-r from-rose-600/60 to-rose-700/60 text-white shadow-lg border border-white/20",
-     "ops": "bg-gradient-to-r from-fuchsia-600/60 to-fuchsia-700/60 text-white shadow-lg border border-white/20",
-     "General": "bg-gradient-to-r from-slate-600/60 to-slate-700/60 text-white shadow-lg border border-white/20",
-   };
+const deptColor: Record<string, string> = {
+  "Sales": "bg-gradient-to-r from-emerald-600/60 to-emerald-700/60 text-white shadow-lg border border-white/20",
+  "Marketing": "bg-gradient-to-r from-violet-600/60 to-violet-700/60 text-white shadow-lg border border-white/20",
+  "Administration": "bg-gradient-to-r from-amber-600/60 to-amber-700/60 text-white shadow-lg border border-white/20",
+  "HR": "bg-gradient-to-r from-rose-600/60 to-rose-700/60 text-white shadow-lg border border-white/20",
+  "IT": "bg-gradient-to-r from-cyan-600/60 to-cyan-700/60 text-white shadow-lg border border-white/20",
+  "Finance": "bg-gradient-to-r from-lime-600/60 to-lime-700/60 text-white shadow-lg border border-white/20",
+  "Operations": "bg-gradient-to-r from-fuchsia-600/60 to-fuchsia-700/60 text-white shadow-lg border border-white/20",
+  "Customer Service": "bg-gradient-to-r from-sky-600/60 to-sky-700/60 text-white shadow-lg border border-white/20",
+  // Legacy mappings for backward compatibility
+  "sales": "bg-gradient-to-r from-emerald-600/60 to-emerald-700/60 text-white shadow-lg border border-white/20",
+  "marketing": "bg-gradient-to-r from-violet-600/60 to-violet-700/60 text-white shadow-lg border border-white/20",
+  "it": "bg-gradient-to-r from-cyan-600/60 to-cyan-700/60 text-white shadow-lg border border-white/20",
+  "hr": "bg-gradient-to-r from-rose-600/60 to-rose-700/60 text-white shadow-lg border border-white/20",
+  "ops": "bg-gradient-to-r from-fuchsia-600/60 to-fuchsia-700/60 text-white shadow-lg border border-white/20",
+  "General": "bg-gradient-to-r from-slate-600/60 to-slate-700/60 text-white shadow-lg border border-white/20",
+};
 
 // Location colors - extreme contrast using opposite spectrum colors
-   const locColor: Record<string, string> = {
-     "SGI Gold Coast": "bg-gradient-to-r from-yellow-600/60 to-yellow-700/60 text-white shadow-lg border border-white/20",
-     "SGI Melbourne": "bg-gradient-to-r from-indigo-600/60 to-indigo-700/60 text-white shadow-lg border border-white/20",
-     "KAYO Coopers Plains": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
-     "KAYO Underwood": "bg-gradient-to-r from-teal-600/60 to-teal-700/60 text-white shadow-lg border border-white/20",
-     "KAYO Brendale": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
-     "KAYO Yatala": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
-     // Additional SGI locations with unique colors
-     "SGI Coopers Plains": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
-     "SGI Brendale": "bg-gradient-to-r from-blue-600/60 to-blue-700/60 text-white shadow-lg border border-white/20",
-     "SGI Toowoomba": "bg-gradient-to-r from-pink-600/60 to-pink-700/60 text-white shadow-lg border border-white/20",
-     "Office": "bg-gradient-to-r from-gray-600/60 to-gray-700/60 text-white shadow-lg border border-white/20",
-   };
+const locColor: Record<string, string> = {
+  "SGI Gold Coast": "bg-gradient-to-r from-yellow-600/60 to-yellow-700/60 text-white shadow-lg border border-white/20",
+  "SGI Melbourne": "bg-gradient-to-r from-indigo-600/60 to-indigo-700/60 text-white shadow-lg border border-white/20",
+  "KAYO Coopers Plains": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
+  "KAYO Underwood": "bg-gradient-to-r from-teal-600/60 to-teal-700/60 text-white shadow-lg border border-white/20",
+  "KAYO Brendale": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
+  "KAYO Yatala": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
+  // Additional SGI locations with unique colors
+  "SGI Coopers Plains": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
+  "SGI Brendale": "bg-gradient-to-r from-blue-600/60 to-blue-700/60 text-white shadow-lg border border-white/20",
+  "SGI Toowoomba": "bg-gradient-to-r from-pink-600/60 to-pink-700/60 text-white shadow-lg border border-white/20",
+  "Office": "bg-gradient-to-r from-gray-600/60 to-gray-700/60 text-white shadow-lg border border-white/20",
+};
+
+// State management with useReducer for better performance
+type EmailState = {
+  users: User[];
+  loading: boolean;
+  recipients: User[];
+  title: string;
+  subject: string;
+  contentHTML: string;
+  sending: boolean;
+  status: null | { ok: boolean; msg: string };
+  isDragging: boolean;
+  occFilter: string;
+  deptFilter: string;
+  locFilter: string;
+  userQuery: string;
+};
+
+type EmailAction = 
+  | { type: 'SET_USERS'; payload: User[] }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'ADD_RECIPIENT'; payload: User }
+  | { type: 'REMOVE_RECIPIENT'; payload: string }
+  | { type: 'SET_RECIPIENTS'; payload: User[] }
+  | { type: 'SET_TITLE'; payload: string }
+  | { type: 'SET_SUBJECT'; payload: string }
+  | { type: 'SET_CONTENT'; payload: string }
+  | { type: 'SET_SENDING'; payload: boolean }
+  | { type: 'SET_STATUS'; payload: null | { ok: boolean; msg: string } }
+  | { type: 'SET_DRAGGING'; payload: boolean }
+  | { type: 'SET_OCC_FILTER'; payload: string }
+  | { type: 'SET_DEPT_FILTER'; payload: string }
+  | { type: 'SET_LOC_FILTER'; payload: string }
+  | { type: 'SET_USER_QUERY'; payload: string }
+  | { type: 'RESET_FILTERS' };
+
+const initialState: EmailState = {
+  users: [],
+  loading: true,
+  recipients: [],
+  title: "",
+  subject: "",
+  contentHTML: "",
+  sending: false,
+  status: null,
+  isDragging: false,
+  occFilter: "all",
+  deptFilter: "all",
+  locFilter: "all",
+  userQuery: ""
+};
+
+function emailReducer(state: EmailState, action: EmailAction): EmailState {
+  switch (action.type) {
+    case 'SET_USERS':
+      return { ...state, users: action.payload };
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'ADD_RECIPIENT':
+      return {
+        ...state,
+        recipients: state.recipients.find(u => u.id === action.payload.id) 
+          ? state.recipients 
+          : [...state.recipients, action.payload]
+      };
+    case 'REMOVE_RECIPIENT':
+      return {
+        ...state,
+        recipients: state.recipients.filter(u => u.id !== action.payload)
+      };
+    case 'SET_RECIPIENTS':
+      return { ...state, recipients: action.payload };
+    case 'SET_TITLE':
+      return { ...state, title: action.payload };
+    case 'SET_SUBJECT':
+      return { ...state, subject: action.payload };
+    case 'SET_CONTENT':
+      return { ...state, contentHTML: action.payload };
+    case 'SET_SENDING':
+      return { ...state, sending: action.payload };
+    case 'SET_STATUS':
+      return { ...state, status: action.payload };
+    case 'SET_DRAGGING':
+      return { ...state, isDragging: action.payload };
+    case 'SET_OCC_FILTER':
+      return { ...state, occFilter: action.payload };
+    case 'SET_DEPT_FILTER':
+      return { ...state, deptFilter: action.payload };
+    case 'SET_LOC_FILTER':
+      return { ...state, locFilter: action.payload };
+    case 'SET_USER_QUERY':
+      return { ...state, userQuery: action.payload };
+    case 'RESET_FILTERS':
+      return { 
+        ...state, 
+        occFilter: "all", 
+        deptFilter: "all", 
+        locFilter: "all", 
+        userQuery: "" 
+      };
+    default:
+      return state;
+  }
+}
 
 export default function EmailComposer() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [recipients, setRecipients] = useState<User[]>([]);
-  const [title, setTitle] = useState("");
-  const [subject, setSubject] = useState("");
-  const [contentHTML, setContentHTML] = useState("");
-
-  const [sending, setSending] = useState(false);
-  const [status, setStatus] = useState<null | { ok: boolean; msg: string }>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [state, dispatch] = useReducer(emailReducer, initialState);
+  const { 
+    users, loading, recipients, title, subject, contentHTML, 
+    sending, status, isDragging, occFilter, deptFilter, locFilter, userQuery 
+  } = state;
 
 
 
-  // Fetch users from database
+  // Fetch users from database with cleanup
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchUsers = async () => {
       try {
         // First check if user is authenticated
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.user) {
-          setUsers([]);
-          setLoading(false);
+          if (isMounted) {
+            dispatch({ type: 'SET_USERS', payload: [] });
+            dispatch({ type: 'SET_LOADING', payload: false });
+          }
           return;
         }
         
@@ -106,24 +209,28 @@ export default function EmailComposer() {
         }
         
         const { users } = await response.json();
-        setUsers(users || []);
+        if (isMounted) {
+          dispatch({ type: 'SET_USERS', payload: users || [] });
+        }
       } catch (error) {
         console.error('Error fetching users:', error);
         // Fallback to empty array if fetch fails
-        setUsers([]);
+        if (isMounted) {
+          dispatch({ type: 'SET_USERS', payload: [] });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          dispatch({ type: 'SET_LOADING', payload: false });
+        }
       }
     };
 
     fetchUsers();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
-
-  // Filters
-  const [occFilter, setOccFilter] = useState<string>("all");
-  const [deptFilter, setDeptFilter] = useState<string>("all");
-  const [locFilter, setLocFilter] = useState<string>("all");
-  const [userQuery, setUserQuery] = useState("");
 
   const recipientIds = useMemo(() => new Set(recipients.map((r) => r.id)), [recipients]);
 
@@ -145,49 +252,54 @@ export default function EmailComposer() {
   }, [users, recipientIds, occFilter, deptFilter, locFilter, userQuery]);
 
   const addRecipient = useCallback((user: User) => {
-    setRecipients((prev) => (prev.find((u) => u.id === user.id) ? prev : [...prev, user]));
+    dispatch({ type: 'ADD_RECIPIENT', payload: user });
   }, []);
 
   const removeRecipient = useCallback((userId: string) => {
-    setRecipients((prev) => prev.filter((u) => u.id !== userId));
+    dispatch({ type: 'REMOVE_RECIPIENT', payload: userId });
   }, []);
 
-  const addAll = () => {
-    setRecipients((prev) => {
-      const merged: Record<string, User> = {};
-      [...prev, ...availableUsers].forEach((u) => (merged[u.id] = u));
-      return Object.values(merged);
-    });
-  };
+  const addAll = useCallback(() => {
+    const merged: Record<string, User> = {};
+    [...recipients, ...availableUsers].forEach((u) => (merged[u.id] = u));
+    dispatch({ type: 'SET_RECIPIENTS', payload: Object.values(merged) });
+  }, [recipients, availableUsers]);
 
-  const removeAll = () => setRecipients([]);
+  const removeAll = useCallback(() => {
+    dispatch({ type: 'SET_RECIPIENTS', payload: [] });
+  }, []);
 
   // Drag & Drop
-  const onUserDragStart = (e: React.DragEvent, userId: string) => {
+  const onUserDragStart = useCallback((e: React.DragEvent, userId: string) => {
     e.dataTransfer.setData("text/plain", userId);
     e.dataTransfer.effectAllowed = "copyMove";
-    setIsDragging(true);
-  };
+    dispatch({ type: 'SET_DRAGGING', payload: true });
+  }, []);
   
-  const onUserDragEnd = () => {
-    setIsDragging(false);
-  };
-  const onDropRecipient = (e: React.DragEvent) => {
+  const onUserDragEnd = useCallback(() => {
+    dispatch({ type: 'SET_DRAGGING', payload: false });
+  }, []);
+  
+  const onDropRecipient = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     const userId = e.dataTransfer.getData("text/plain");
     const user = users.find((u) => u.id === userId);
     if (user && !recipientIds.has(user.id)) addRecipient(user);
-  };
-  const onDragOverRecipient = (e: React.DragEvent) => {
+  }, [users, recipientIds, addRecipient]);
+  
+  const onDragOverRecipient = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
-  };
+  }, []);
 
-  const contentIsEmpty = !contentHTML || !contentHTML.replace(/<[^>]+>/g, "").trim();
+  const contentIsEmpty = useMemo(() => 
+    !contentHTML || !contentHTML.replace(/<[^>]+>/g, "").trim(), 
+    [contentHTML]
+  );
 
-  const handleSend = async () => {
-    setSending(true);
-    setStatus(null);
+  const handleSend = useCallback(async () => {
+    dispatch({ type: 'SET_SENDING', payload: true });
+    dispatch({ type: 'SET_STATUS', payload: null });
     try {
       const payload = {
         title,
@@ -202,14 +314,14 @@ export default function EmailComposer() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      setStatus({ ok: res.ok, msg: data.message || (res.ok ? "Sent" : "Failed") });
+      dispatch({ type: 'SET_STATUS', payload: { ok: res.ok, msg: data.message || (res.ok ? "Sent" : "Failed") } });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Send failed";
-      setStatus({ ok: false, msg: errorMessage });
+      dispatch({ type: 'SET_STATUS', payload: { ok: false, msg: errorMessage } });
     } finally {
-      setSending(false);
+      dispatch({ type: 'SET_SENDING', payload: false });
     }
-  };
+  }, [title, subject, contentHTML, recipients]);
 
   // Complete lists from signup form
   const titleOptions = useMemo(() => [
@@ -261,9 +373,7 @@ export default function EmailComposer() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={() => {
-                        setOccFilter("all"); setDeptFilter("all"); setLocFilter("all"); setUserQuery("");
-                      }}
+                      onClick={() => dispatch({ type: 'RESET_FILTERS' })}
                       className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-400 hover:to-slate-500 border border-slate-400/60 transition-all shadow-md hover:shadow-lg ring-1 ring-slate-300/10"
                     >
                       Clear filters
@@ -296,7 +406,7 @@ export default function EmailComposer() {
               <input
 
                 value={userQuery}
-                onChange={(e) => setUserQuery(e.target.value)}
+                onChange={(e) => dispatch({ type: 'SET_USER_QUERY', payload: e.target.value })}
                 className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100 cursor-text"
                 placeholder="Search users (name, email, title, department, location)"
                 aria-label="Search users"
@@ -306,21 +416,21 @@ export default function EmailComposer() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
               <RdxSelect
                 value={occFilter}
-                onValueChange={setOccFilter}
+                onValueChange={(value) => dispatch({ type: 'SET_OCC_FILTER', payload: value })}
                 ariaLabel="Filter by title"
                 placeholder="All titles"
                 items={[{ value: 'all', label: 'All titles' }, ...titleOptions.map(t => ({ value: t, label: t }))]}
               />
               <RdxSelect
                 value={deptFilter}
-                onValueChange={setDeptFilter}
+                onValueChange={(value) => dispatch({ type: 'SET_DEPT_FILTER', payload: value })}
                 ariaLabel="Filter by department"
                 placeholder="All departments"
                 items={[{ value: 'all', label: 'All departments' }, ...departmentOptions.map(d => ({ value: d, label: d }))]}
               />
               <RdxSelect
                 value={locFilter}
-                onValueChange={setLocFilter}
+                onValueChange={(value) => dispatch({ type: 'SET_LOC_FILTER', payload: value })}
                 ariaLabel="Filter by location"
                 placeholder="All locations"
                 items={[{ value: 'all', label: 'All locations' }, ...locationOptions.map(l => ({ value: l, label: l }))]}
@@ -401,21 +511,22 @@ export default function EmailComposer() {
                       <p>Add all filtered users to recipients</p>
                     </TooltipContent>
                   </Tooltip>
-                  {recipients.length > 0 && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={removeAll}
-                          className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 border border-rose-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 text-white font-medium cursor-pointer"
-                        >
-                          Remove All
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Remove all recipients</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={removeAll}
+                        disabled={recipients.length === 0}
+                        className={`text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 border border-rose-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 text-white font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                          recipients.length === 0 ? 'hidden' : ''
+                        }`}
+                      >
+                        Remove All
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Remove all recipients</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </CardHeader>
@@ -505,7 +616,7 @@ export default function EmailComposer() {
               <input
 
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => dispatch({ type: 'SET_TITLE', payload: e.target.value })}
                 className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100 cursor-text"
                 placeholder="Internal title"
               />
@@ -515,14 +626,14 @@ export default function EmailComposer() {
               <input
 
                 value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+                onChange={(e) => dispatch({ type: 'SET_SUBJECT', payload: e.target.value })}
                 className="w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all text-slate-100 cursor-text"
                 placeholder="Email subject"
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-200">Content</label>
-              <RichTextEditor value={contentHTML} onChange={setContentHTML} placeholder="Write rich content (text, images, links, lists, tables, emojis)..." />
+              <RichTextEditor value={contentHTML} onChange={(value) => dispatch({ type: 'SET_CONTENT', payload: value })} placeholder="Write rich content (text, images, links, lists, tables, emojis)..." />
               <p className="text-xs text-slate-400">Timestamp is added on send.</p>
             </div>
             <button

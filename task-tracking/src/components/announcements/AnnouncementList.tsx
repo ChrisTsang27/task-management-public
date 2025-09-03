@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,8 +53,10 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showCommentsFor, setShowCommentsFor] = useState<string | null>(null);
   const [previewAnnouncement, setPreviewAnnouncement] = useState<Announcement | null>(null);
+  const [displayCount, setDisplayCount] = useState(5); // Show 5 announcements initially
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await getAnnouncements();
@@ -67,6 +69,8 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
             : announcement.attachments || []
         }));
         setAnnouncements(processedAnnouncements);
+        // Reset display count when fetching new announcements
+        setDisplayCount(5);
       } else {
         console.error("Failed to fetch announcements:", result.error);
       }
@@ -75,13 +79,13 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAnnouncements();
-  }, [refreshTrigger]);
+  }, [fetchAnnouncements, refreshTrigger]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm("Are you sure you want to delete this announcement?")) return;
 
     setDeletingId(id);
@@ -99,9 +103,9 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
     } finally {
       setDeletingId(null);
     }
-  };
+  }, []);
 
-  const handleTogglePin = async (id: string) => {
+  const handleTogglePin = useCallback(async (id: string) => {
     try {
       const result = await toggleAnnouncementPin(id);
       if (result.announcement) {
@@ -118,33 +122,33 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
       console.error("Error toggling pin:", error);
       alert("An error occurred. Please try again.");
     }
-  };
+  }, []);
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = useCallback((priority: string) => {
     switch (priority) {
       case "high": return "bg-gradient-to-r from-red-500/30 to-red-600/30 text-red-300 border-red-400/50 shadow-lg shadow-red-500/20";
       case "medium": return "bg-gradient-to-r from-amber-500/30 to-orange-500/30 text-amber-300 border-amber-400/50 shadow-lg shadow-amber-500/20";
       case "low": return "bg-gradient-to-r from-emerald-500/30 to-green-500/30 text-emerald-300 border-emerald-400/50 shadow-lg shadow-emerald-500/20";
       default: return "bg-gradient-to-r from-slate-500/30 to-slate-600/30 text-slate-300 border-slate-400/50 shadow-lg shadow-slate-500/20";
     }
-  };
+  }, []);
 
-  const getPriorityIcon = (priority: string) => {
+  const getPriorityIcon = useCallback((priority: string) => {
     switch (priority) {
       case "high": return "🔴";
       case "medium": return "🟡";
       case "low": return "🟢";
       default: return "⚪";
     }
-  };
+  }, []);
 
-  const formatContent = (content: string) => {
+  const formatContent = useCallback((content: string) => {
     // Content is already sanitized HTML from TipTap editor
     // Just return it as-is since server-side sanitization is applied
     return content;
-  };
+  }, []);
 
-  const getFileIcon = (fileType: string) => {
+  const getFileIcon = useCallback((fileType: string) => {
     if (fileType.startsWith('image/')) {
       // eslint-disable-next-line jsx-a11y/alt-text
       return <Image className="h-4 w-4" />;
@@ -153,17 +157,17 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
     } else {
       return <Paperclip className="h-4 w-4" />;
     }
-  };
+  }, []);
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = useCallback((bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  }, []);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -171,21 +175,53 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
       hour: "2-digit",
       minute: "2-digit"
     });
-  };
+  }, []);
 
-  const isExpired = (expiresAt: string | null) => {
+  const isExpired = useCallback((expiresAt: string | null) => {
     if (!expiresAt) return false;
     return new Date(expiresAt) < new Date();
-  };
+  }, []);
+
+  // Memoize sorted announcements for better performance
+  const sortedAnnouncements = useMemo(() => {
+    return [...announcements].sort((a, b) => {
+      // Sort by pinned first, then by creation date (newest first)
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [announcements]);
+
+  // Get displayed announcements based on current display count
+  const displayedAnnouncements = useMemo(() => {
+    return sortedAnnouncements.slice(0, displayCount);
+  }, [sortedAnnouncements, displayCount]);
+
+  // Check if there are more announcements to load
+  const hasMoreAnnouncements = useMemo(() => {
+    return sortedAnnouncements.length > displayCount;
+  }, [sortedAnnouncements.length, displayCount]);
+
+  // Load more announcements function
+  const handleLoadMore = useCallback(async () => {
+    setIsLoadingMore(true);
+    // Simulate a small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setDisplayCount(prev => prev + 5);
+    setIsLoadingMore(false);
+  }, []);
+
+  // Memoize admin status
+  const isAdmin = useMemo(() => profile?.role === 'admin', [profile?.role]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-blue-500/30 border-t-blue-500"></div>
-          <p className="text-slate-400 text-sm">Loading announcements...</p>
+          <div className="flex flex-col items-center gap-4">
+           <div className="animate-spin rounded-full h-10 w-10 border-2 border-blue-500/30 border-t-blue-500"></div>
+            <p className="text-slate-400 text-sm">Loading announcements...</p>
+          </div>
         </div>
-      </div>
     );
   }
 
@@ -205,31 +241,53 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
 
   return (
     <TooltipProvider delayDuration={300}>
-    <div className="space-y-6">
-      {announcements.map((announcement) => {
+    <div className="space-y-12">
+      {displayedAnnouncements.map((announcement, index) => {
         const expired = isExpired(announcement.expires_at);
+        const isEven = index % 2 === 0;
+        const isLast = index === displayedAnnouncements.length - 1;
         return (
-          <Card key={announcement.id} className={`group relative overflow-visible bg-gradient-to-br from-slate-800/95 via-slate-800/90 to-slate-900/95 border-2 transition-all duration-500 hover:shadow-2xl hover:shadow-black/50 hover:scale-[1.01] cursor-pointer ${
+          <React.Fragment key={announcement.id}>
+          <Card className={`group relative overflow-visible transition-all duration-500 cursor-pointer ${
              announcement.pinned 
-               ? 'border-blue-400/70 shadow-2xl shadow-blue-500/30 bg-gradient-to-br from-blue-900/40 via-slate-800/90 to-slate-900/95 ring-2 ring-blue-400/30 before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-500/10 before:to-transparent before:pointer-events-none' 
-               : 'border-slate-600/60 hover:border-slate-500/80 shadow-xl shadow-black/30 hover:shadow-slate-500/20'
+               ? 'border-blue-400/70 bg-gradient-to-br from-blue-900/40 via-slate-800/90 to-slate-900/95 border-2' 
+               : expired 
+                 ? 'border-red-400/60 bg-gradient-to-br from-red-900/30 via-slate-800/90 to-slate-900/95 border-2'
+                 : isEven 
+                    ? 'border-cyan-400/70 hover:border-cyan-300/90 bg-gradient-to-br from-slate-800/95 via-slate-700/90 to-slate-900/95 border-2'
+                    : 'border-purple-400/70 hover:border-purple-300/90 bg-gradient-to-br from-purple-900/25 via-slate-800/85 to-slate-900/95 border-2'
            } ${expired ? 'opacity-70 grayscale-[0.3]' : ''}`}
             onClick={() => setPreviewAnnouncement(announcement)}>
             {announcement.pinned && (
                <div className="absolute top-6 left-6 z-10">
-                 <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/40 to-blue-600/40 border border-blue-300/70 text-blue-200 px-4 py-2 rounded-full text-xs font-bold backdrop-blur-md shadow-xl shadow-blue-500/30 animate-pulse">
+                 <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/40 to-blue-600/40 border border-blue-300/70 text-blue-200 px-4 py-2 rounded-full text-xs font-bold backdrop-blur-md">
                    <Pin className="h-4 w-4 fill-current" />
                    <span className="tracking-wide">PINNED</span>
                  </div>
                </div>
              )}
             
-            {/* Priority indicator stripe */}
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${
-              announcement.priority === 'high' ? 'from-red-500 to-red-600' :
-              announcement.priority === 'medium' ? 'from-amber-500 to-orange-500' :
-              'from-emerald-500 to-green-500'
-            }`} />
+            {/* Enhanced Priority indicator stripe */}
+            <div className="absolute top-0 left-0 w-full h-2 overflow-hidden rounded-t-lg">
+              <div className={`w-full h-full bg-gradient-to-r relative ${
+                announcement.priority === 'high' ? 'from-red-400 via-red-500 to-red-600' :
+                announcement.priority === 'medium' ? 'from-amber-400 via-orange-500 to-orange-600' :
+                'from-emerald-400 via-green-500 to-green-600'
+              }`}>
+                {/* Animated shimmer effect */}
+                <div className={`absolute inset-0 bg-gradient-to-r opacity-60 animate-pulse ${
+                  announcement.priority === 'high' ? 'from-transparent via-red-300/40 to-transparent' :
+                  announcement.priority === 'medium' ? 'from-transparent via-amber-300/40 to-transparent' :
+                  'from-transparent via-emerald-300/40 to-transparent'
+                }`} />
+                {/* Subtle glow effect */}
+                <div className={`absolute inset-0 shadow-inner ${
+                  announcement.priority === 'high' ? 'shadow-red-900/50' :
+                  announcement.priority === 'medium' ? 'shadow-orange-900/50' :
+                  'shadow-green-900/50'
+                }`} />
+              </div>
+            </div>
             {/* Priority badges positioned absolutely relative to card */}
             <div className="flex items-center gap-3 flex-shrink-0 absolute top-6 right-6 z-10">
               <Badge className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${getPriorityColor(announcement.priority)} backdrop-blur-sm`}>
@@ -238,7 +296,7 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
               </Badge>
               {expired && (
                 <Badge className="bg-gradient-to-r from-red-500/30 to-red-600/30 text-red-300 border-red-400/50 text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg shadow-red-500/20 backdrop-blur-sm">
-                  <span className="mr-1.5">⏰</span>
+
                   EXPIRED
                 </Badge>
               )}
@@ -282,7 +340,7 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
                    <p>{showCommentsFor === announcement.id ? 'Hide comments' : 'Show comments'}</p>
                  </TooltipContent>
                </Tooltip>
-               {profile?.role === 'admin' && (
+               {isAdmin && (
                    <>
                      <Tooltip>
                        <TooltipTrigger asChild>
@@ -352,15 +410,28 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
             <CardHeader className={`pb-6 ${announcement.pinned ? 'pt-20' : 'pt-6'}`}>
               <div className="relative">
                 <div className="flex-1">
-                  <div className="mb-3">
-                    <CardTitle className="text-white text-xl font-bold flex items-center gap-3 tracking-tight leading-tight">
-                      <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500/30 to-indigo-500/30 rounded-full border border-blue-400/40 shadow-lg">
-                        <span className="text-lg">📢</span>
+                  <div className="mb-4">
+                    <CardTitle className="text-white text-xl font-bold flex items-center gap-4 tracking-tight leading-tight group">
+                      {/* Enhanced announcement icon with hover effects */}
+                      <div className="relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500/40 via-indigo-500/30 to-purple-500/20 rounded-xl border border-blue-400/50 shadow-xl shadow-blue-500/20 transition-all duration-300 group-hover:scale-105 group-hover:shadow-blue-500/30 group-hover:border-blue-300/70">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <span className="text-xl relative z-10 filter drop-shadow-sm">📢</span>
+                        {/* Subtle pulse animation */}
+                        <div className="absolute inset-0 bg-blue-400/20 rounded-xl animate-ping opacity-20" />
                       </div>
-                      <span className="flex-1">{announcement.title}</span>
+                      
+                      {/* Enhanced title with better typography */}
+                      <div className="flex-1 min-w-0">
+                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-indigo-100 font-extrabold text-xl leading-tight tracking-wide drop-shadow-sm hover:from-blue-100 hover:via-white hover:to-blue-100 transition-all duration-300">
+                          {announcement.title}
+                        </span>
+                      </div>
+                      
+                      {/* Enhanced expired indicator */}
                       {expired && (
-                        <div className="flex items-center justify-center w-8 h-8 bg-red-500/30 rounded-full border border-red-400/40">
-                          <AlertCircle className="h-4 w-4 text-red-300" />
+                        <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-br from-red-500/40 to-red-600/30 rounded-xl border border-red-400/50 shadow-lg shadow-red-500/20 animate-pulse">
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl" />
+                          <AlertCircle className="h-5 w-5 text-red-300 relative z-10 filter drop-shadow-sm" />
                         </div>
                       )}
                     </CardTitle>
@@ -382,7 +453,7 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
                          <Calendar className="h-4 w-4 text-emerald-300" />
                        </div>
                        <div className="flex flex-col">
-                         <span className="font-bold text-emerald-100 text-sm">📅 Published</span>
+                         <span className="font-bold text-emerald-100 text-sm">Published</span>
                          <span className="text-xs text-emerald-300/80 font-medium">{formatDate(announcement.created_at)}</span>
                        </div>
                      </div>
@@ -405,7 +476,7 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
                            <span className={`font-bold text-sm ${
                              expired ? 'text-red-100' : 'text-amber-100'
                            }`}>
-                             {expired ? '⏰ Expired' : '⏳ Expires'}
+                             {expired ? 'Expired' : 'Expires'}
                            </span>
                            <span className={`text-xs font-medium ${
                              expired ? 'text-red-300/80' : 'text-amber-300/80'
@@ -421,7 +492,7 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
             </CardHeader>
             <CardContent className="pt-4 px-6 pb-6">
               <div 
-                className="text-slate-100 leading-relaxed max-w-none text-base mb-6 bg-gradient-to-br from-slate-800/30 to-slate-700/30 rounded-xl p-5 border border-slate-600/40 backdrop-blur-sm shadow-inner [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-white [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_h3]:mb-2 [&_strong]:text-white [&_strong]:font-semibold [&_em]:text-slate-200 [&_a]:text-blue-400 [&_a]:no-underline hover:[&_a]:underline hover:[&_a]:text-blue-300 [&_blockquote]:border-l-4 [&_blockquote]:border-blue-500/50 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:bg-slate-800/30 [&_blockquote]:py-2 [&_code]:text-slate-200 [&_code]:bg-slate-700/60 [&_code]:px-2 [&_code]:py-1 [&_code]:rounded [&_pre]:bg-slate-800/60 [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-slate-600/30 [&_ul]:list-disc [&_ul]:list-inside [&_ol]:list-decimal [&_ol]:list-inside [&_li]:mb-1 [&_img]:max-w-full [&_img]:max-h-[400px] [&_img]:object-contain [&_img]:rounded-md"
+                className="relative text-white leading-relaxed max-w-none text-base mb-6 rounded-2xl p-8 border-2 border-blue-400/40 backdrop-blur-md shadow-2xl shadow-blue-500/20 ring-2 ring-blue-300/20 hover:border-blue-300/60 hover:shadow-blue-400/30 hover:ring-blue-200/30 transition-all duration-500 transform hover:scale-[1.01] before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:via-transparent before:to-blue-500/5 before:rounded-2xl before:pointer-events-none [&_h1]:text-3xl [&_h1]:font-extrabold [&_h1]:text-transparent [&_h1]:bg-clip-text [&_h1]:bg-gradient-to-r [&_h1]:from-white [&_h1]:to-blue-100 [&_h1]:mb-6 [&_h1]:drop-shadow-sm [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-blue-50 [&_h2]:mb-4 [&_h2]:drop-shadow-sm [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-blue-100 [&_h3]:mb-3 [&_strong]:text-blue-50 [&_strong]:font-bold [&_strong]:drop-shadow-sm [&_em]:text-blue-200 [&_em]:italic [&_a]:text-blue-300 [&_a]:font-medium [&_a]:no-underline hover:[&_a]:underline hover:[&_a]:text-blue-200 [&_a]:transition-colors [&_blockquote]:border-l-4 [&_blockquote]:border-blue-400/60 [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:bg-blue-900/20 [&_blockquote]:py-4 [&_blockquote]:rounded-r-lg [&_blockquote]:shadow-inner [&_code]:text-blue-100 [&_code]:bg-slate-800/80 [&_code]:px-3 [&_code]:py-1.5 [&_code]:rounded-md [&_code]:border [&_code]:border-slate-600/50 [&_code]:shadow-sm [&_pre]:bg-slate-900/80 [&_pre]:p-6 [&_pre]:rounded-xl [&_pre]:border-2 [&_pre]:border-slate-600/40 [&_pre]:shadow-xl [&_pre]:backdrop-blur-sm [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:space-y-1 [&_li]:mb-2 [&_li]:text-blue-50 [&_p]:mb-4 [&_p]:text-blue-50 [&_p]:leading-7 [&_img]:max-w-full [&_img]:max-h-[500px] [&_img]:object-contain [&_img]:rounded-xl [&_img]:shadow-lg [&_img]:border [&_img]:border-slate-600/30"
                 dangerouslySetInnerHTML={{ __html: formatContent(announcement.content) }}
               />
 
@@ -466,20 +537,12 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
                 </div>
               )}
               
-              {/* Reactions Section */}
-              <div className="mt-6 pt-5 border-t border-slate-600/40">
-                <div className="flex items-center gap-3 mb-4 bg-gradient-to-r from-pink-600/20 to-rose-600/20 px-4 py-3 rounded-xl border border-pink-500/30 backdrop-blur-sm shadow-lg">
-                  <div className="flex items-center justify-center w-8 h-8 bg-pink-500/30 rounded-full border border-pink-400/40">
-                    <span className="text-sm">💝</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-pink-100 text-sm">❤️ Reactions</span>
-                    <span className="text-xs text-pink-300/80 font-medium">Share your thoughts</span>
-                  </div>
-                </div>
-                <AnnouncementReactions announcementId={announcement.id} />
-              </div>
-             </CardContent>
+
+             {/* Reactions Section */}
+               <div className="mt-6 pt-5 border-t border-slate-600/40">
+                 <AnnouncementReactions announcementId={announcement.id} />
+               </div>
+              </CardContent>
              {showCommentsFor === announcement.id && (
                <div 
                  className="border-t border-slate-600/50 bg-slate-900/30 p-6"
@@ -492,9 +555,45 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
                </div>
              )}
            </Card>
+           
+           {/* Visual separator between announcements */}
+           {!isLast && (
+             <div className="flex items-center justify-center py-4">
+               <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-600/40 to-transparent"></div>
+               <div className="mx-4 w-2 h-2 rounded-full bg-slate-600/60"></div>
+               <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-600/40 to-transparent"></div>
+             </div>
+           )}
+           </React.Fragment>
          );
        })}    
     </div>
+
+    {/* Load More Button */}
+    {hasMoreAnnouncements && (
+      <div className="flex justify-center pt-8">
+        <Button
+          onClick={handleLoadMore}
+          disabled={isLoadingMore}
+          variant="outline"
+          className="border-slate-600/60 bg-slate-700/30 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500/80 hover:text-white transition-all duration-200 backdrop-blur-sm px-8 py-3"
+        >
+          {isLoadingMore ? (
+            <>
+              <div className="w-4 h-4 border-2 border-slate-400/30 border-t-slate-400 rounded-full animate-spin mr-2"></div>
+              Loading more...
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              Load More Announcements ({sortedAnnouncements.length - displayCount} remaining)
+            </>
+          )}
+        </Button>
+      </div>
+    )}
 
     {/* Preview Modal */}
     {previewAnnouncement && (
@@ -559,7 +658,7 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
             
             <div className="prose prose-invert max-w-none mb-6">
               <div 
-                className="text-slate-200 leading-relaxed text-base [&_img]:max-w-full [&_img]:max-h-[400px] [&_img]:object-contain [&_img]:rounded-md"
+                className="relative text-white leading-relaxed text-base rounded-2xl p-8 border-2 border-blue-400/40 backdrop-blur-md shadow-2xl shadow-blue-500/20 ring-2 ring-blue-300/20 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:via-transparent before:to-blue-500/5 before:rounded-2xl before:pointer-events-none [&_h1]:text-3xl [&_h1]:font-extrabold [&_h1]:text-transparent [&_h1]:bg-clip-text [&_h1]:bg-gradient-to-r [&_h1]:from-white [&_h1]:to-blue-100 [&_h1]:mb-6 [&_h1]:drop-shadow-sm [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-blue-50 [&_h2]:mb-4 [&_h2]:drop-shadow-sm [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-blue-100 [&_h3]:mb-3 [&_strong]:text-blue-50 [&_strong]:font-bold [&_strong]:drop-shadow-sm [&_em]:text-blue-200 [&_em]:italic [&_a]:text-blue-300 [&_a]:font-medium [&_a]:no-underline hover:[&_a]:underline hover:[&_a]:text-blue-200 [&_a]:transition-colors [&_blockquote]:border-l-4 [&_blockquote]:border-blue-400/60 [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:bg-blue-900/20 [&_blockquote]:py-4 [&_blockquote]:rounded-r-lg [&_blockquote]:shadow-inner [&_code]:text-blue-100 [&_code]:bg-slate-800/80 [&_code]:px-3 [&_code]:py-1.5 [&_code]:rounded-md [&_code]:border [&_code]:border-slate-600/50 [&_code]:shadow-sm [&_pre]:bg-slate-900/80 [&_pre]:p-6 [&_pre]:rounded-xl [&_pre]:border-2 [&_pre]:border-slate-600/40 [&_pre]:shadow-xl [&_pre]:backdrop-blur-sm [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:space-y-1 [&_li]:mb-2 [&_li]:text-blue-50 [&_p]:mb-4 [&_p]:text-blue-50 [&_p]:leading-7 [&_img]:max-w-full [&_img]:max-h-[500px] [&_img]:object-contain [&_img]:rounded-xl [&_img]:shadow-lg [&_img]:border [&_img]:border-slate-600/30"
                 dangerouslySetInnerHTML={{ __html: formatContent(previewAnnouncement.content) }}
               />
             </div>

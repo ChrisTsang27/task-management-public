@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import { Heart, ThumbsUp, ThumbsDown, Smile, Frown, Star } from 'lucide-react';
@@ -83,7 +83,7 @@ export default function AnnouncementReactions({ announcementId }: AnnouncementRe
     calculateReactionCounts();
   }, [calculateReactionCounts]);
 
-  const handleReaction = async (emoji: string) => {
+  const handleReaction = useCallback(async (emoji: string) => {
     if (!profile?.id) return;
 
     setSubmittingEmoji(emoji);
@@ -106,17 +106,17 @@ export default function AnnouncementReactions({ announcementId }: AnnouncementRe
     } finally {
       setSubmittingEmoji(null);
     }
-  };
+  }, [profile?.id, announcementId, fetchReactions]);
 
-  const getReactionCount = (emoji: string) => {
+  const getReactionCount = useCallback((emoji: string) => {
     return reactionCounts.find(r => r.emoji === emoji);
-  };
+  }, [reactionCounts]);
 
-  const hasUserReacted = (emoji: string) => {
+  const hasUserReacted = useCallback((emoji: string) => {
     return reactionCounts.find(r => r.emoji === emoji)?.hasUserReacted || false;
-  };
+  }, [reactionCounts]);
 
-  const getTooltipText = (emoji: string) => {
+  const getTooltipText = useCallback((emoji: string) => {
     const reaction = getReactionCount(emoji);
     if (!reaction || reaction.count === 0) return '';
     
@@ -127,7 +127,20 @@ export default function AnnouncementReactions({ announcementId }: AnnouncementRe
     } else {
       return `${reaction.users.slice(0, 2).join(', ')} and ${reaction.count - 2} others`;
     }
-  };
+  }, [getReactionCount]);
+
+  // Memoized computed values
+  const totalReactions = useMemo(() => {
+    return reactionCounts.reduce((total, r) => total + r.count, 0);
+  }, [reactionCounts]);
+
+  const hasReactions = useMemo(() => {
+    return reactionCounts.length > 0;
+  }, [reactionCounts.length]);
+
+  const canReact = useMemo(() => {
+    return !!profile;
+  }, [profile]);
 
   if (isLoading) {
     return (
@@ -139,10 +152,10 @@ export default function AnnouncementReactions({ announcementId }: AnnouncementRe
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-3">
       {/* Reaction Buttons */}
-      <div className="flex items-center gap-1">
-        {EMOJI_OPTIONS.map(({ emoji }) => {
+      <div className="flex items-center gap-2">
+        {EMOJI_OPTIONS.map(({ emoji, icon: Icon, label }) => {
           const count = getReactionCount(emoji)?.count || 0;
           const userReacted = hasUserReacted(emoji);
           const isSubmitting = submittingEmoji === emoji;
@@ -153,21 +166,23 @@ export default function AnnouncementReactions({ announcementId }: AnnouncementRe
               variant="outline"
               size="sm"
               onClick={() => handleReaction(emoji)}
-              disabled={!profile || isSubmitting}
-              className={`h-8 px-2 border-slate-600 text-slate-300 hover:bg-slate-700 transition-all ${
-                userReacted ? 'bg-blue-600/20 border-blue-500/50 text-blue-300' : ''
+              disabled={!canReact || isSubmitting}
+              className={`h-9 px-2.5 rounded-lg border transition-all duration-200 flex items-center justify-center ${
+                userReacted 
+                  ? 'bg-blue-500/15 border-blue-400/50 text-blue-300' 
+                  : 'border-slate-600/60 bg-slate-800/40 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/70'
               }`}
               title={getTooltipText(emoji)}
             >
               {isSubmitting ? (
-                <div className="w-3 h-3 border border-slate-400/30 border-t-slate-400 rounded-full animate-spin"></div>
+                <div className="w-3.5 h-3.5 border border-slate-400/30 border-t-slate-400 rounded-full animate-spin"></div>
               ) : (
-                <>
-                  <span className="text-sm mr-1">{emoji}</span>
+                <div className="flex items-center justify-center gap-1.5">
+                  <Icon className="w-4 h-4" />
                   {count > 0 && (
-                    <span className="text-xs font-medium">{count}</span>
+                    <span className="text-xs font-medium bg-slate-600/40 px-1.5 py-0.5 rounded min-w-[16px] text-center leading-none">{count}</span>
                   )}
-                </>
+                </div>
               )}
             </Button>
           );
@@ -175,11 +190,11 @@ export default function AnnouncementReactions({ announcementId }: AnnouncementRe
       </div>
 
       {/* Reaction Summary */}
-      {reactionCounts.length > 0 && (
-        <div className="flex items-center gap-1 text-slate-400 text-sm">
-          <span>•</span>
-          <span>
-            {reactionCounts.reduce((total, r) => total + r.count, 0)} reaction{reactionCounts.reduce((total, r) => total + r.count, 0) !== 1 ? 's' : ''}
+      {hasReactions && (
+        <div className="flex items-center gap-2 text-slate-400 text-sm bg-slate-800/40 px-3 py-1.5 rounded-full border border-slate-600/30">
+          <span className="w-1.5 h-1.5 bg-slate-500 rounded-full"></span>
+          <span className="font-medium">
+            {totalReactions} reaction{totalReactions !== 1 ? 's' : ''}
           </span>
         </div>
       )}

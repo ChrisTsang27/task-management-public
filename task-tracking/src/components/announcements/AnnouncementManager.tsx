@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
@@ -31,6 +31,12 @@ interface Announcement {
   }[];
 }
 
+interface AnnouncementStats {
+  total: number;
+  highPriority: number;
+  active: number;
+}
+
 export default function AnnouncementManager() {
   const { profile } = useSupabaseProfile();
   const [currentView, setCurrentView] = useState<View>("list");
@@ -39,7 +45,25 @@ export default function AnnouncementManager() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
-  const fetchAnnouncementsData = async () => {
+  // Memoize admin status to prevent unnecessary re-renders
+  const isAdmin = useMemo(() => profile?.role === 'admin', [profile?.role]);
+
+  // Memoize expiry check function
+  const isExpired = useCallback((expiresAt: string | null) => {
+    if (!expiresAt) return false;
+    return new Date(expiresAt) < new Date();
+  }, []);
+
+  // Memoize statistics calculation
+  const stats: AnnouncementStats = useMemo(() => {
+    return {
+      total: announcements.length,
+      highPriority: announcements.filter(a => a.priority === 'high').length,
+      active: announcements.filter(a => !isExpired(a.expires_at)).length
+    };
+  }, [announcements, isExpired]);
+
+  const fetchAnnouncementsData = useCallback(async () => {
     try {
       setIsLoadingStats(true);
       const result = await getAnnouncements();
@@ -50,47 +74,43 @@ export default function AnnouncementManager() {
     } finally {
       setIsLoadingStats(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAnnouncementsData();
-  }, [refreshTrigger]);
+  }, [fetchAnnouncementsData, refreshTrigger]);
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = useCallback(() => {
     setCurrentView("list");
     setRefreshTrigger(prev => prev + 1);
-  };
+  }, []);
 
-  const handleEditAnnouncement = (announcement: Announcement) => {
+  const handleEditAnnouncement = useCallback((announcement: Announcement) => {
     setEditingAnnouncement(announcement);
     setCurrentView("edit");
-  };
+  }, []);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setCurrentView("list");
     setEditingAnnouncement(null);
-  };
+  }, []);
 
-  const isAdmin = profile?.role === 'admin';
+  const handleBackToList = useCallback(() => {
+    setCurrentView("list");
+  }, []);
 
-  // Calculate statistics
-  const isExpired = (expiresAt: string | null) => {
-    if (!expiresAt) return false;
-    return new Date(expiresAt) < new Date();
-  };
-
-  const totalAnnouncements = announcements.length;
-  const highPriorityCount = announcements.filter(a => a.priority === 'high').length;
-  const activeCount = announcements.filter(a => !isExpired(a.expires_at)).length;
+  const handleCreateNew = useCallback(() => {
+    setCurrentView("create");
+  }, []);
 
   if (currentView === "create") {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Button
-            onClick={() => setCurrentView("list")}
+            onClick={handleBackToList}
             variant="outline"
-            className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+            className="border-slate-600/70 bg-slate-800/40 text-slate-300 hover:bg-gradient-to-r hover:from-slate-700/60 hover:to-slate-600/60 hover:border-slate-500/80 hover:text-white transition-all duration-300 backdrop-blur-sm rounded-xl"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -108,9 +128,9 @@ export default function AnnouncementManager() {
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Button
-            onClick={() => setCurrentView("list")}
+            onClick={handleBackToList}
             variant="outline"
-            className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+            className="border-slate-600/70 bg-slate-800/40 text-slate-300 hover:bg-gradient-to-r hover:from-slate-700/60 hover:to-slate-600/60 hover:border-slate-500/80 hover:text-white transition-all duration-300 backdrop-blur-sm rounded-xl"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -142,7 +162,7 @@ export default function AnnouncementManager() {
         </div>
         {isAdmin && (
           <Button
-            onClick={() => setCurrentView("create")}
+            onClick={handleCreateNew}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow-lg transition-all duration-200"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,7 +189,7 @@ export default function AnnouncementManager() {
                   {isLoadingStats ? (
                     <span className="animate-pulse">-</span>
                   ) : (
-                    totalAnnouncements
+                    stats.total
                   )}
                 </p>
               </div>
@@ -191,7 +211,7 @@ export default function AnnouncementManager() {
                   {isLoadingStats ? (
                     <span className="animate-pulse">-</span>
                   ) : (
-                    highPriorityCount
+                    stats.highPriority
                   )}
                 </p>
               </div>
@@ -213,7 +233,7 @@ export default function AnnouncementManager() {
                   {isLoadingStats ? (
                     <span className="animate-pulse">-</span>
                   ) : (
-                    activeCount
+                    stats.active
                   )}
                 </p>
               </div>

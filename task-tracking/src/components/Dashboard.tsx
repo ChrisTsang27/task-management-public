@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import EmailComposer from "@/components/email/EmailComposer";
 import AnnouncementManager from "@/components/announcements/AnnouncementManager";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
@@ -9,23 +9,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-
 type Role = "admin" | "user";
-type Tab = "Email" | "Announcements" | "Tasks";
+type Tab = "Announcements" | "Email" | "Tasks";
+
+interface TabConfig {
+  key: Tab;
+  roles: Role[];
+  icon: React.ReactNode;
+  tooltip: string;
+}
 
 export default function Dashboard() {
   const { user, profile, loading: profileLoading, error } = useSupabaseProfile();
-  const [role, setRole] = useState<Role>("user");
-
   
-  // Update role based on actual user profile
-  useEffect(() => {
-    if (profile?.role === 'admin') {
-      setRole('admin');
-    } else {
-      setRole('user');
-    }
-  }, [profile]);
+  // Derive role directly from profile to avoid unnecessary state
+  const role: Role = useMemo(() => {
+    return profile?.role === 'admin' ? 'admin' : 'user';
+  }, [profile?.role]);
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
@@ -34,22 +34,64 @@ export default function Dashboard() {
     }
   }, [profileLoading, user]);
 
-  const allTabs: { key: Tab; roles: Role[] }[] = useMemo(
+  // Memoize tab configuration to prevent recreation
+  const allTabs: TabConfig[] = useMemo(
     () => [
-      { key: "Email", roles: ["admin"] },
-      { key: "Announcements", roles: ["admin", "user"] },
-      { key: "Tasks", roles: ["admin", "user"] },
+      { 
+        key: "Announcements", 
+        roles: ["admin", "user"],
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+          </svg>
+        ),
+        tooltip: "View team announcements"
+      },
+      { 
+        key: "Email", 
+        roles: ["admin"],
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        ),
+        tooltip: "Compose and send emails"
+      },
+
+      { 
+        key: "Tasks", 
+        roles: ["admin", "user"],
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+        ),
+        tooltip: "Manage tasks and project workflow"
+      },
     ],
     []
   );
 
-  const availableTabs = allTabs.filter((t) => t.roles.includes(role)).map((t) => t.key);
-  const [tab, setTab] = useState<Tab>(availableTabs[0] || "Announcements");
+  // Memoize available tabs based on role
+  const availableTabs = useMemo(() => {
+    return allTabs.filter((t) => t.roles.includes(role));
+  }, [allTabs, role]);
 
+  const [tab, setTab] = useState<Tab>("Announcements");
+
+  // Update tab when role changes and current tab is not available
   useEffect(() => {
-    if (!availableTabs.includes(tab)) setTab(availableTabs[0] as Tab);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role]);
+    const availableTabKeys = availableTabs.map(t => t.key);
+    if (availableTabKeys.length > 0 && !availableTabKeys.includes(tab)) {
+      setTab(availableTabKeys[0]);
+    }
+  }, [availableTabs, tab]);
+
+  // Memoize sign out handler
+  const handleSignOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/auth/sign-in';
+  }, []);
 
   // Show loading while profile is being fetched
   if (profileLoading) {
@@ -124,10 +166,7 @@ export default function Dashboard() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    window.location.href = '/auth/sign-in';
-                  }}
+                  onClick={handleSignOut}
                   className="px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl border border-red-400/30 hover:scale-105"
                 >
                   Sign Out
@@ -155,7 +194,7 @@ export default function Dashboard() {
                     <span className="font-medium">Role: {role}</span>
                   </div>
                   <div className="text-white">
-                    <span className="font-medium">Tabs: {availableTabs.join(" • ")}</span>
+                    <span className="font-medium">Tabs: {availableTabs.map(t => t.key).join(" • ")}</span>
                   </div>
                 </div>
               </CardContent>
@@ -167,63 +206,27 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <nav className="flex flex-col gap-2">
-                  <Button
-                    onClick={() => setTab('Email')}
-                    variant={tab === 'Email' ? "default" : "ghost"}
-                    className={`justify-start h-12 px-4 rounded-lg transition-all duration-200 ${
-                      tab === 'Email' 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-                        : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
-                    }`}
-                    title="Compose and send emails"
-                  >
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    Email
-                  </Button>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setTab('Announcements')}
-                        variant={tab === 'Announcements' ? "default" : "ghost"}
-                        className={`justify-start h-12 px-4 rounded-lg transition-all duration-200 ${
-                          tab === 'Announcements' 
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-                            : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
-                        }`}
-                      >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                        </svg>
-                        Announcements
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>View and manage announcements</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setTab('Tasks')}
-                        variant={tab === 'Tasks' ? "default" : "ghost"}
-                        className={`justify-start h-12 px-4 rounded-lg transition-all duration-200 ${
-                          tab === 'Tasks' 
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-                            : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
-                        }`}
-                      >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                        </svg>
-                        Tasks
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Manage tasks and project workflow</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  {availableTabs.map((tabConfig) => (
+                    <Tooltip key={tabConfig.key}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => setTab(tabConfig.key)}
+                          variant={tab === tabConfig.key ? "default" : "ghost"}
+                          className={`justify-start h-12 px-4 rounded-lg transition-all duration-200 ${
+                            tab === tabConfig.key 
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
+                              : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+                          }`}
+                        >
+                          <span className="mr-3">{tabConfig.icon}</span>
+                          {tabConfig.key}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{tabConfig.tooltip}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
                 </nav>
               </CardContent>
             </Card>
@@ -248,11 +251,14 @@ export default function Dashboard() {
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button className="w-full h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200">
+                    <Button 
+                      onClick={() => setTab("Announcements")}
+                      className="w-full h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200"
+                    >
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       </svg>
-                      New Announcement
+                      Create Announcement
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -277,48 +283,56 @@ export default function Dashboard() {
           </aside>
 
           {/* Main content */}
-          <section className="lg:col-span-9">
-            {tab === "Email" && role === "admin" && <EmailComposer />}
-            
-            {tab !== "Email" && (
-              <Card className="bg-slate-800/50 border-slate-700 overflow-visible">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{tab}</CardTitle>
-                    {/* Top tab buttons for small screens */}
-                    <div className="flex lg:hidden flex-wrap gap-2">
-                      {availableTabs.map((t) => (
-                        <Button
-                          key={t}
-                          onClick={() => setTab(t)}
-                          variant={tab === t ? "default" : "outline"}
-                          size="sm"
-                          title={`Switch to ${t} tab`}
-                        >
-                          {t}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-10 m-10 overflow-visible">
-
-              {tab === "Announcements" && <AnnouncementManager />}
-
-                {tab === "Tasks" && (
-                  <div className="space-y-3">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Task Board</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground text-sm">Placeholder – Kanban with assistance workflow next.</p>
-                      </CardContent>
-                    </Card>
-                  </div>
+          <section className="lg:col-span-9 space-y-6">
+            {/* Tab-based content - only show if there are available tabs */}
+            {availableTabs.length > 0 && (
+              <>
+                {tab === "Announcements" && (
+                  <Card className="bg-slate-800/50 border-slate-700">
+                    <CardContent className="p-6">
+                      <AnnouncementManager />
+                    </CardContent>
+                  </Card>
                 )}
-                </CardContent>
-              </Card>
+                
+                {tab === "Email" && role === "admin" && <EmailComposer />}
+                
+                {tab === "Tasks" && (
+                  <Card className="bg-slate-800/50 border-slate-700 overflow-visible">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle>Tasks</CardTitle>
+                        {/* Top tab buttons for small screens */}
+                        <div className="flex lg:hidden flex-wrap gap-2">
+                          {availableTabs.map((tabConfig) => (
+                            <Button
+                              key={tabConfig.key}
+                              onClick={() => setTab(tabConfig.key)}
+                              variant={tab === tabConfig.key ? "default" : "outline"}
+                              size="sm"
+                              title={`Switch to ${tabConfig.key} tab`}
+                            >
+                              {tabConfig.key}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-10 m-10 overflow-visible">
+                      <div className="space-y-3">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-lg">Task Board</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-muted-foreground text-sm">Placeholder – Kanban with assistance workflow next.</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
           </section>
         </div>

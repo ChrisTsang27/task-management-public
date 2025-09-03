@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createAnnouncement } from "@/lib/actions/announcements";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
-import { Paperclip, X } from 'lucide-react';
+import { Paperclip, X, Calendar } from 'lucide-react';
 import RichTextEditor from '@/components/email/RichTextEditor';
 
 interface AnnouncementFormProps {
@@ -33,7 +33,7 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
 
 
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     const validFiles = files.filter(file => {
       const maxSize = 10 * 1024 * 1024; // 10MB
@@ -54,21 +54,21 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
     
     setAttachments(prev => [...prev, ...validFiles]);
     event.target.value = ''; // Reset input
-  };
+  }, []);
 
-  const removeAttachment = (index: number) => {
+  const removeAttachment = useCallback((index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = useCallback((bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile?.id) return;
 
@@ -139,11 +139,20 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
       setIsSubmitting(false);
       setUploadingFiles(false);
     }
-  };
+  }, [profile?.id, attachments, formData, onSuccess]);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = useCallback((field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
+
+  // Memoized computed values
+  const isFormValid = useMemo(() => {
+    return formData.title.trim() && formData.content.trim();
+  }, [formData.title, formData.content]);
+
+  const hasAttachments = useMemo(() => {
+    return attachments.length > 0;
+  }, [attachments.length]);
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -159,24 +168,29 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
       <CardContent className="overflow-visible">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
-          <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium text-slate-300 cursor-pointer">
+          <div className="space-y-3 group">
+            <label htmlFor="title" className="text-sm font-semibold text-slate-300 cursor-pointer flex items-center gap-2 transition-colors duration-200 group-focus-within:text-blue-400">
+              <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-70 group-focus-within:opacity-100 transition-opacity duration-200"></div>
               Title *
             </label>
-            <Input
-              id="title"
-              type="text"
-              value={formData.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              placeholder="Enter announcement title..."
-              required
-              className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 cursor-text"
-            />
+            <div className="relative">
+              <Input
+                id="title"
+                type="text"
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                placeholder="Enter announcement title..."
+                required
+                className="bg-gradient-to-br from-slate-800/60 to-slate-700/60 border-slate-600/70 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 cursor-text transition-all duration-300 hover:border-slate-500 hover:bg-gradient-to-br hover:from-slate-700/70 hover:to-slate-600/70 backdrop-blur-sm shadow-lg focus:shadow-blue-500/10 focus:shadow-xl pl-4 pr-4 py-3 rounded-xl"
+              />
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+            </div>
           </div>
 
           {/* Content */}
-          <div className="space-y-2">
-            <label htmlFor="content" className="text-sm font-medium text-slate-300 cursor-pointer">
+          <div className="space-y-3 group">
+            <label htmlFor="content" className="text-sm font-semibold text-slate-300 cursor-pointer flex items-center gap-2 transition-colors duration-200 group-focus-within:text-violet-400">
+              <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 opacity-70 group-focus-within:opacity-100 transition-opacity duration-200"></div>
               Content *
             </label>
             <RichTextEditor
@@ -186,104 +200,127 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
             />
           </div>
 
-          {/* Priority */}
-          <div className="space-y-2">
-            <label htmlFor="priority" className="text-sm font-medium text-slate-300 cursor-pointer">
-              Priority
-            </label>
-            <Select value={formData.priority} onValueChange={(value) => handleInputChange("priority", value)}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white focus:border-blue-500 cursor-pointer">
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Set the priority level for this announcement</p>
-                </TooltipContent>
-              </Tooltip>
-              <SelectContent className="bg-slate-700 border-slate-600">
-                <SelectItem value="low" className="text-white hover:bg-slate-600 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    Low
-                  </div>
-                </SelectItem>
-                <SelectItem value="medium" className="text-white hover:bg-slate-600 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                    Medium
-                  </div>
-                </SelectItem>
-                <SelectItem value="high" className="text-white hover:bg-slate-600 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    High
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Expiration Date */}
-          <div className="space-y-2">
-            <label htmlFor="expires_at" className="text-sm font-medium text-slate-300 cursor-pointer">
-              Expiration Date (Optional)
-            </label>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Input
-                  id="expires_at"
-                  type="datetime-local"
-                  value={formData.expires_at}
-                  onChange={(e) => handleInputChange("expires_at", e.target.value)}
-                  className="bg-slate-700/50 border-slate-600 text-white focus:border-blue-500 cursor-pointer"
-                />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Set when this announcement should expire (optional)</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
-          {/* File Attachments */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300 cursor-default">
-              Attachments (Optional)
-            </label>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="file"
-                  id="file-upload"
-                  multiple
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  accept="image/*,.pdf,.doc,.docx,.txt"
-                />
+          {/* Priority, Expiration Date, and Attachments Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Priority */}
+            <div className="space-y-3 group">
+              <label htmlFor="priority" className="text-sm font-semibold text-slate-300 cursor-pointer flex items-center gap-2 transition-colors duration-200 group-focus-within:text-emerald-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-70 group-focus-within:opacity-100 transition-opacity duration-200"></div>
+                Priority
+              </label>
+              <Select value={formData.priority} onValueChange={(value) => handleInputChange("priority", value)}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById('file-upload')?.click()}
-                      disabled={uploadingFiles}
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      <Paperclip className="h-4 w-4 mr-2" />
-                      Add Files
-                    </Button>
+                    <div className="relative">
+                      <SelectTrigger className="bg-gradient-to-br from-slate-800/60 to-slate-700/60 border-slate-600/70 text-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all duration-300 hover:border-slate-500 hover:bg-gradient-to-br hover:from-slate-700/70 hover:to-slate-600/70 backdrop-blur-sm shadow-lg focus:shadow-emerald-500/10 focus:shadow-xl pl-4 pr-4 py-3 rounded-xl">
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Attach files to this announcement</p>
+                    <p>Set the priority level for this announcement</p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="text-xs text-slate-400">
-                  Max 10MB per file. Images, PDFs, documents allowed.
-                </span>
+                <SelectContent className="bg-slate-700 border-slate-600">
+                  <SelectItem value="low" className="text-white hover:bg-slate-600 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      Low
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="medium" className="text-white hover:bg-slate-600 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                      Medium
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="high" className="text-white hover:bg-slate-600 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      High
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Expiration Date */}
+            <div className="space-y-3 group">
+              <label htmlFor="expires_at" className="text-sm font-semibold text-slate-300 cursor-pointer flex items-center gap-2 transition-colors duration-200 group-focus-within:text-slate-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-slate-500 to-slate-400 opacity-70 group-focus-within:opacity-100 transition-opacity duration-200"></div>
+                Expiration Date (Optional)
+              </label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative">
+                    <Input
+                      id="expires_at"
+                      type="datetime-local"
+                      value={formData.expires_at}
+                      onChange={(e) => handleInputChange("expires_at", e.target.value)}
+                      onClick={(e) => {
+                        const input = e.target as HTMLInputElement;
+                        if (input.showPicker) {
+                          input.showPicker();
+                        }
+                      }}
+                      className="bg-gradient-to-br from-slate-800/60 to-slate-700/60 border-slate-600/70 text-white focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 cursor-pointer transition-all duration-300 hover:border-slate-500 hover:bg-gradient-to-br hover:from-slate-700/70 hover:to-slate-600/70 backdrop-blur-sm shadow-lg focus:shadow-slate-500/10 focus:shadow-xl pl-4 pr-12 py-3 rounded-xl [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    />
+                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white pointer-events-none" />
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-slate-500/10 to-slate-400/10 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Set when this announcement should expire (optional)</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            {/* File Attachments */}
+            <div className="space-y-3 group">
+              <label className="text-sm font-semibold text-slate-300 cursor-default flex items-center gap-2 transition-colors duration-200 group-hover:text-pink-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 opacity-70 group-hover:opacity-100 transition-opacity duration-200"></div>
+                Attachments (Optional)
+              </label>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-slate-800/40 to-slate-700/40 rounded-xl border border-slate-600/50 backdrop-blur-sm">
+                  <input
+                    type="file"
+                    id="file-upload"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept="image/*,.pdf,.doc,.docx,.txt"
+                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                        disabled={uploadingFiles}
+                        className="border-slate-600/70 bg-slate-800/40 text-slate-300 hover:bg-gradient-to-r hover:from-slate-700/60 hover:to-slate-600/60 hover:border-slate-500/80 hover:text-white cursor-pointer disabled:cursor-not-allowed transition-all duration-300 backdrop-blur-sm rounded-xl"
+                      >
+                        <Paperclip className="h-4 w-4 mr-2" />
+                        Add Files
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Attach files to this announcement</p>
+                    </TooltipContent>
+                </Tooltip>
+                <div className="flex flex-col">
+                  <span className="text-xs text-slate-400 font-medium">
+                    Max 10MB per file
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    Images, PDFs, documents allowed
+                  </span>
+                </div>
               </div>
               
-              {attachments.length > 0 && (
+              {hasAttachments && (
                 <div className="space-y-2">
                   {attachments.map((file, index) => (
                     <div key={index} className="flex items-center justify-between p-2 bg-slate-700/30 rounded border border-slate-600 cursor-default">
@@ -316,12 +353,13 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
               )}
             </div>
           </div>
+          </div>
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
             <Button
               type="submit"
-              disabled={isSubmitting || !formData.title.trim() || !formData.content.trim()}
+              disabled={isSubmitting || !isFormValid}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSubmitting ? (
@@ -343,7 +381,7 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
                 type="button"
                 onClick={onCancel}
                 variant="outline"
-                className="px-6 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white cursor-pointer"
+                className="px-6 border-slate-600/70 bg-slate-800/40 text-slate-300 hover:bg-gradient-to-r hover:from-slate-700/60 hover:to-slate-600/60 hover:border-slate-500/80 hover:text-white transition-all duration-300 backdrop-blur-sm rounded-xl cursor-pointer"
               >
                 Cancel
               </Button>

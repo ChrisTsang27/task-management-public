@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,7 +48,7 @@ export default function AnnouncementComments({ announcementId, onClose }: Announ
     fetchComments();
   }, [fetchComments]);
 
-  const handleSubmitComment = async (e: React.FormEvent) => {
+  const handleSubmitComment = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || !profile?.id) return;
 
@@ -74,9 +74,9 @@ export default function AnnouncementComments({ announcementId, onClose }: Announ
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [newComment, profile?.id, announcementId, fetchComments]);
 
-  const handleDeleteComment = async (commentId: string) => {
+  const handleDeleteComment = useCallback(async (commentId: string) => {
     if (!profile?.id) return;
 
     setDeletingId(commentId);
@@ -98,9 +98,9 @@ export default function AnnouncementComments({ announcementId, onClose }: Announ
     } finally {
       setDeletingId(null);
     }
-  };
+  }, [profile?.id, announcementId, fetchComments]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -108,11 +108,16 @@ export default function AnnouncementComments({ announcementId, onClose }: Announ
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
+  }, []);
 
-  const canDeleteComment = (comment: Comment) => {
+  const canDeleteComment = useCallback((comment: Comment) => {
     return profile?.role === 'admin' || comment.user_id === profile?.id;
-  };
+  }, [profile?.role, profile?.id]);
+
+  // Memoized computed values
+  const hasComments = useMemo(() => comments.length > 0, [comments.length]);
+  const canComment = useMemo(() => !!profile, [profile]);
+  const isCommentValid = useMemo(() => newComment.trim().length > 0, [newComment]);
 
   if (isLoading) {
     return (
@@ -149,7 +154,7 @@ export default function AnnouncementComments({ announcementId, onClose }: Announ
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Add Comment Form */}
-        {profile && (
+        {canComment && (
           <form onSubmit={handleSubmitComment} className="space-y-3">
             <Textarea
               value={newComment}
@@ -161,7 +166,7 @@ export default function AnnouncementComments({ announcementId, onClose }: Announ
             <div className="flex justify-end">
               <Button
                 type="submit"
-                disabled={!newComment.trim() || isSubmitting}
+                disabled={!isCommentValid || isSubmitting}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {isSubmitting ? (
@@ -177,7 +182,7 @@ export default function AnnouncementComments({ announcementId, onClose }: Announ
 
         {/* Comments List */}
         <div className="space-y-3">
-          {comments.length === 0 ? (
+          {!hasComments ? (
             <div className="text-center py-8">
               <MessageCircle className="h-12 w-12 text-slate-500 mx-auto mb-3" />
               <p className="text-slate-400">No comments yet</p>
