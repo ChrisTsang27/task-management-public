@@ -20,6 +20,7 @@ const AnnouncementSchema = z.object({
   content: z.string().min(1, 'Content is required'),
   team_id: z.string().uuid().optional().nullable(),
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
+  pinned: z.boolean().default(false),
   expires_at: z.string().datetime().optional().nullable()
 });
 
@@ -38,18 +39,21 @@ export async function GET(request: Request) {
         title,
         content,
         priority,
+        pinned,
         team_id,
         created_by,
         expires_at,
         created_at,
         updated_at,
-        profiles(
+        attachments,
+        profiles!announcements_created_by_fkey(
           id,
           full_name,
           title,
           role
         )
       `)
+      .order('pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -132,7 +136,7 @@ export async function POST(request: Request) {
         expires_at,
         created_at,
         updated_at,
-        profiles(
+        profiles!announcements_created_by_fkey(
           id,
           full_name,
           title,

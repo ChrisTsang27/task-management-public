@@ -17,6 +17,7 @@ import TableCell from "@tiptap/extension-table-cell";
 import CharacterCount from "@tiptap/extension-character-count";
 import Dropcursor from "@tiptap/extension-dropcursor";
 import Gapcursor from "@tiptap/extension-gapcursor";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 type Props = {
@@ -78,7 +79,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
     editorProps: {
       attributes: {
         class:
-          "min-h-[260px] w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all max-w-none rte custom-text-cursor",
+          "min-h-[260px] w-full rounded-lg bg-slate-900/80 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all max-w-none rte custom-text-cursor cursor-text [&_img]:max-w-full [&_img]:max-h-[400px] [&_img]:object-contain [&_img]:rounded-md",
         style: "cursor: inherit !important;",
       },
     },
@@ -90,8 +91,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
   const [openTable, setOpenTable] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-
-
+  const [isDraggingOverEditor, setIsDraggingOverEditor] = useState(false);
 
   if (!editor) return null;
 
@@ -154,7 +154,55 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
   const nearLimit = counts.chars > CONTENT_LIMIT * 0.95;
   const overLimit = counts.chars > CONTENT_LIMIT;
 
+  const handleEditorDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    const items = Array.from(e.dataTransfer.items);
+    const hasImageFile = items.some(item => item.type.startsWith('image/'));
+    if (hasImageFile) {
+      setIsDraggingOverEditor(true);
+    }
+  };
+
+  const handleEditorDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOverEditor(false);
+  };
+
+  const handleEditorDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOverEditor(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) return;
+    
+    // Upload the first image file
+    const file = imageFiles[0];
+    try {
+      const formData = new FormData();
+      formData.append('file_0', file);
+      
+      const response = await fetch('/api/announcements/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.urls && result.urls.length > 0) {
+          const imageUrl = result.urls[0].url;
+          const altText = file.name.split('.')[0];
+          editor.chain().focus().setImage({ src: imageUrl, alt: altText }).run();
+        }
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+    }
+  };
+
   return (
+    <TooltipProvider delayDuration={300}>
     <div className="space-y-2">
       <div className="relative z-[100]">
         <div
@@ -162,8 +210,8 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
           aria-label="Rich text editor toolbar"
           className="flex items-center flex-wrap gap-2 rounded-xl bg-slate-800/95 backdrop-blur-sm border border-slate-500/30 shadow-2xl p-3"
         >
-          <Btn onAction={() => editor.chain().focus().undo().run()} ariaLabel="Undo">↶</Btn>
-          <Btn onAction={() => editor.chain().focus().redo().run()} ariaLabel="Redo">↷</Btn>
+          <Btn onAction={() => editor.chain().focus().undo().run()} ariaLabel="Undo" title="Undo last action">↶</Btn>
+          <Btn onAction={() => editor.chain().focus().redo().run()} ariaLabel="Redo" title="Redo last action">↷</Btn>
           <Divider />
 
           {/* Heading dropdown */}
@@ -175,6 +223,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
                 setOpenTable(false);
               }}
               ariaLabel="Block type"
+              title="Change text style (Normal, H1, H2, H3, H4)"
             >
               {currentBlock === "p" ? "Normal" : currentBlock.toUpperCase()} <span className="ml-1">▾</span>
             </Btn>
@@ -201,45 +250,45 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
 
           <Divider />
 
-          <Btn onAction={toggleBullet} active={editor.isActive("bulletList")} ariaLabel="Bulleted list">•</Btn>
-          <Btn onAction={toggleOrdered} active={editor.isActive("orderedList")} ariaLabel="Numbered list">1.</Btn>
+          <Btn onAction={toggleBullet} active={editor.isActive("bulletList")} ariaLabel="Bulleted list" title="Create bulleted list">•</Btn>
+          <Btn onAction={toggleOrdered} active={editor.isActive("orderedList")} ariaLabel="Numbered list" title="Create numbered list">1.</Btn>
 
           <Divider />
 
-          <Btn onAction={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} ariaLabel="Bold">B</Btn>
-          <Btn onAction={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} ariaLabel="Italic">I</Btn>
-          <Btn onAction={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive("strike")} ariaLabel="Strikethrough">S</Btn>
-          <Btn onAction={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} ariaLabel="Underline">U</Btn>
+          <Btn onAction={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} ariaLabel="Bold" title="Make text bold">B</Btn>
+          <Btn onAction={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} ariaLabel="Italic" title="Make text italic">I</Btn>
+          <Btn onAction={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive("strike")} ariaLabel="Strikethrough" title="Strike through text">S</Btn>
+          <Btn onAction={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} ariaLabel="Underline" title="Underline text">U</Btn>
 
           {/* Code block (</>) */}
-          <Btn onAction={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive("codeBlock")} ariaLabel="Code block">
+          <Btn onAction={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive("codeBlock")} ariaLabel="Code block" title="Insert code block">
             {"</>"}
           </Btn>
 
           <Divider />
 
-          <Btn onAction={() => setShowLinkModal(true)} active={editor.isActive("link")} ariaLabel="Insert link" title="Insert link">🔗</Btn>
-          <Btn onAction={() => editor.chain().focus().unsetLink().run()} disabled={!editor.isActive("link")} ariaLabel="Remove link">
+          <Btn onAction={() => setShowLinkModal(true)} active={editor.isActive("link")} ariaLabel="Insert link" title="Insert or edit link">🔗</Btn>
+          <Btn onAction={() => editor.chain().focus().unsetLink().run()} disabled={!editor.isActive("link")} ariaLabel="Remove link" title="Remove link from selected text">
             Unlink
           </Btn>
 
           <Divider />
 
-          <Btn onAction={() => align("left")} active={editor.isActive({ textAlign: "left" })} ariaLabel="Align left">L</Btn>
-          <Btn onAction={() => align("center")} active={editor.isActive({ textAlign: "center" })} ariaLabel="Align center">C</Btn>
-          <Btn onAction={() => align("right")} active={editor.isActive({ textAlign: "right" })} ariaLabel="Align right">R</Btn>
-          <Btn onAction={() => align("justify")} active={editor.isActive({ textAlign: "justify" })} ariaLabel="Justify">J</Btn>
+          <Btn onAction={() => align("left")} active={editor.isActive({ textAlign: "left" })} ariaLabel="Align left" title="Align text to the left">L</Btn>
+          <Btn onAction={() => align("center")} active={editor.isActive({ textAlign: "center" })} ariaLabel="Align center" title="Center align text">C</Btn>
+          <Btn onAction={() => align("right")} active={editor.isActive({ textAlign: "right" })} ariaLabel="Align right" title="Align text to the right">R</Btn>
+          <Btn onAction={() => align("justify")} active={editor.isActive({ textAlign: "justify" })} ariaLabel="Justify" title="Justify text alignment">J</Btn>
 
           <Divider />
 
-          <Btn onAction={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive("superscript")} ariaLabel="Superscript">x²</Btn>
-          <Btn onAction={() => editor.chain().focus().toggleSubscript().run()} active={editor.isActive("subscript")} ariaLabel="Subscript">x₂</Btn>
+          <Btn onAction={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive("superscript")} ariaLabel="Superscript" title="Make text superscript">x²</Btn>
+          <Btn onAction={() => editor.chain().focus().toggleSubscript().run()} active={editor.isActive("subscript")} ariaLabel="Subscript" title="Make text subscript">x₂</Btn>
 
           <Divider />
 
           {/* Add dropdown */}
           <div className="relative">
-            <Btn onAction={() => { setOpenAdd((v) => !v); setOpenHead(false); setOpenTable(false); }} ariaLabel="Add menu">Add ▾</Btn>
+            <Btn onAction={() => { setOpenAdd((v) => !v); setOpenHead(false); setOpenTable(false); }} ariaLabel="Add menu" title="Insert images, tables, or horizontal rules">Add ▾</Btn>
             {openAdd && (
               <Menu onClose={() => setOpenAdd(false)} ariaLabel="Insert elements">
                 <MenuItem onAction={() => setShowImageModal(true)}>Image…</MenuItem>
@@ -274,8 +323,20 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
         </div>
       </div>
 
-      <div>
+      <div 
+        className={`relative ${isDraggingOverEditor ? 'ring-2 ring-blue-400 ring-opacity-50' : ''}`}
+        onDragOver={handleEditorDragOver}
+        onDragLeave={handleEditorDragLeave}
+        onDrop={handleEditorDrop}
+      >
         <EditorContent editor={editor} />
+        {isDraggingOverEditor && (
+          <div className="absolute inset-0 bg-blue-500/10 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center pointer-events-none">
+            <div className="bg-slate-800/90 px-4 py-2 rounded-lg border border-blue-400/50">
+              <p className="text-blue-300 text-sm font-medium">Drop image here to insert</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-end gap-3 text-xs text-slate-300">
@@ -307,6 +368,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
         />
       )}
     </div>
+    </TooltipProvider>
   );
 }
 
@@ -343,7 +405,7 @@ function MenuItem({
         e.preventDefault();
         onAction();
       }}
-      className={`w-full text-left text-sm font-medium px-3 py-2.5 rounded-lg transition-all duration-150 ${
+      className={`w-full text-left text-sm font-medium px-3 py-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
         active ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20" : "bg-transparent hover:bg-gradient-to-r hover:from-slate-700/60 hover:to-slate-800/60 text-slate-100 hover:text-white"
       }`}
     >
@@ -371,7 +433,7 @@ function Btn({
   ariaLabel?: string;
   title?: string;
 }) {
-  return (
+  const button = (
     <button
       type="button"
       onMouseDown={(e) => {
@@ -380,19 +442,33 @@ function Btn({
       }}
       aria-label={ariaLabel}
       aria-pressed={active ? true : undefined}
-      title={title}
       disabled={disabled}
       className={`text-sm font-medium px-3 py-2 rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 ${
         disabled
           ? "opacity-40 cursor-not-allowed bg-slate-700/50 text-slate-500 shadow-inner"
           : active
-          ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25 ring-2 ring-blue-400/30"
-          : "bg-gradient-to-r from-slate-600/80 to-slate-700/80 hover:from-slate-500/90 hover:to-slate-600/90 text-slate-100 shadow-md hover:shadow-lg backdrop-blur-sm border border-slate-500/20 hover:border-slate-400/30"
+          ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25 ring-2 ring-blue-400/30 cursor-pointer"
+          : "bg-gradient-to-r from-slate-600/80 to-slate-700/80 hover:from-slate-500/90 hover:to-slate-600/90 text-slate-100 shadow-md hover:shadow-lg backdrop-blur-sm border border-slate-500/20 hover:border-slate-400/30 cursor-pointer"
       }`}
     >
       {children}
     </button>
   );
+
+  if (title && !disabled) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {button}
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{title}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return button;
 }
 
 /* Simple glassy modals */
@@ -438,19 +514,157 @@ function ImageModal({
 }) {
   const [url, setUrl] = useState("");
   const [alt, setAlt] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'url' | 'upload'>('upload');
   const safe = !url || isSafeHttpUrl(url);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
+      alert('Please drop an image file');
+      return;
+    }
+    
+    await uploadFile(imageFiles[0]);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      await uploadFile(file);
+    }
+  };
+
+  const uploadFile = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file_0', file);
+      
+      const response = await fetch('/api/announcements/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.urls && result.urls.length > 0) {
+          setUrl(result.urls[0].url);
+          setAlt(file.name.split('.')[0]); // Use filename without extension as default alt text
+        }
+      } else {
+        alert('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Failed to upload image');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <ModalShell title="Insert image" onCancel={onCancel} onSubmit={() => url && safe && onConfirm(url, alt)}>
-      <label className="text-xs text-slate-300">Image URL (http/https)</label>
-      <input
-        autoFocus
-        type="url"
-        placeholder="https://example.com/image.jpg"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all cursor-text"
-      />
-      {!safe && <p className="text-xs text-rose-300 mt-1">Only http/https URLs are allowed.</p>}
+      {/* Mode Toggle */}
+      <div className="flex gap-2 mb-3">
+        <button
+          type="button"
+          onClick={() => setUploadMode('upload')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            uploadMode === 'upload'
+              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+          }`}
+        >
+          Upload File
+        </button>
+        <button
+          type="button"
+          onClick={() => setUploadMode('url')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            uploadMode === 'url'
+              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+          }`}
+        >
+          From URL
+        </button>
+      </div>
+
+      {uploadMode === 'upload' ? (
+        <>
+          {/* Drag and Drop Area */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all cursor-pointer ${
+              isDragging
+                ? 'border-blue-400 bg-blue-500/10'
+                : 'border-slate-600 hover:border-slate-500 bg-slate-800/50'
+            }`}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              disabled={isUploading}
+            />
+            {isUploading ? (
+              <div className="space-y-2">
+                <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+                <p className="text-sm text-slate-400">Uploading...</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-2xl">📁</div>
+                <p className="text-sm text-slate-300">
+                  {isDragging ? 'Drop your image here' : 'Drag & drop an image or click to browse'}
+                </p>
+                <p className="text-xs text-slate-500">Supports: JPG, PNG, GIF, WebP</p>
+              </div>
+            )}
+          </div>
+          
+          {url && (
+            <div className="mt-3 p-3 bg-slate-800/50 rounded-lg">
+              <p className="text-xs text-slate-400 mb-1">Preview URL:</p>
+              <p className="text-xs text-slate-300 break-all">{url}</p>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <label className="text-xs text-slate-300">Image URL (http/https)</label>
+          <input
+            autoFocus
+            type="url"
+            placeholder="https://example.com/image.jpg"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-600/50 px-3 py-2 outline-none focus:border-blue-500/50 transition-all cursor-text"
+          />
+          {!safe && <p className="text-xs text-rose-300 mt-1">Only http/https URLs are allowed.</p>}
+        </>
+      )}
+      
       <label className="text-xs text-slate-300 mt-2">Alt text (optional)</label>
       <input
         type="text"
@@ -466,7 +680,7 @@ function ImageModal({
         <button
           type="button"
           className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border border-emerald-500/50 hover:from-emerald-500 hover:to-emerald-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-          disabled={!url || !safe}
+          disabled={!url || !safe || isUploading}
           onClick={() => onConfirm(url, alt)}
         >
           Insert
@@ -498,7 +712,7 @@ function ModalShell({
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "enter") onSubmit();
       }}
     >
-      <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
+      <div className="absolute inset-0 bg-black/50 cursor-pointer" onClick={onCancel} />
       <div className="relative w-full max-w-md rounded-2xl bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/50 shadow-2xl p-4 text-slate-100">
         <h3 className="text-sm font-medium mb-2">{title}</h3>
         <div className="space-y-2">{children}</div>

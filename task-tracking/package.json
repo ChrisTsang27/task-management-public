@@ -9,14 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@lexical/html": "^0.34.0",
-    "@lexical/link": "^0.34.0",
-    "@lexical/list": "^0.34.0",
-    "@lexical/react": "^0.34.0",
-    "@lexical/rich-text": "^0.34.0",
-    "@lexical/utils": "^0.34.0",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.56.0",
@@ -42,15 +37,15 @@
     "@tiptap/pm": "^2.26.1",
     "@tiptap/react": "^2.26.1",
     "@tiptap/starter-kit": "^2.26.1",
-    "@types/dompurify": "^3.0.5",
+
     "@types/uuid": "^10.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "dompurify": "^3.2.6",
-    "lexical": "^0.34.0",
+
+    "dotenv": "^17.2.2",
     "lucide-react": "^0.542.0",
     "next": "15.5.2",
-    "pg": "^8.16.3",
+
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "sanitize-html": "^2.17.0",

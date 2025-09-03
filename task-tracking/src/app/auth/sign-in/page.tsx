@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import supabase from "@/lib/supabaseBrowserClient";
+import RdxSelect from "@/components/ui/RdxSelect";
 
 type AuthMode = "signin" | "signup";
 type AuthMethod = "magic-link" | "password";
@@ -379,54 +380,42 @@ function SignInContent() {
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Job Title
                   </label>
-                  <select
+                  <RdxSelect
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full rounded-xl bg-slate-800/50 border border-slate-600/50 px-4 py-3 pr-10 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-slate-100 appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Select your title</option>
-                    {titleOptions.map((titleOption) => (
-                      <option key={titleOption} value={titleOption} className="bg-slate-800 text-slate-100">
-                        {titleOption}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={setTitle}
+                    ariaLabel="Select your job title"
+                    placeholder="Select your title"
+                    items={titleOptions.map(option => ({ value: option, label: option }))}
+                    className="w-full"
+                  />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Department
                   </label>
-                  <select
+                  <RdxSelect
                     value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full rounded-xl bg-slate-800/50 border border-slate-600/50 px-4 py-3 pr-10 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-slate-100 appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Select your department</option>
-                    {departmentOptions.map((deptOption) => (
-                      <option key={deptOption} value={deptOption} className="bg-slate-800 text-slate-100">
-                        {deptOption}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={setDepartment}
+                    ariaLabel="Select your department"
+                    placeholder="Select your department"
+                    items={departmentOptions.map(option => ({ value: option, label: option }))}
+                    className="w-full"
+                  />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Location
                   </label>
-                  <select
+                  <RdxSelect
                     value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full rounded-xl bg-slate-800/50 border border-slate-600/50 px-4 py-3 pr-10 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-slate-100 appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Select your location</option>
-                    {locationOptions.map((locOption) => (
-                      <option key={locOption} value={locOption} className="bg-slate-800 text-slate-100">
-                        {locOption}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={setLocation}
+                    ariaLabel="Select your location"
+                    placeholder="Select your location"
+                    items={locationOptions.map(option => ({ value: option, label: option }))}
+                    className="w-full"
+                  />
                 </div>
               </div>
             </>

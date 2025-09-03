@@ -23,6 +23,7 @@ const CreateAnnouncementSchema = z.object({
   content: z.string().min(1, 'Content is required'),
   team_id: z.string().uuid().optional().nullable(),
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
+  pinned: z.boolean().default(false),
   expires_at: z.string().datetime().optional().nullable(),
   created_by: z.string().uuid(),
   attachments: z.array(z.object({
@@ -40,6 +41,7 @@ const UpdateAnnouncementSchema = z.object({
   content: z.string().min(1, 'Content is required').optional(),
   team_id: z.string().uuid().optional().nullable(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
+  pinned: z.boolean().optional(),
   expires_at: z.string().datetime().optional().nullable()
 });
 
@@ -61,6 +63,7 @@ export interface Announcement {
   title: string;
   content: string;
   priority: 'low' | 'medium' | 'high';
+  pinned: boolean;
   team_id: string | null;
   created_by: string;
   expires_at: string | null;
@@ -88,11 +91,10 @@ export interface Announcement {
 
 export interface AnnouncementComment {
   id: string;
-  content: string;
+  body: string;
   user_id: string;
   announcement_id: string;
   created_at: string;
-  updated_at: string;
   profiles?: {
     id: string;
     full_name: string | null;
@@ -141,19 +143,21 @@ export async function getAnnouncements({
         title,
         content,
         priority,
+        pinned,
         team_id,
         created_by,
         expires_at,
         created_at,
         updated_at,
         attachments,
-        profiles(
+        profiles!announcements_created_by_fkey(
           id,
           full_name,
           title,
           role
         )
       `)
+      .order('pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -236,19 +240,21 @@ export async function createAnnouncement(
         priority,
         expires_at,
         created_by,
-        attachments: JSON.stringify(attachments || [])
+        attachments
       })
       .select(`
         id,
         title,
         content,
         priority,
+        pinned,
         team_id,
         created_by,
         expires_at,
         created_at,
         updated_at,
-        profiles(
+        attachments,
+        profiles!announcements_created_by_fkey(
           id,
           full_name,
           title,
@@ -300,12 +306,14 @@ export async function updateAnnouncement(
         title,
         content,
         priority,
+        pinned,
         team_id,
         created_by,
         expires_at,
         created_at,
         updated_at,
-        profiles(
+        attachments,
+        profiles!announcements_created_by_fkey(
           id,
           full_name,
           title,
@@ -363,6 +371,73 @@ export async function deleteAnnouncement(
 }
 
 /**
+ * Toggle pin status of an announcement
+ */
+export async function toggleAnnouncementPin(
+  id: string
+): Promise<{ announcement?: Announcement; error?: string }> {
+  try {
+    if (!id) {
+      return { error: 'Announcement ID is required' };
+    }
+
+    // First get the current pinned status
+    const { data: currentAnnouncement, error: fetchError } = await supabaseAdmin
+      .from('announcements')
+      .select('pinned')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching announcement:', fetchError);
+      return { error: 'Failed to fetch announcement' };
+    }
+
+    // Toggle the pinned status
+    const { data: announcement, error } = await supabaseAdmin
+      .from('announcements')
+      .update({ 
+        pinned: !currentAnnouncement.pinned,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select(`
+        id,
+        title,
+        content,
+        priority,
+        pinned,
+        team_id,
+        created_by,
+        expires_at,
+        created_at,
+        updated_at,
+        profiles!announcements_created_by_fkey(
+          id,
+          full_name,
+          title,
+          role
+        )
+      `)
+      .single();
+
+    if (error) {
+      console.error('Error toggling pin status:', error);
+      return { error: 'Failed to toggle pin status' };
+    }
+
+    // Revalidate the announcements page
+    revalidatePath('/dashboard');
+    revalidatePath('/announcements');
+
+    return { announcement };
+  } catch (error) {
+    console.error('Server action error:', error);
+    return { error: 'Internal server error' };
+  }
+}
+
+/**
  * Add a comment to an announcement
  */
 export async function addComment(
@@ -380,17 +455,16 @@ export async function addComment(
     const { data: comment, error } = await supabaseAdmin
       .from('announcement_comments')
       .insert({
-        content,
+        body: content,
         user_id,
         announcement_id
       })
       .select(`
         id,
-        content,
+        body,
         user_id,
         announcement_id,
         created_at,
-        updated_at,
         profiles!announcement_comments_user_id_fkey(
           id,
           full_name,

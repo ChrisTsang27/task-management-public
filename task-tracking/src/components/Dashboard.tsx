@@ -7,6 +7,7 @@ import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import supabase from "@/lib/supabaseBrowserClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 type Role = "admin" | "user";
@@ -81,7 +82,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen text-foreground bg-gradient-to-b from-blue-950 via-slate-900 to-slate-950">
+    <TooltipProvider delayDuration={300}>
+      <div className="min-h-screen text-foreground bg-gradient-to-b from-blue-950 via-slate-900 to-slate-950">
       <header className="sticky top-0 z-10 bg-gradient-to-r from-slate-900/70 via-slate-800/70 to-slate-900/70 border-b border-slate-600/30 shadow-2xl backdrop-blur-xl backdrop-saturate-150">
         <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -95,32 +97,46 @@ export default function Dashboard() {
           {/* User info and sign out */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-slate-600/50 shadow-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
-                  {(profile?.full_name || 'U').charAt(0).toUpperCase()}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-white">
-                    {profile?.full_name || 'User'}
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    Welcome back
-                  </span>
-                </div>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
+                      {(profile?.full_name || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-white">
+                        {profile?.full_name || 'User'}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        Welcome back
+                      </span>
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Logged in as {profile?.full_name || 'User'} ({profile?.role || 'user'})</p>
+                </TooltipContent>
+              </Tooltip>
               <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white border border-emerald-400/30 shadow-sm">
                 {profile?.role || 'member'}
               </span>
             </div>
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                window.location.href = '/auth/sign-in';
-              }}
-              className="px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl border border-red-400/30 hover:scale-105"
-            >
-              Sign Out
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    window.location.href = '/auth/sign-in';
+                  }}
+                  className="px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl border border-red-400/30 hover:scale-105"
+                >
+                  Sign Out
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Sign out of your account</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </header>
@@ -159,40 +175,55 @@ export default function Dashboard() {
                         ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
                         : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
                     }`}
+                    title="Compose and send emails"
                   >
                     <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                     Email
                   </Button>
-                  <Button
-                    onClick={() => setTab('Announcements')}
-                    variant={tab === 'Announcements' ? "default" : "ghost"}
-                    className={`justify-start h-12 px-4 rounded-lg transition-all duration-200 ${
-                      tab === 'Announcements' 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-                        : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
-                    }`}
-                  >
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                    </svg>
-                    Announcements
-                  </Button>
-                  <Button
-                    onClick={() => setTab('Tasks')}
-                    variant={tab === 'Tasks' ? "default" : "ghost"}
-                    className={`justify-start h-12 px-4 rounded-lg transition-all duration-200 ${
-                      tab === 'Tasks' 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-                        : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
-                    }`}
-                  >
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                    </svg>
-                    Tasks
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setTab('Announcements')}
+                        variant={tab === 'Announcements' ? "default" : "ghost"}
+                        className={`justify-start h-12 px-4 rounded-lg transition-all duration-200 ${
+                          tab === 'Announcements' 
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
+                            : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+                        }`}
+                      >
+                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                        </svg>
+                        Announcements
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>View and manage announcements</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setTab('Tasks')}
+                        variant={tab === 'Tasks' ? "default" : "ghost"}
+                        className={`justify-start h-12 px-4 rounded-lg transition-all duration-200 ${
+                          tab === 'Tasks' 
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
+                            : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+                        }`}
+                      >
+                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        Tasks
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Manage tasks and project workflow</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </nav>
               </CardContent>
             </Card>
@@ -202,24 +233,45 @@ export default function Dashboard() {
                 <CardTitle className="text-sm text-slate-300 uppercase tracking-wider font-medium">QUICK ACTIONS</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium rounded-lg shadow-md transition-all duration-200">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  New Task
-                </Button>
-                <Button className="w-full h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                  </svg>
-                  New Announcement
-                </Button>
-                <Button className="w-full h-12 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-purple-600 hover:via-pink-600 hover:to-red-600 text-white font-medium rounded-lg shadow-md transition-all duration-200">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  Full Email Composer
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button className="w-full h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium rounded-lg shadow-md transition-all duration-200">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      New Task
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Create a new task</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button className="w-full h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                      </svg>
+                      New Announcement
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Create a new announcement</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button className="w-full h-12 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-purple-600 hover:via-pink-600 hover:to-red-600 text-white font-medium rounded-lg shadow-md transition-all duration-200">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Full Email Composer
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Open full email composer</p>
+                  </TooltipContent>
+                </Tooltip>
               </CardContent>
             </Card>
           </aside>
@@ -241,6 +293,7 @@ export default function Dashboard() {
                           onClick={() => setTab(t)}
                           variant={tab === t ? "default" : "outline"}
                           size="sm"
+                          title={`Switch to ${t} tab`}
                         >
                           {t}
                         </Button>
@@ -270,6 +323,7 @@ export default function Dashboard() {
           </section>
         </div>
       </main>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

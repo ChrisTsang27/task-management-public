@@ -61,9 +61,8 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Define protected routes
+  // Define protected routes (excluding root to prevent loops)
   const protectedRoutes = [
-    '/',
     '/dashboard',
     '/teams',
     '/tasks',
@@ -73,7 +72,7 @@ export async function middleware(req: NextRequest) {
   // Check if the current path is a protected route
   const isProtectedRoute = protectedRoutes.some(route => 
     req.nextUrl.pathname.startsWith(route)
-  );
+  ) || req.nextUrl.pathname === '/';
 
   // If accessing a protected route without authentication, redirect to sign-in
   if (isProtectedRoute && !session) {
@@ -85,12 +84,25 @@ export async function middleware(req: NextRequest) {
   // If authenticated and trying to access auth pages, redirect to main dashboard
   if (session && req.nextUrl.pathname.startsWith('/auth/sign-in')) {
     const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/';
-    return NextResponse.redirect(new URL(redirectTo, req.url));
+    // Prevent redirect loops by checking if redirectTo is the same as current path
+    if (redirectTo !== req.nextUrl.pathname) {
+      return NextResponse.redirect(new URL(redirectTo, req.url));
+    }
   }
 
   // If authenticated and accessing /dashboard, redirect to root (stylish dashboard)
   if (session && req.nextUrl.pathname === '/dashboard') {
     return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  // Allow auth pages to load without interference
+  if (req.nextUrl.pathname.startsWith('/auth/')) {
+    return response;
+  }
+
+  // Add user ID to headers for API routes if authenticated
+  if (session && req.nextUrl.pathname.startsWith('/api/')) {
+    response.headers.set('x-user-id', session.user.id);
   }
 
   return response;

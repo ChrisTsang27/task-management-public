@@ -4,12 +4,12 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createAnnouncement } from "@/lib/actions/announcements";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import { Paperclip, X } from 'lucide-react';
-import { LexicalRichTextEditor } from '@/components/ui/lexical-editor';
+import RichTextEditor from '@/components/email/RichTextEditor';
 
 interface AnnouncementFormProps {
   onSuccess?: () => void;
@@ -77,7 +77,14 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
     
     try {
       // Upload files first if any
-      let attachmentUrls: string[] = [];
+      let uploadedAttachments: Array<{
+        url: string;
+        name: string;
+        size: number;
+        type: string;
+        path: string;
+      }> = [];
+      
       if (attachments.length > 0) {
         const uploadFormData = new FormData();
         attachments.forEach((file, index) => {
@@ -91,7 +98,7 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
         
         if (uploadResponse.ok) {
           const uploadResult = await uploadResponse.json();
-          attachmentUrls = uploadResult.urls || [];
+          uploadedAttachments = uploadResult.urls || [];
         } else {
           throw new Error('Failed to upload files');
         }
@@ -101,16 +108,11 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
         title: formData.title,
         content: formData.content,
         priority: formData.priority,
+        pinned: false,
         expires_at: formData.expires_at ? new Date(formData.expires_at).toISOString() : null,
         team_id: null, // For now, we'll make announcements global
         created_by: profile.id,
-        attachments: attachmentUrls.map((url, index) => ({
-          url,
-          name: attachments[index]?.name || 'attachment',
-          size: attachments[index]?.size || 0,
-          type: attachments[index]?.type || 'application/octet-stream',
-          path: url
-        })),
+        attachments: uploadedAttachments,
       };
       
   
@@ -144,20 +146,21 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
   };
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700 overflow-visible">
-      <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-          </svg>
-          Create New Announcement
-        </CardTitle>
-      </CardHeader>
+    <TooltipProvider delayDuration={300}>
+      <Card className="bg-slate-800/50 border-slate-700 shadow-xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
+            <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+            </svg>
+            Create New Announcement
+          </CardTitle>
+        </CardHeader>
       <CardContent className="overflow-visible">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium text-slate-300">
+            <label htmlFor="title" className="text-sm font-medium text-slate-300 cursor-pointer">
               Title *
             </label>
             <Input
@@ -167,46 +170,52 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
               onChange={(e) => handleInputChange("title", e.target.value)}
               placeholder="Enter announcement title..."
               required
-              className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500"
+              className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 cursor-text"
             />
           </div>
 
           {/* Content */}
           <div className="space-y-2">
-            <label htmlFor="content" className="text-sm font-medium text-slate-300">
+            <label htmlFor="content" className="text-sm font-medium text-slate-300 cursor-pointer">
               Content *
             </label>
-            <LexicalRichTextEditor
+            <RichTextEditor
               value={formData.content}
               onChange={(content) => handleInputChange("content", content)}
               placeholder="Write your announcement content with rich formatting..."
-              className="min-h-[200px]"
             />
           </div>
 
           {/* Priority */}
           <div className="space-y-2">
-            <label htmlFor="priority" className="text-sm font-medium text-slate-300">
+            <label htmlFor="priority" className="text-sm font-medium text-slate-300 cursor-pointer">
               Priority
             </label>
             <Select value={formData.priority} onValueChange={(value) => handleInputChange("priority", value)}>
-              <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white focus:border-blue-500">
-                <SelectValue placeholder="Select priority" />
-              </SelectTrigger>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white focus:border-blue-500 cursor-pointer">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Set the priority level for this announcement</p>
+                </TooltipContent>
+              </Tooltip>
               <SelectContent className="bg-slate-700 border-slate-600">
-                <SelectItem value="low" className="text-white hover:bg-slate-600">
+                <SelectItem value="low" className="text-white hover:bg-slate-600 cursor-pointer">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-green-500"></div>
                     Low
                   </div>
                 </SelectItem>
-                <SelectItem value="medium" className="text-white hover:bg-slate-600">
+                <SelectItem value="medium" className="text-white hover:bg-slate-600 cursor-pointer">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                     Medium
                   </div>
                 </SelectItem>
-                <SelectItem value="high" className="text-white hover:bg-slate-600">
+                <SelectItem value="high" className="text-white hover:bg-slate-600 cursor-pointer">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-red-500"></div>
                     High
@@ -218,21 +227,28 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
 
           {/* Expiration Date */}
           <div className="space-y-2">
-            <label htmlFor="expires_at" className="text-sm font-medium text-slate-300">
+            <label htmlFor="expires_at" className="text-sm font-medium text-slate-300 cursor-pointer">
               Expiration Date (Optional)
             </label>
-            <Input
-              id="expires_at"
-              type="datetime-local"
-              value={formData.expires_at}
-              onChange={(e) => handleInputChange("expires_at", e.target.value)}
-              className="bg-slate-700/50 border-slate-600 text-white focus:border-blue-500"
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Input
+                  id="expires_at"
+                  type="datetime-local"
+                  value={formData.expires_at}
+                  onChange={(e) => handleInputChange("expires_at", e.target.value)}
+                  className="bg-slate-700/50 border-slate-600 text-white focus:border-blue-500 cursor-pointer"
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Set when this announcement should expire (optional)</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* File Attachments */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+            <label className="text-sm font-medium text-slate-300 cursor-default">
               Attachments (Optional)
             </label>
             <div className="space-y-3">
@@ -245,16 +261,23 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
                   className="hidden"
                   accept="image/*,.pdf,.doc,.docx,.txt"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                  disabled={uploadingFiles}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                >
-                  <Paperclip className="h-4 w-4 mr-2" />
-                  Add Files
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                      disabled={uploadingFiles}
+                      className="border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      <Paperclip className="h-4 w-4 mr-2" />
+                      Add Files
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Attach files to this announcement</p>
+                  </TooltipContent>
+                </Tooltip>
                 <span className="text-xs text-slate-400">
                   Max 10MB per file. Images, PDFs, documents allowed.
                 </span>
@@ -263,7 +286,7 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
               {attachments.length > 0 && (
                 <div className="space-y-2">
                   {attachments.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-slate-700/30 rounded border border-slate-600">
+                    <div key={index} className="flex items-center justify-between p-2 bg-slate-700/30 rounded border border-slate-600 cursor-default">
                       <div className="flex items-center gap-2 min-w-0">
                         <Paperclip className="h-4 w-4 text-slate-400 flex-shrink-0" />
                         <div className="min-w-0">
@@ -271,15 +294,22 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
                           <p className="text-xs text-slate-400">{formatFileSize(file.size)}</p>
                         </div>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeAttachment(index)}
-                        className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeAttachment(index)}
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Remove {file.name} from attachments</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   ))}
                 </div>
@@ -292,7 +322,7 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
             <Button
               type="submit"
               disabled={isSubmitting || !formData.title.trim() || !formData.content.trim()}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
@@ -313,7 +343,7 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
                 type="button"
                 onClick={onCancel}
                 variant="outline"
-                className="px-6 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+                className="px-6 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white cursor-pointer"
               >
                 Cancel
               </Button>
@@ -322,5 +352,6 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
         </form>
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }

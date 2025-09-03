@@ -16,8 +16,7 @@ const supabaseAdmin = createClient(
 
 // Validation schema for comment creation
 const CommentSchema = z.object({
-  content: z.string().min(1, 'Comment content is required').max(1000, 'Comment too long'),
-  user_id: z.string().uuid('Invalid user ID')
+  content: z.string().min(1, 'Comment content is required').max(1000, 'Comment too long')
 });
 
 interface RouteParams {
@@ -67,11 +66,10 @@ export async function GET(request: Request, { params }: RouteParams) {
       .from('announcement_comments')
       .select(`
         id,
-        content,
+        body,
         user_id,
         announcement_id,
         created_at,
-        updated_at,
         profiles!announcement_comments_user_id_fkey(
           id,
           full_name,
@@ -106,6 +104,8 @@ export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { id: announcementId } = await params;
     const body = await request.json();
+    console.log('POST request body:', body);
+    console.log('Headers:', Object.fromEntries(request.headers.entries()));
     
     if (!announcementId) {
       return NextResponse.json(
@@ -117,13 +117,22 @@ export async function POST(request: Request, { params }: RouteParams) {
     const parsed = CommentSchema.safeParse(body);
     
     if (!parsed.success) {
+      console.error('Validation failed:', parsed.error.flatten());
       return NextResponse.json(
         { error: 'Invalid data', issues: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    const { content, user_id } = parsed.data;
+    const { content } = parsed.data;
+    const user_id = request.headers.get('x-user-id');
+    
+    if (!user_id) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 401 }
+      );
+    }
 
     // First check if announcement exists
     const { error: announcementError } = await supabaseAdmin
@@ -150,17 +159,16 @@ export async function POST(request: Request, { params }: RouteParams) {
     const { data: comment, error } = await supabaseAdmin
       .from('announcement_comments')
       .insert({
-        content,
+        body: content,
         user_id,
         announcement_id: announcementId
       })
       .select(`
         id,
-        content,
+        body,
         user_id,
         announcement_id,
         created_at,
-        updated_at,
         profiles!announcement_comments_user_id_fkey(
           id,
           full_name,

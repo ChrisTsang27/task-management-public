@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SupabaseAuthInit from "@/components/auth/SupabaseAuthInit";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 
 const geistSans = Geist({
@@ -29,9 +30,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased dark`}
       >
-
-        <SupabaseAuthInit />
-        {children}
+        <ErrorBoundary>
+          <SupabaseAuthInit />
+          {children}
+        </ErrorBoundary>
       </body>
     </html>
   );

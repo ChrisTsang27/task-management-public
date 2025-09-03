@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import { MessageCircle, Send, User, Calendar, Trash2 } from 'lucide-react';
 
 interface Comment {
   id: string;
-  content: string;
+  body: string;
   created_at: string;
   user_id: string;
   profiles: {
@@ -126,6 +127,7 @@ export default function AnnouncementComments({ announcementId, onClose }: Announ
   }
 
   return (
+    <TooltipProvider delayDuration={300}>
     <Card className="bg-slate-800/50 border-slate-700">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -200,23 +202,30 @@ export default function AnnouncementComments({ announcementId, onClose }: Announ
                     </div>
                   </div>
                   {canDeleteComment(comment) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteComment(comment.id)}
-                      disabled={deletingId === comment.id}
-                      className="h-8 w-8 p-0 border-red-600/50 text-red-400 hover:bg-red-600/20 hover:text-red-300"
-                    >
-                      {deletingId === comment.id ? (
-                        <div className="w-3 h-3 border border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
-                      ) : (
-                        <Trash2 className="h-3 w-3" />
-                      )}
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteComment(comment.id)}
+                          disabled={deletingId === comment.id}
+                          className="h-8 w-8 p-0 border-red-600/50 text-red-400 hover:bg-red-600/20 hover:text-red-300"
+                        >
+                          {deletingId === comment.id ? (
+                            <div className="w-3 h-3 border border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Delete comment</p>
+                      </TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
                 <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-                  {comment.content}
+                  {comment.body}
                 </p>
               </div>
             ))
@@ -224,5 +233,6 @@ export default function AnnouncementComments({ announcementId, onClose }: Announ
         </div>
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }

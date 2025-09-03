@@ -80,22 +80,3 @@ export default function RoleGuard({
 
   return <>{children}</>;
 }
-
-// Higher-order component version
-export function withRoleGuard<P extends object>(
-  Component: React.ComponentType<P>,
-  requiredRoles: UserRole[],
-  options?: { fallback?: ReactNode; redirectTo?: string }
-) {
-  return function WrappedComponent(props: P) {
-    return (
-      <RoleGuard 
-        requiredRoles={requiredRoles} 
-        fallback={options?.fallback}
-        redirectTo={options?.redirectTo}
-      >
-        <Component {...props} />
-      </RoleGuard>
-    );
-  };
-}

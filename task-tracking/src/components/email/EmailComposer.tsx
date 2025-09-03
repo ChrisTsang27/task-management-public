@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState, useEffect } from "react";
 import RichTextEditor from "@/components/email/RichTextEditor";
 import RdxSelect from "@/components/ui/RdxSelect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import supabase from "@/lib/supabaseBrowserClient";
 
 
@@ -168,7 +169,7 @@ export default function EmailComposer() {
     setIsDragging(true);
   };
   
-  const onUserDragEnd = (_e: React.DragEvent) => {
+  const onUserDragEnd = () => {
     setIsDragging(false);
   };
   const onDropRecipient = (e: React.DragEvent) => {
@@ -245,6 +246,7 @@ export default function EmailComposer() {
   ], []);
 
   return (
+    <TooltipProvider delayDuration={300}>
     <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto space-y-4 text-white bg-slate-800/60 backdrop-blur-sm border border-slate-600/50 shadow-xl p-6 rounded-xl">
       <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Email Composer</h1>
 
@@ -256,22 +258,34 @@ export default function EmailComposer() {
                 <CardTitle className="text-lg">Users Pool</CardTitle>
                 <div className="flex items-center gap-2">
 
-                <button
-  
-                  onClick={() => {
-                    setOccFilter("all"); setDeptFilter("all"); setLocFilter("all");
-                  }}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-400 hover:to-slate-500 border border-slate-400/60 transition-all shadow-md hover:shadow-lg ring-1 ring-slate-300/10"
-                >
-                  Clear filters
-                </button>
-                <button
-
-                  onClick={addAll}
-                  className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border border-blue-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-blue-400/20 text-white font-medium"
-                >
-                  Add all
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => {
+                        setOccFilter("all"); setDeptFilter("all"); setLocFilter("all"); setUserQuery("");
+                      }}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-400 hover:to-slate-500 border border-slate-400/60 transition-all shadow-md hover:shadow-lg ring-1 ring-slate-300/10"
+                    >
+                      Clear filters
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Clear all filters and search</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={addAll}
+                      className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border border-blue-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-blue-400/20 text-white font-medium"
+                    >
+                      Add all
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add all filtered users to recipients</p>
+                  </TooltipContent>
+                </Tooltip>
                 </div>
               </div>
             </CardHeader>
@@ -339,12 +353,19 @@ export default function EmailComposer() {
                         <div className="text-xs text-slate-300">{u.email}</div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => addRecipient(u)}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white border border-blue-500/60 hover:from-blue-500 hover:to-blue-600 transition-all shadow-md hover:shadow-lg ring-1 ring-blue-400/20 font-medium cursor-pointer"
-                    >
-                      Add
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => addRecipient(u)}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white border border-blue-500/60 hover:from-blue-500 hover:to-blue-600 transition-all shadow-md hover:shadow-lg ring-1 ring-blue-400/20 font-medium cursor-pointer"
+                        >
+                          Add
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Add {u.name} to recipients</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${titleColor[u.occupation] || titleColor.Officer}`}>{u.occupation}</span>
@@ -365,21 +386,35 @@ export default function EmailComposer() {
                   <CardTitle className="text-lg">Recipients ({recipients.length})</CardTitle>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      availableUsers.forEach(user => addRecipient(user));
-                    }}
-                    className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 border border-emerald-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-emerald-400/20 text-white font-medium cursor-pointer"
-                  >
-                    Add All
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => {
+                          availableUsers.forEach(user => addRecipient(user));
+                        }}
+                        className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 border border-emerald-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-emerald-400/20 text-white font-medium cursor-pointer"
+                      >
+                        Add All
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Add all filtered users to recipients</p>
+                    </TooltipContent>
+                  </Tooltip>
                   {recipients.length > 0 && (
-                    <button
-                      onClick={removeAll}
-                      className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 border border-rose-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 text-white font-medium cursor-pointer"
-                    >
-                      Remove All
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={removeAll}
+                          className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 border border-rose-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-rose-400/20 text-white font-medium cursor-pointer"
+                        >
+                          Remove All
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Remove all recipients</p>
+                      </TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
               </div>
@@ -396,10 +431,17 @@ export default function EmailComposer() {
                 }`}
               >
                 {recipients.length === 0 ? (
-                  <div className="text-center py-12 text-slate-400">
-                    <div className="text-lg mb-2">📧</div>
-                    <div className="text-sm">Drag users here or use Add buttons</div>
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="text-center py-12 text-slate-400">
+                        <div className="text-lg mb-2">📧</div>
+                        <div className="text-sm">Drag users here or use Add buttons</div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Drop zone for email recipients - drag users from the left panel or use Add buttons</p>
+                    </TooltipContent>
+                  </Tooltip>
                 ) : (
                   <div className="grid grid-cols-2 gap-3" onDrop={onDropRecipient} onDragOver={onDragOverRecipient}>
                     {recipients.map((u) => (
@@ -425,15 +467,21 @@ export default function EmailComposer() {
                               </span>
                             </div>
                           </div>
-                          <button
-                            onClick={() => removeRecipient(u.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-full hover:bg-red-500/20 text-red-400 hover:text-red-300 flex-shrink-0 cursor-pointer"
-                            title="Remove recipient"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => removeRecipient(u.id)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-full hover:bg-red-500/20 text-red-400 hover:text-red-300 flex-shrink-0 cursor-pointer"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Remove recipient</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </div>
                     ))}
@@ -498,5 +546,6 @@ export default function EmailComposer() {
           </CardContent>
         </Card>
     </div>
+    </TooltipProvider>
   );
 }

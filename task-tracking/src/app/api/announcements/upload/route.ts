@@ -56,11 +56,11 @@ export async function POST(request: NextRequest) {
         .getPublicUrl(filePath);
 
       uploadedUrls.push({
-        url: urlData.publicUrl,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        path: filePath,
+        url: String(urlData.publicUrl),
+        name: String(file.name),
+        size: Number(file.size),
+        type: String(file.type),
+        path: String(filePath),
       });
     }
 

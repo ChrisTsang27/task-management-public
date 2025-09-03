@@ -53,7 +53,8 @@ export async function GET(request: Request, { params }: RouteParams) {
         expires_at,
         created_at,
         updated_at,
-        profiles(
+        attachments,
+        profiles!announcements_created_by_fkey(
           id,
           full_name,
           title,
@@ -150,7 +151,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         expires_at,
         created_at,
         updated_at,
-        profiles(
+        attachments,
+        profiles!announcements_created_by_fkey(
           id,
           full_name,
           title,

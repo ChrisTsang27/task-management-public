@@ -63,7 +63,6 @@ export async function GET(request: Request, { params }: RouteParams) {
     const { data: reactions, error } = await supabaseAdmin
       .from('announcement_reactions')
       .select(`
-        id,
         emoji,
         user_id,
         announcement_id,
@@ -167,7 +166,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     // Check if user already reacted with this emoji
     const { data: existingReaction, error: checkError } = await supabaseAdmin
       .from('announcement_reactions')
-      .select('id')
+      .select('announcement_id, user_id, emoji')
       .eq('announcement_id', announcementId)
       .eq('user_id', user_id)
       .eq('emoji', emoji)
@@ -186,7 +185,9 @@ export async function POST(request: Request, { params }: RouteParams) {
       const { error: deleteError } = await supabaseAdmin
         .from('announcement_reactions')
         .delete()
-        .eq('id', existingReaction.id);
+        .eq('announcement_id', announcementId)
+        .eq('user_id', user_id)
+        .eq('emoji', emoji);
 
       if (deleteError) {
         console.error('Error removing reaction:', deleteError);
@@ -210,7 +211,6 @@ export async function POST(request: Request, { params }: RouteParams) {
           announcement_id: announcementId
         })
         .select(`
-          id,
           emoji,
           user_id,
           announcement_id,

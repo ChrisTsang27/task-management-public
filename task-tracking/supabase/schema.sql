@@ -88,7 +88,9 @@ create table public.announcements (
   title text not null,
   content text not null,
   priority text check (priority in ('low','medium','high')) default 'medium',
+  pinned boolean not null default false,
   expires_at timestamptz,
+  attachments jsonb default '[]'::jsonb,
   created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
+import { getAnnouncements } from "@/lib/actions/announcements";
 import AnnouncementForm from "./AnnouncementForm";
 import AnnouncementList from "./AnnouncementList";
 
@@ -14,6 +15,7 @@ interface Announcement {
   title: string;
   content: string;
   priority: "low" | "medium" | "high";
+  pinned?: boolean;
   created_at: string;
   expires_at: string | null;
   profiles?: {
@@ -34,6 +36,25 @@ export default function AnnouncementManager() {
   const [currentView, setCurrentView] = useState<View>("list");
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
+  const fetchAnnouncementsData = async () => {
+    try {
+      setIsLoadingStats(true);
+      const result = await getAnnouncements();
+      setAnnouncements(result.announcements || []);
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+      setAnnouncements([]);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnnouncementsData();
+  }, [refreshTrigger]);
 
   const handleCreateSuccess = () => {
     setCurrentView("list");
@@ -51,6 +72,16 @@ export default function AnnouncementManager() {
   };
 
   const isAdmin = profile?.role === 'admin';
+
+  // Calculate statistics
+  const isExpired = (expiresAt: string | null) => {
+    if (!expiresAt) return false;
+    return new Date(expiresAt) < new Date();
+  };
+
+  const totalAnnouncements = announcements.length;
+  const highPriorityCount = announcements.filter(a => a.priority === 'high').length;
+  const activeCount = announcements.filter(a => !isExpired(a.expires_at)).length;
 
   if (currentView === "create") {
     return (
@@ -134,7 +165,13 @@ export default function AnnouncementManager() {
               </div>
               <div>
                 <p className="text-sm text-slate-400">Total Announcements</p>
-                <p className="text-xl font-semibold text-white">-</p>
+                <p className="text-xl font-semibold text-white">
+                  {isLoadingStats ? (
+                    <span className="animate-pulse">-</span>
+                  ) : (
+                    totalAnnouncements
+                  )}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -150,7 +187,13 @@ export default function AnnouncementManager() {
               </div>
               <div>
                 <p className="text-sm text-slate-400">High Priority</p>
-                <p className="text-xl font-semibold text-white">-</p>
+                <p className="text-xl font-semibold text-white">
+                  {isLoadingStats ? (
+                    <span className="animate-pulse">-</span>
+                  ) : (
+                    highPriorityCount
+                  )}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -166,7 +209,13 @@ export default function AnnouncementManager() {
               </div>
               <div>
                 <p className="text-sm text-slate-400">Active</p>
-                <p className="text-xl font-semibold text-white">-</p>
+                <p className="text-xl font-semibold text-white">
+                  {isLoadingStats ? (
+                    <span className="animate-pulse">-</span>
+                  ) : (
+                    activeCount
+                  )}
+                </p>
               </div>
             </div>
           </CardContent>
