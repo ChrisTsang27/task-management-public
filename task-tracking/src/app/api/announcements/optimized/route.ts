@@ -30,6 +30,15 @@ const QuerySchema = z.object({
 // GET /api/announcements/optimized - Optimized announcements fetching
 export async function GET(request: Request) {
   try {
+    // Check authentication
+    const userId = request.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
     

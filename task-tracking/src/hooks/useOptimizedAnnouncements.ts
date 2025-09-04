@@ -80,11 +80,13 @@ const fetchAnnouncements = async ({
   const response = await fetch(`/api/announcements/optimized?${params}`, {
     headers: {
       'Cache-Control': 'no-cache',
+      'Content-Type': 'application/json',
     },
+    credentials: 'include', // Include cookies for authentication
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({ error: 'Failed to fetch announcements' }));
     throw new Error(error.error || 'Failed to fetch announcements');
   }
 
