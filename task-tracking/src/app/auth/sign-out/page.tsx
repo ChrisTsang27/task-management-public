@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabaseBrowserClient'
+import supabase from '@/lib/supabaseBrowserClient'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function SignOutPage() {
   const [isDone, setIsDone] = useState(false)
-  const supabase = createClient()
   const router = useRouter()
 
   // Auto sign out if user navigates directly to this page
@@ -34,7 +33,7 @@ export default function SignOutPage() {
     }
 
     signOut()
-  }, [router, supabase])
+  }, [router])
 
   if (isDone) {
     return (
