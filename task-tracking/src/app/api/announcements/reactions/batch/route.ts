@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Group reactions by announcement_id
-    const groupedReactions: Record<string, any[]> = {};
+    const groupedReactions: Record<string, { emoji: string; count: number; user_reacted: boolean }[]> = {};
     
     // Initialize empty arrays for all requested announcements
     announcementIds.forEach(id => {

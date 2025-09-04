@@ -1,14 +1,14 @@
 'use client'
 
-import supabase from '@/lib/supabaseBrowserClient'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function SignOutPage() {
-  const [, setIsLoading] = useState(false)
   const [isDone, setIsDone] = useState(false)
+  const supabase = createClient()
   const router = useRouter()
 
 

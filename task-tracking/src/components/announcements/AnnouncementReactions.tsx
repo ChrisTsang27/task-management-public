@@ -4,12 +4,7 @@ import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import { useReactions } from "@/contexts/ReactionsContext";
 import { Heart, ThumbsUp, ThumbsDown, Smile, Frown, Star } from 'lucide-react';
 
-interface ReactionCount {
-  emoji: string;
-  count: number;
-  users: string[];
-  hasUserReacted: boolean;
-}
+
 
 interface AnnouncementReactionsProps {
   announcementId: string;
