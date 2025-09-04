@@ -10,6 +10,7 @@ import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import { Trash2, Edit, Calendar, User, Clock, AlertCircle, MessageCircle, Paperclip, Download, FileText, Image, Eye, X, Maximize2, Pin, PinOff } from 'lucide-react';
 import AnnouncementComments from './AnnouncementComments';
 import AnnouncementReactions from './AnnouncementReactions';
+import { useReactions } from '@/contexts/ReactionsContext';
 
 
 interface Attachment {
@@ -57,6 +58,8 @@ const AnnouncementList = React.memo(function AnnouncementList({ onEdit, refreshT
   const [displayCount, setDisplayCount] = useState(5); // Show 5 announcements initially
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  const { fetchReactionsForAnnouncements } = useReactions();
+
   const fetchAnnouncements = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -72,6 +75,12 @@ const AnnouncementList = React.memo(function AnnouncementList({ onEdit, refreshT
         setAnnouncements(processedAnnouncements);
         // Reset display count when fetching new announcements
         setDisplayCount(5);
+        
+        // Batch fetch reactions for the first 5 announcements
+        const initialAnnouncementIds = processedAnnouncements.slice(0, 5).map(a => a.id);
+        if (initialAnnouncementIds.length > 0) {
+          await fetchReactionsForAnnouncements(initialAnnouncementIds);
+        }
       } else {
         console.error("Failed to fetch announcements:", result.error);
       }
@@ -80,7 +89,7 @@ const AnnouncementList = React.memo(function AnnouncementList({ onEdit, refreshT
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchReactionsForAnnouncements]);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -208,9 +217,20 @@ const AnnouncementList = React.memo(function AnnouncementList({ onEdit, refreshT
     setIsLoadingMore(true);
     // Simulate a small delay for better UX
     await new Promise(resolve => setTimeout(resolve, 300));
-    setDisplayCount(prev => prev + 5);
+    const newDisplayCount = displayCount + 5;
+    setDisplayCount(newDisplayCount);
+    
+    // Fetch reactions for the newly displayed announcements
+    const newAnnouncementIds = sortedAnnouncements
+      .slice(displayCount, newDisplayCount)
+      .map(a => a.id);
+    
+    if (newAnnouncementIds.length > 0) {
+      await fetchReactionsForAnnouncements(newAnnouncementIds);
+    }
+    
     setIsLoadingMore(false);
-  }, []);
+  }, [displayCount, sortedAnnouncements, fetchReactionsForAnnouncements]);
 
   // Memoize admin status
   const isAdmin = useMemo(() => profile?.role === 'admin', [profile?.role]);

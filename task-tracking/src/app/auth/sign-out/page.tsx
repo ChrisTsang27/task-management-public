@@ -11,33 +11,32 @@ export default function SignOutPage() {
   const [isDone, setIsDone] = useState(false)
   const router = useRouter()
 
-  const handleSignOut = useCallback(async () => {
-    console.log('Starting sign out process...')
-    setIsLoading(true)
-    try {
-      console.log('Calling supabase.auth.signOut()')
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Supabase sign out error:', error)
-        throw error
-      }
-      console.log('Sign out successful, setting isDone to true')
-      setIsDone(true)
-      // Redirect to sign-in page after successful logout
-      setTimeout(() => {
-        console.log('Redirecting to sign-in page')
-        router.push('/auth/sign-in')
-      }, 1000)
-    } catch (error) {
-      console.error('Error signing out:', error)
-      setIsLoading(false)
-    }
-  }, [router, setIsLoading])
+
 
   // Auto sign out if user navigates directly to this page
   useEffect(() => {
-    handleSignOut()
-  }, [handleSignOut])
+    const signOut = async () => {
+      try {
+        const { error } = await supabase.auth.signOut({
+          scope: 'local'
+        })
+        
+        if (error) {
+          console.error('Sign out error:', error)
+        } else {
+          setIsDone(true)
+          
+          setTimeout(() => {
+            router.push('/auth/sign-in')
+          }, 1500)
+        }
+      } catch (error) {
+        console.error('Unexpected error during sign out:', error)
+      }
+    }
+
+    signOut()
+  }, [router])
 
   if (isDone) {
     return (

@@ -39,7 +39,6 @@ export default function UserMenu() {
             <Link
               href="/auth/sign-out"
               className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 border border-slate-500/50 transition-all duration-200 hover:shadow-lg hover:scale-105"
-              onClick={() => console.log('Sign out link clicked')}
             >
               Sign out
             </Link>

@@ -26,6 +26,7 @@ import {
 } from '@/hooks/useOptimizedAnnouncements';
 import AnnouncementList from './AnnouncementList';
 import AnnouncementForm from './AnnouncementForm';
+import { ReactionsProvider } from '@/contexts/ReactionsContext';
 
 // Types
 interface AnnouncementFilters {
@@ -415,9 +416,11 @@ export const OptimizedAnnouncementManager: React.FC = () => {
 
           {/* Results */}
           <Suspense fallback={<div className="h-96 bg-gray-200 rounded animate-pulse" />}>
-            <AnnouncementList
-              onEdit={handleEdit}
-            />
+            <ReactionsProvider>
+              <AnnouncementList
+                onEdit={handleEdit}
+              />
+            </ReactionsProvider>
           </Suspense>
         </div>
       </div>

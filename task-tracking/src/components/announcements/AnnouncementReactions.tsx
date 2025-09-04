@@ -1,16 +1,8 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
+import { useReactions } from "@/contexts/ReactionsContext";
 import { Heart, ThumbsUp, ThumbsDown, Smile, Frown, Star } from 'lucide-react';
-
-interface Reaction {
-  id: string;
-  emoji: string;
-  user_id: string;
-  profiles: {
-    full_name: string;
-  };
-}
 
 interface ReactionCount {
   emoji: string;
@@ -34,60 +26,24 @@ const EMOJI_OPTIONS = [
 
 export default function AnnouncementReactions({ announcementId }: AnnouncementReactionsProps) {
   const { profile } = useSupabaseProfile();
-  const [reactions, setReactions] = useState<Reaction[]>([]);
-  const [reactionCounts, setReactionCounts] = useState<ReactionCount[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { 
+    getReactionCountsForAnnouncement, 
+    addReaction, 
+    removeReaction,
+    isLoading: reactionsLoading 
+  } = useReactions();
   const [submittingEmoji, setSubmittingEmoji] = useState<string | null>(null);
 
-  const fetchReactions = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/announcements/${announcementId}/reactions`);
-      if (response.ok) {
-        const data = await response.json();
-        setReactions(data.reactions || []);
-      }
-    } catch (error) {
-      console.error('Error fetching reactions:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [announcementId]);
-
-  const calculateReactionCounts = useCallback(() => {
-    const counts: { [emoji: string]: ReactionCount } = {};
-
-    reactions.forEach((reaction) => {
-      if (!counts[reaction.emoji]) {
-        counts[reaction.emoji] = {
-          emoji: reaction.emoji,
-          count: 0,
-          users: [],
-          hasUserReacted: false,
-        };
-      }
-      counts[reaction.emoji].count++;
-      counts[reaction.emoji].users.push(reaction.profiles.full_name);
-      if (reaction.user_id === profile?.id) {
-        counts[reaction.emoji].hasUserReacted = true;
-      }
-    });
-
-    setReactionCounts(Object.values(counts));
-  }, [reactions, profile?.id]);
-
-  useEffect(() => {
-    fetchReactions();
-  }, [fetchReactions]);
-
-  useEffect(() => {
-    calculateReactionCounts();
-  }, [calculateReactionCounts]);
+  // Get reaction counts from context
+  const reactionCounts = getReactionCountsForAnnouncement(announcementId);
 
   const handleReaction = useCallback(async (emoji: string) => {
     if (!profile?.id) return;
 
     setSubmittingEmoji(emoji);
     try {
+      const hasReacted = reactionCounts.find(r => r.emoji === emoji)?.hasUserReacted || false;
+      
       const response = await fetch(`/api/announcements/${announcementId}/reactions`, {
         method: 'POST',
         headers: {
@@ -97,7 +53,12 @@ export default function AnnouncementReactions({ announcementId }: AnnouncementRe
       });
 
       if (response.ok) {
-        await fetchReactions(); // Refresh reactions
+        // Optimistically update the context
+        if (hasReacted) {
+          removeReaction(announcementId, emoji, profile.id);
+        } else {
+          addReaction(announcementId, emoji, profile.id);
+        }
       } else {
         console.error('Failed to toggle reaction');
       }
@@ -106,7 +67,7 @@ export default function AnnouncementReactions({ announcementId }: AnnouncementRe
     } finally {
       setSubmittingEmoji(null);
     }
-  }, [profile?.id, announcementId, fetchReactions]);
+  }, [profile?.id, announcementId, reactionCounts, addReaction, removeReaction]);
 
   const getReactionCount = useCallback((emoji: string) => {
     return reactionCounts.find(r => r.emoji === emoji);
@@ -142,7 +103,7 @@ export default function AnnouncementReactions({ announcementId }: AnnouncementRe
     return !!profile;
   }, [profile]);
 
-  if (isLoading) {
+  if (reactionsLoading) {
     return (
       <div className="flex items-center gap-2">
         <div className="w-4 h-4 border border-slate-400/30 border-t-slate-400 rounded-full animate-spin"></div>

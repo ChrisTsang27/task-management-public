@@ -7,6 +7,7 @@ import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import { getAnnouncements } from "@/lib/actions/announcements";
 import AnnouncementForm from "./AnnouncementForm";
 import AnnouncementList from "./AnnouncementList";
+import { ReactionsProvider } from '@/contexts/ReactionsContext';
 
 type View = "list" | "create" | "edit";
 
@@ -243,10 +244,12 @@ export default function AnnouncementManager() {
       </div>
 
       {/* Announcements List */}
-      <AnnouncementList 
-        onEdit={isAdmin ? handleEditAnnouncement : undefined}
-        refreshTrigger={refreshTrigger}
-      />
+      <ReactionsProvider>
+        <AnnouncementList 
+          onEdit={isAdmin ? handleEditAnnouncement : undefined}
+          refreshTrigger={refreshTrigger}
+        />
+      </ReactionsProvider>
     </div>
   );
 }
