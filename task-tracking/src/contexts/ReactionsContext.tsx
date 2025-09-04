@@ -8,7 +8,7 @@ interface Reaction {
   user_id: string;
   announcement_id: string;
   created_at: string;
-  profiles: {
+  profiles?: {
     id: string;
     full_name: string;
     title?: string;
@@ -53,7 +53,7 @@ export function ReactionsProvider({ children }: { children: React.ReactNode }) {
         };
       }
       counts[reaction.emoji].count++;
-      counts[reaction.emoji].users.push(reaction.profiles.full_name);
+      counts[reaction.emoji].users.push(reaction.profiles?.full_name || 'Unknown User');
       if (reaction.user_id === userId) {
         counts[reaction.emoji].hasUserReacted = true;
       }

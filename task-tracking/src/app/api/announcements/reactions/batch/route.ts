@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// Type definitions
+interface Profile {
+  id: string;
+  full_name: string;
+  title?: string;
+}
+
+interface ReactionData {
+  emoji: string;
+  user_id: string;
+  announcement_id: string;
+  created_at: string;
+  profiles: Profile[] | Profile | null;
+}
+
+interface FormattedReaction {
+  id: string;
+  emoji: string;
+  user_id: string;
+  announcement_id: string;
+  created_at: string;
+  profiles: Profile;
+}
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -58,37 +82,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Group reactions by announcement_id and aggregate by emoji
-    const groupedReactions: Record<string, { emoji: string; count: number; user_reacted: boolean }[]> = {};
+    // Group reactions by announcement_id
+    const groupedReactions: Record<string, FormattedReaction[]> = {};
     
     // Initialize empty arrays for all requested announcements
     announcementIds.forEach(id => {
       groupedReactions[id] = [];
     });
 
-    // Group and aggregate reactions by emoji
-    reactions?.forEach(reaction => {
+    // Group reactions by announcement_id
+    reactions?.forEach((reaction: ReactionData) => {
       const announcementId = reaction.announcement_id;
       if (!groupedReactions[announcementId]) {
         groupedReactions[announcementId] = [];
       }
       
-      // Find existing emoji entry or create new one
-      let emojiEntry = groupedReactions[announcementId].find(r => r.emoji === reaction.emoji);
-      if (!emojiEntry) {
-        emojiEntry = {
-          emoji: reaction.emoji,
-          count: 0,
-          user_reacted: false
-        };
-        groupedReactions[announcementId].push(emojiEntry);
-      }
+      // Add the reaction with proper structure
+      const formattedReaction: FormattedReaction = {
+        id: `${reaction.announcement_id}-${reaction.user_id}-${reaction.emoji}`,
+        emoji: reaction.emoji,
+        user_id: reaction.user_id,
+        announcement_id: reaction.announcement_id,
+        created_at: reaction.created_at,
+        profiles: Array.isArray(reaction.profiles) 
+          ? reaction.profiles[0] || {
+              id: reaction.user_id,
+              full_name: 'Unknown User',
+              title: undefined
+            }
+          : reaction.profiles || {
+              id: reaction.user_id,
+              full_name: 'Unknown User',
+              title: undefined
+            }
+      };
       
-      // Increment count
-      emojiEntry.count++;
-      
-      // Note: user_reacted would need user context to determine properly
-      // For now, keeping it as false since we don't have current user info in this endpoint
+      groupedReactions[announcementId].push(formattedReaction);
     });
 
     return NextResponse.json(

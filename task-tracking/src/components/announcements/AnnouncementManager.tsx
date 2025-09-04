@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import { getAnnouncements } from "@/lib/actions/announcements";
-import AnnouncementForm from "./AnnouncementForm";
-import AnnouncementList from "./AnnouncementList";
 import { ReactionsProvider } from '@/contexts/ReactionsContext';
+import { LoadingCard } from "@/components/ui/LoadingSpinner";
+
+// Lazy load heavy components
+const AnnouncementForm = lazy(() => import("./AnnouncementForm"));
+const AnnouncementList = lazy(() => import("./AnnouncementList"));
 
 type View = "list" | "create" | "edit";
 
@@ -119,7 +122,9 @@ export default function AnnouncementManager() {
             Back to Announcements
           </Button>
         </div>
-        <AnnouncementForm onSuccess={handleCreateSuccess} onCancel={handleCancel} />
+        <Suspense fallback={<LoadingCard />}>
+          <AnnouncementForm onSuccess={handleCreateSuccess} onCancel={handleCancel} />
+        </Suspense>
       </div>
     );
   }
@@ -245,10 +250,12 @@ export default function AnnouncementManager() {
 
       {/* Announcements List */}
       <ReactionsProvider>
-        <AnnouncementList 
-          onEdit={isAdmin ? handleEditAnnouncement : undefined}
-          refreshTrigger={refreshTrigger}
-        />
+        <Suspense fallback={<LoadingCard />}>
+          <AnnouncementList 
+            onEdit={isAdmin ? handleEditAnnouncement : undefined}
+            refreshTrigger={refreshTrigger}
+          />
+        </Suspense>
       </ReactionsProvider>
     </div>
   );

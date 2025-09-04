@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import supabase from "@/lib/supabaseBrowserClient";
-import RdxSelect from "@/components/ui/RdxSelect";
+import { LoadingCard } from "@/components/ui/LoadingSpinner";
+
+// Lazy load heavy components
+const RdxSelect = lazy(() => import("@/components/ui/RdxSelect"));
 
 type AuthMode = "signin" | "signup";
 type AuthMethod = "magic-link" | "password";
@@ -380,42 +383,48 @@ function SignInContent() {
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Job Title
                   </label>
-                  <RdxSelect
-                    value={title}
-                    onValueChange={setTitle}
-                    ariaLabel="Select your job title"
-                    placeholder="Select your title"
-                    items={titleOptions.map(option => ({ value: option, label: option }))}
-                    className="w-full"
-                  />
+                  <Suspense fallback={<LoadingCard />}>
+                    <RdxSelect
+                      value={title}
+                      onValueChange={setTitle}
+                      ariaLabel="Select your job title"
+                      placeholder="Select your title"
+                      items={titleOptions.map(option => ({ value: option, label: option }))}
+                      className="w-full"
+                    />
+                  </Suspense>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Department
                   </label>
-                  <RdxSelect
-                    value={department}
-                    onValueChange={setDepartment}
-                    ariaLabel="Select your department"
-                    placeholder="Select your department"
-                    items={departmentOptions.map(option => ({ value: option, label: option }))}
-                    className="w-full"
-                  />
+                  <Suspense fallback={<LoadingCard />}>
+                    <RdxSelect
+                      value={department}
+                      onValueChange={setDepartment}
+                      ariaLabel="Select your department"
+                      placeholder="Select your department"
+                      items={departmentOptions.map(option => ({ value: option, label: option }))}
+                      className="w-full"
+                    />
+                  </Suspense>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Location
                   </label>
-                  <RdxSelect
-                    value={location}
-                    onValueChange={setLocation}
-                    ariaLabel="Select your location"
-                    placeholder="Select your location"
-                    items={locationOptions.map(option => ({ value: option, label: option }))}
-                    className="w-full"
-                  />
+                  <Suspense fallback={<LoadingCard />}>
+                    <RdxSelect
+                      value={location}
+                      onValueChange={setLocation}
+                      ariaLabel="Select your location"
+                      placeholder="Select your location"
+                      items={locationOptions.map(option => ({ value: option, label: option }))}
+                      className="w-full"
+                    />
+                  </Suspense>
                 </div>
               </div>
             </>

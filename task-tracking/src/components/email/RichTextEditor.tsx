@@ -38,7 +38,7 @@ function isSafeHttpUrl(url: string) {
   }
 }
 
-export default function RichTextEditor({ value, onChange, placeholder }: Props) {
+const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, placeholder }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onUpdateDebounced = useCallback((html: string) => {
@@ -384,7 +384,9 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
     </div>
     </TooltipProvider>
   );
-}
+});
+
+export default RichTextEditor;
 
 function Menu({ children, onClose, ariaLabel }: { children: React.ReactNode; onClose: () => void; ariaLabel: string }) {
   return (

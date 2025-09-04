@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import SupabaseAuthInit from "@/components/auth/SupabaseAuthInit";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 
 const inter = Inter({
@@ -29,6 +30,7 @@ export default function RootLayout({
       >
         <ErrorBoundary>
           <SupabaseAuthInit />
+          <ServiceWorkerRegistration />
           {children}
         </ErrorBoundary>
       </body>

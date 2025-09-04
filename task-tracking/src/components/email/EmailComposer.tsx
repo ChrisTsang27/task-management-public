@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useCallback, useMemo, useReducer, useEffect, useState, lazy, Suspense } from "react";
-import EmailTemplate from "@/components/email/EmailTemplate";
-import TemplateCustomizer from "@/components/email/TemplateCustomizer";
 import { LoadingCard } from "@/components/ui/LoadingSpinner";
 
 // Lazy load heavy components
 const RichTextEditor = lazy(() => import("@/components/email/RichTextEditor"));
+const EmailTemplate = lazy(() => import("@/components/email/EmailTemplate"));
+const TemplateCustomizer = lazy(() => import("@/components/email/TemplateCustomizer"));
 import RdxSelect from "@/components/ui/RdxSelect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -638,10 +638,12 @@ const EmailComposer = React.memo(function EmailComposer() {
         </div>
         
         {/* Email Templates Section */}
-        <EmailTemplate 
-          onApplyTemplate={handleApplyTemplate}
-          currentContent={contentHTML}
-        />
+        <Suspense fallback={<LoadingCard />}>
+          <EmailTemplate 
+            onApplyTemplate={handleApplyTemplate}
+            currentContent={contentHTML}
+          />
+        </Suspense>
         
         {/* Email Section - Outside the grid */}
         <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-600/50 shadow-xl">
@@ -700,11 +702,13 @@ const EmailComposer = React.memo(function EmailComposer() {
         
         {/* Template Customizer Modal */}
         {showCustomizer && (
-          <TemplateCustomizer
-            content={pendingTemplate}
-            onContentUpdate={handleCustomizerUpdate}
-            onClose={handleCustomizerClose}
-          />
+          <Suspense fallback={<LoadingCard />}>
+            <TemplateCustomizer
+              content={pendingTemplate}
+              onContentUpdate={handleCustomizerUpdate}
+              onClose={handleCustomizerClose}
+            />
+          </Suspense>
         )}
     </div>
     </TooltipProvider>

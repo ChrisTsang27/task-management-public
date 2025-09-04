@@ -103,6 +103,26 @@ export async function middleware(req: NextRequest) {
     response.headers.set('x-user-id', session.user.id);
   }
 
+  // Add caching headers for static assets
+  if (req.nextUrl.pathname.startsWith('/_next/static/') || 
+      req.nextUrl.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)$/)) {
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+
+  // Add caching headers for API routes
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    // Default cache for API routes (can be overridden in individual routes)
+    if (!response.headers.get('Cache-Control')) {
+      response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    }
+  }
+
+  // Add security and performance headers
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
   return response;
 }
 
