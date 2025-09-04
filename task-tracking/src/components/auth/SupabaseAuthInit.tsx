@@ -26,6 +26,23 @@ export default function SupabaseAuthInit() {
     const createProfileIfNeeded = async (user: User) => {
       if (!user) return;
 
+      // Check for pending signup data (magic link) or user metadata (password signup)
+      const pendingDataStr = localStorage.getItem('pendingSignupData');
+      let signupData = null;
+      
+      if (pendingDataStr) {
+        // Magic link signup data from localStorage
+        signupData = JSON.parse(pendingDataStr);
+      } else if (user.user_metadata && user.user_metadata.full_name) {
+        // Password signup data from user metadata
+        signupData = {
+          fullName: user.user_metadata.full_name,
+          title: user.user_metadata.title,
+          department: user.user_metadata.department,
+          location: user.user_metadata.location
+        };
+      }
+
       try {
         // Check if profile already exists
         const { data: existingProfile } = await supabase
@@ -39,36 +56,24 @@ export default function SupabaseAuthInit() {
           localStorage.removeItem('pendingSignupData');
           return;
         }
-
-        // Check for pending signup data (magic link) or user metadata (password signup)
-        const pendingDataStr = localStorage.getItem('pendingSignupData');
-        let signupData = null;
-        
-        if (pendingDataStr) {
-          // Magic link signup data from localStorage
-          signupData = JSON.parse(pendingDataStr);
-        } else if (user.user_metadata && user.user_metadata.full_name) {
-          // Password signup data from user metadata
-          signupData = {
-            fullName: user.user_metadata.full_name,
-            title: user.user_metadata.title,
-            department: user.user_metadata.department,
-            location: user.user_metadata.location
-          };
-        }
         
         if (!signupData) {
           // No signup data, create basic profile
-          await supabase.from("profiles").insert({
+          const { error: insertError } = await supabase.from("profiles").insert({
             id: user.id,
             full_name: user.email?.split('@')[0] || 'User',
             role: 'member'
           });
+          
+          if (insertError) {
+            console.error('Profile creation failed (basic):', insertError);
+            throw insertError;
+          }
           return;
         }
 
         // Use signup data to create profile
-        await supabase.from("profiles").insert({
+        const { error: insertError } = await supabase.from("profiles").insert({
           id: user.id,
           full_name: signupData.fullName,
           title: signupData.title,
@@ -76,14 +81,44 @@ export default function SupabaseAuthInit() {
           department: signupData.department,
           location: signupData.location
         });
+        
+        if (insertError) {
+          console.error('Profile creation failed (with data):', insertError);
+          throw insertError;
+        }
 
         // Clean up the temporary data if it came from localStorage
         if (pendingDataStr) {
           localStorage.removeItem('pendingSignupData');
         }
       } catch (error) {
-        console.error('Error creating profile:', error);
-        // Don't throw - let the user continue even if profile creation fails
+        console.error('Error creating profile with client:', error);
+        
+        // Fallback: Use API endpoint with service role
+        try {
+          const response = await fetch('/api/profiles/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: user.id,
+              userData: signupData || {
+                full_name: user.email?.split('@')[0] || 'User'
+              }
+            })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('API profile creation failed:', errorData);
+          } else {
+            const result = await response.json();
+            console.log('Profile created via API:', result);
+          }
+        } catch (apiError) {
+          console.error('API fallback failed:', apiError);
+        }
       }
     };
 

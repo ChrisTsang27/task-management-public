@@ -11,6 +11,7 @@ import { Trash2, Edit, Calendar, User, Clock, AlertCircle, MessageCircle, Paperc
 import AnnouncementComments from './AnnouncementComments';
 import AnnouncementReactions from './AnnouncementReactions';
 
+
 interface Attachment {
   url: string;
   name: string;
@@ -241,7 +242,7 @@ const AnnouncementList = React.memo(function AnnouncementList({ onEdit, refreshT
 
   return (
     <TooltipProvider delayDuration={300}>
-    <div className="space-y-12">
+      <div className="space-y-6">
       {displayedAnnouncements.map((announcement, index) => {
         const expired = isExpired(announcement.expires_at);
         const isEven = index % 2 === 0;

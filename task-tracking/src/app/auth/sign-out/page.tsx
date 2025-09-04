@@ -12,12 +12,20 @@ export default function SignOutPage() {
   const router = useRouter()
 
   const handleSignOut = useCallback(async () => {
+    console.log('Starting sign out process...')
     setIsLoading(true)
     try {
-      await supabase.auth.signOut()
+      console.log('Calling supabase.auth.signOut()')
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Supabase sign out error:', error)
+        throw error
+      }
+      console.log('Sign out successful, setting isDone to true')
       setIsDone(true)
       // Redirect to sign-in page after successful logout
       setTimeout(() => {
+        console.log('Redirecting to sign-in page')
         router.push('/auth/sign-in')
       }, 1000)
     } catch (error) {
