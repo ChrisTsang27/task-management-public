@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useMemo, useCallback } from "react";
+import React, { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -85,6 +85,13 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
     },
     immediatelyRender: false,
   });
+
+  // Update editor content when value prop changes (for template application)
+  useEffect(() => {
+    if (editor && value !== undefined && editor.getHTML() !== value) {
+      editor.commands.setContent(value, false);
+    }
+  }, [editor, value]);
 
   const [openHead, setOpenHead] = useState(false);
   const [openAdd, setOpenAdd] = useState(false);

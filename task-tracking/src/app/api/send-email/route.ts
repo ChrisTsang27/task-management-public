@@ -22,16 +22,21 @@ const EmailPayload = z.object({
 function sanitize(html: string) {
   return sanitizeHtml(html, {
     allowedTags: [
+      "div",
       "p",
       "h1",
       "h2",
       "h3",
       "h4",
+      "h5",
+      "h6",
       "ul",
       "ol",
       "li",
       "strong",
+      "b",
       "em",
+      "i",
       "u",
       "s",
       "a",
@@ -49,19 +54,46 @@ function sanitize(html: string) {
       "sup",
       "sub",
       "br",
-      "span"
+      "span",
+      "small",
+      "center"
     ],
     allowedAttributes: {
+      '*': ['style', 'class'],
       a: ["href", "title", "target", "rel"],
       img: ["src", "alt", "title", "width", "height"],
       td: ["colspan", "rowspan"],
       th: ["colspan", "rowspan"],
-      // keep span without style to avoid CSS injection; extend cautiously if needed
+      div: ["style", "class"],
+      p: ["style", "class"],
+      span: ["style", "class"],
+      table: ["style", "class", "width", "cellpadding", "cellspacing", "border"]
     },
     allowedSchemes: ["http", "https", "mailto"],
     allowProtocolRelative: false,
     transformTags: {
       a: sanitizeHtml.simpleTransform("a", { target: "_blank", rel: "noopener noreferrer" }, true),
+    },
+    // Allow CSS properties commonly used in email templates
+    allowedStyles: {
+      '*': {
+        'color': [/^#[0-9a-fA-F]{3,6}$/, /^rgb\(\d+,\s*\d+,\s*\d+\)$/, /^[a-zA-Z]+$/],
+        'background-color': [/^#[0-9a-fA-F]{3,6}$/, /^rgb\(\d+,\s*\d+,\s*\d+\)$/, /^[a-zA-Z]+$/],
+        'font-family': [/^[\w\s,'-]+$/],
+        'font-size': [/^\d+px$/, /^\d+em$/, /^\d+%$/],
+        'font-weight': [/^(normal|bold|\d+)$/],
+        'text-align': [/^(left|right|center|justify)$/],
+        'padding': [/^\d+px(\s+\d+px){0,3}$/],
+        'margin': [/^\d+px(\s+\d+px){0,3}$/],
+        'border': [/^\d+px\s+(solid|dashed|dotted)\s+#[0-9a-fA-F]{3,6}$/],
+        'border-radius': [/^\d+px$/],
+        'width': [/^\d+px$/, /^\d+%$/, /^auto$/],
+        'height': [/^\d+px$/, /^\d+%$/, /^auto$/],
+        'max-width': [/^\d+px$/, /^\d+%$/],
+        'line-height': [/^\d+(\.\d+)?$/],
+        'display': [/^(block|inline|inline-block|none)$/],
+        'vertical-align': [/^(top|middle|bottom|baseline)$/]
+      }
     },
     // strip all disallowed
     disallowedTagsMode: "discard",

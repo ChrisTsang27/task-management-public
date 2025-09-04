@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useCallback, useMemo, useReducer, useEffect } from "react";
+import React, { useCallback, useMemo, useReducer, useEffect, useState } from "react";
 import RichTextEditor from "@/components/email/RichTextEditor";
+import EmailTemplate from "@/components/email/EmailTemplate";
+import TemplateCustomizer from "@/components/email/TemplateCustomizer";
 import RdxSelect from "@/components/ui/RdxSelect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -182,6 +184,10 @@ const EmailComposer = React.memo(function EmailComposer() {
     users, loading, recipients, title, subject, contentHTML, 
     sending, status, isDragging, occFilter, deptFilter, locFilter, userQuery 
   } = state;
+  
+  // Template customizer state
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState<string>("");
 
 
 
@@ -298,14 +304,17 @@ const EmailComposer = React.memo(function EmailComposer() {
   );
 
   const handleSend = useCallback(async () => {
+    if (recipients.length === 0 || !subject.trim() || contentIsEmpty) return;
+    
     dispatch({ type: 'SET_SENDING', payload: true });
     dispatch({ type: 'SET_STATUS', payload: null });
+    
     try {
       const payload = {
+        recipients: recipients.map(r => ({ name: r.name, email: r.email })),
         title,
         subject,
         content: contentHTML,
-        recipients: recipients.map((r) => ({ name: r.name, email: r.email })),
         timestamp: new Date().toISOString(),
       };
       const res = await fetch("/api/send-email", {
@@ -322,6 +331,27 @@ const EmailComposer = React.memo(function EmailComposer() {
       dispatch({ type: 'SET_SENDING', payload: false });
     }
   }, [title, subject, contentHTML, recipients]);
+
+  const handleApplyTemplate = useCallback((templateHtml: string) => {
+    // Check if template has placeholders that need customization
+    const hasPlaceholders = /\[[^\]]+\]/.test(templateHtml);
+    
+    if (hasPlaceholders) {
+      setPendingTemplate(templateHtml);
+      setShowCustomizer(true);
+    } else {
+      dispatch({ type: 'SET_CONTENT', payload: templateHtml });
+    }
+  }, []);
+
+  const handleCustomizerUpdate = useCallback((updatedContent: string) => {
+    dispatch({ type: 'SET_CONTENT', payload: updatedContent });
+  }, []);
+
+  const handleCustomizerClose = useCallback(() => {
+    setShowCustomizer(false);
+    setPendingTemplate("");
+  }, []);
 
   // Complete lists from signup form
   const titleOptions = useMemo(() => [
@@ -604,6 +634,12 @@ const EmailComposer = React.memo(function EmailComposer() {
 
         </div>
         
+        {/* Email Templates Section */}
+        <EmailTemplate 
+          onApplyTemplate={handleApplyTemplate}
+          currentContent={contentHTML}
+        />
+        
         {/* Email Section - Outside the grid */}
         <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-600/50 shadow-xl">
           <CardHeader>
@@ -656,6 +692,15 @@ const EmailComposer = React.memo(function EmailComposer() {
             )}
           </CardContent>
         </Card>
+        
+        {/* Template Customizer Modal */}
+        {showCustomizer && (
+          <TemplateCustomizer
+            content={pendingTemplate}
+            onContentUpdate={handleCustomizerUpdate}
+            onClose={handleCustomizerClose}
+          />
+        )}
     </div>
     </TooltipProvider>
   );
