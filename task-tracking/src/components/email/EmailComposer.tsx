@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useCallback, useMemo, useReducer, useEffect, useState } from "react";
-import RichTextEditor from "@/components/email/RichTextEditor";
+import React, { useCallback, useMemo, useReducer, useEffect, useState, lazy, Suspense } from "react";
 import EmailTemplate from "@/components/email/EmailTemplate";
 import TemplateCustomizer from "@/components/email/TemplateCustomizer";
+import { LoadingCard } from "@/components/ui/LoadingSpinner";
+
+// Lazy load heavy components
+const RichTextEditor = lazy(() => import("@/components/email/RichTextEditor"));
 import RdxSelect from "@/components/ui/RdxSelect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -330,7 +333,7 @@ const EmailComposer = React.memo(function EmailComposer() {
     } finally {
       dispatch({ type: 'SET_SENDING', payload: false });
     }
-  }, [title, subject, contentHTML, recipients]);
+  }, [title, subject, contentHTML, recipients, contentIsEmpty]);
 
   const handleApplyTemplate = useCallback((templateHtml: string) => {
     // Check if template has placeholders that need customization
@@ -669,7 +672,9 @@ const EmailComposer = React.memo(function EmailComposer() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-200">Content</label>
-              <RichTextEditor value={contentHTML} onChange={(value) => dispatch({ type: 'SET_CONTENT', payload: value })} placeholder="Write rich content (text, images, links, lists, tables, emojis)..." />
+              <Suspense fallback={<LoadingCard title="Loading Editor..." description="Please wait while we load the rich text editor" />}>
+                <RichTextEditor value={contentHTML} onChange={(value) => dispatch({ type: 'SET_CONTENT', payload: value })} placeholder="Write rich content (text, images, links, lists, tables, emojis)..." />
+              </Suspense>
               <p className="text-xs text-slate-400">Timestamp is added on send.</p>
             </div>
             <button

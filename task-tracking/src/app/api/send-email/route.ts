@@ -74,27 +74,6 @@ function sanitize(html: string) {
     transformTags: {
       a: sanitizeHtml.simpleTransform("a", { target: "_blank", rel: "noopener noreferrer" }, true),
     },
-    // Allow CSS properties commonly used in email templates
-    allowedStyles: {
-      '*': {
-        'color': [/^#[0-9a-fA-F]{3,6}$/, /^rgb\(\d+,\s*\d+,\s*\d+\)$/, /^[a-zA-Z]+$/],
-        'background-color': [/^#[0-9a-fA-F]{3,6}$/, /^rgb\(\d+,\s*\d+,\s*\d+\)$/, /^[a-zA-Z]+$/],
-        'font-family': [/^[\w\s,'-]+$/],
-        'font-size': [/^\d+px$/, /^\d+em$/, /^\d+%$/],
-        'font-weight': [/^(normal|bold|\d+)$/],
-        'text-align': [/^(left|right|center|justify)$/],
-        'padding': [/^\d+px(\s+\d+px){0,3}$/],
-        'margin': [/^\d+px(\s+\d+px){0,3}$/],
-        'border': [/^\d+px\s+(solid|dashed|dotted)\s+#[0-9a-fA-F]{3,6}$/],
-        'border-radius': [/^\d+px$/],
-        'width': [/^\d+px$/, /^\d+%$/, /^auto$/],
-        'height': [/^\d+px$/, /^\d+%$/, /^auto$/],
-        'max-width': [/^\d+px$/, /^\d+%$/],
-        'line-height': [/^\d+(\.\d+)?$/],
-        'display': [/^(block|inline|inline-block|none)$/],
-        'vertical-align': [/^(top|middle|bottom|baseline)$/]
-      }
-    },
     // strip all disallowed
     disallowedTagsMode: "discard",
   });
@@ -108,7 +87,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Invalid payload", issues: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { title, subject, content, recipients, timestamp } = parsed.data;
+    const { subject, content, recipients, timestamp } = parsed.data;
 
     // sanitize content
     const clean = sanitize(content);

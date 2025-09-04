@@ -62,11 +62,14 @@ const TemplateCustomizer: React.FC<TemplateCustomizerProps> = ({
     onClose();
   };
 
-  if (fields.length === 0) {
-    // No placeholders found, close automatically
-    React.useEffect(() => {
+  // Auto-close if no placeholders found
+  React.useEffect(() => {
+    if (fields.length === 0) {
       onClose();
-    }, [onClose]);
+    }
+  }, [fields.length, onClose]);
+
+  if (fields.length === 0) {
     return null;
   }
 

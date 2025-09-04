@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import EmailComposer from "@/components/email/EmailComposer";
-import AnnouncementManager from "@/components/announcements/AnnouncementManager";
+import React, { useEffect, useMemo, useState, useCallback, lazy, Suspense } from "react";
+import { LoadingCard } from "@/components/ui/LoadingSpinner";
+
+// Lazy load heavy components
+const EmailComposer = lazy(() => import("@/components/email/EmailComposer"));
+const AnnouncementManager = lazy(() => import("@/components/announcements/AnnouncementManager"));
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import supabase from "@/lib/supabaseBrowserClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -290,12 +293,18 @@ export default function Dashboard() {
                 {tab === "Announcements" && (
                   <Card className="bg-slate-800/50 border-slate-700">
                     <CardContent className="p-6">
-                      <AnnouncementManager />
+                      <Suspense fallback={<LoadingCard title="Loading Announcements..." description="Please wait while we load the announcement manager" />}>
+                        <AnnouncementManager />
+                      </Suspense>
                     </CardContent>
                   </Card>
                 )}
                 
-                {tab === "Email" && role === "admin" && <EmailComposer />}
+                {tab === "Email" && role === "admin" && (
+                  <Suspense fallback={<LoadingCard title="Loading Email Composer..." description="Please wait while we load the email composer" />}>
+                    <EmailComposer />
+                  </Suspense>
+                )}
                 
                 {tab === "Tasks" && (
                   <Card className="bg-slate-800/50 border-slate-700 overflow-visible">
