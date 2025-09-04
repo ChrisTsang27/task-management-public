@@ -11,8 +11,6 @@ export default function SignOutPage() {
   const supabase = createClient()
   const router = useRouter()
 
-
-
   // Auto sign out if user navigates directly to this page
   useEffect(() => {
     const signOut = async () => {
@@ -36,7 +34,7 @@ export default function SignOutPage() {
     }
 
     signOut()
-  }, [router])
+  }, [router, supabase])
 
   if (isDone) {
     return (
