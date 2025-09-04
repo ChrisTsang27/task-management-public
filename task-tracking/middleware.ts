@@ -83,17 +83,15 @@ export async function middleware(req: NextRequest) {
 
   // If authenticated and trying to access auth pages, redirect to main dashboard
   if (session && req.nextUrl.pathname.startsWith('/auth/sign-in')) {
-    const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/';
+    const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/dashboard';
     // Prevent redirect loops by checking if redirectTo is the same as current path
     if (redirectTo !== req.nextUrl.pathname) {
       return NextResponse.redirect(new URL(redirectTo, req.url));
     }
   }
 
-  // If authenticated and accessing /dashboard, redirect to root (stylish dashboard)
-  if (session && req.nextUrl.pathname === '/dashboard') {
-    return NextResponse.redirect(new URL('/', req.url));
-  }
+  // If authenticated and accessing /dashboard, allow it (no redirect to root)
+  // The dashboard page will handle the display logic
 
   // Allow auth pages to load without interference
   if (req.nextUrl.pathname.startsWith('/auth/')) {

@@ -87,11 +87,8 @@ const nextConfig = {
   // Compression
   compress: true,
   
-  // Power optimizations
+  // Remove X-Powered-By header for security
   poweredByHeader: false,
-  
-  // Output optimization
-  output: 'standalone',
   
   // Environment variables for build optimization
   env: {
