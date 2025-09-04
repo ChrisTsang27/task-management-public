@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -10,7 +10,7 @@ module.exports = {
     extend: {},
   },
   plugins: [
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('tailwind-scrollbar'),
+    // Using dynamic import for tailwind-scrollbar
+    await import('tailwind-scrollbar').then(module => module.default),
   ],
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
+import emailService from "@/lib/emailService";
 
 const EmailPayload = z.object({
   title: z.string().max(120).optional().default(""),
@@ -83,59 +84,49 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Content is empty after sanitization" }, { status: 400 });
     }
 
-    const env = {
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-      from: process.env.EMAIL_FROM,
-    };
-
-    // If SMTP placeholders still present, simulate send
-    const missing =
-      !env.host || !env.port || !env.user || !env.pass || !env.from || String(env.host).includes("PLACEHOLDER");
-    if (missing) {
+    // Use our EmailService to send emails
+    try {
+      // Prepare recipient emails
+      const recipientEmails = recipients.map(r => r.email);
+      
+      // Add timestamp to content if provided
+      const finalContent = timestamp ? `${clean}<br><br><small><em>Sent: ${timestamp}</em></small>` : clean;
+      
+      // Send email using our EmailService
+      const result = await emailService.sendEmail({
+        to: recipientEmails,
+        subject: subject,
+        html: finalContent
+      });
+      
+      if (result.success) {
+        return NextResponse.json(
+          {
+            message: "Email sent successfully",
+            messageId: result.messageId,
+            recipientsCount: recipients.length
+          },
+          { status: 200 }
+        );
+      } else {
+        return NextResponse.json(
+          {
+            message: "Failed to send email",
+            error: result.error
+          },
+          { status: 500 }
+        );
+      }
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
       return NextResponse.json(
         {
-          message:
-            "SMTP not configured. Simulated send only. Please set SMTP_* and EMAIL_FROM in .env.local.",
-          payload: {
-            title,
-            subject,
-            contentLength: clean.length,
-            recipientsCount: recipients.length,
-            timestamp,
-          },
+          message: "Email service error",
+          error: emailError instanceof Error ? emailError.message : "Unknown error"
         },
-        { status: 202 }
+        { status: 500 }
       );
     }
-
-    // Actual send via nodemailer (enable after credentials provided)
-    // const nodemailer = await import("nodemailer");
-    // const transporter = nodemailer.createTransport({
-    //   host: env.host,
-    //   port: Number(env.port),
-    //   secure: Number(env.port) === 465,
-    //   auth: { user: env.user, pass: env.pass },
-    // });
-    // const toList = recipients.map((r) => `${r.name} <${r.email}>`).join(", ");
-    // await transporter.sendMail({
-    //   from: env.from,
-    //   to: toList,
-    //   subject,
-    //   html: clean,
-    // });
-    // return NextResponse.json({ message: "Email sent" }, { status: 200 });
-
-    // For now, until SMTP is configured:
-    return NextResponse.json(
-      {
-        message: "SMTP configured check bypassed; uncomment nodemailer section to actually send.",
-        info: { recipientsCount: recipients.length, contentLength: clean.length },
-      },
-      { status: 200 }
-    );
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : "Unexpected error";
     return NextResponse.json({ message: errorMessage }, { status: 500 });

@@ -46,7 +46,7 @@ interface AnnouncementListProps {
   refreshTrigger?: number;
 }
 
-export default function AnnouncementList({ onEdit, refreshTrigger }: AnnouncementListProps) {
+const AnnouncementList = React.memo(function AnnouncementList({ onEdit, refreshTrigger }: AnnouncementListProps) {
   const { profile } = useSupabaseProfile();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -702,4 +702,6 @@ export default function AnnouncementList({ onEdit, refreshTrigger }: Announcemen
     )}
     </TooltipProvider>
   );
-}
+});
+
+export default AnnouncementList;

@@ -176,7 +176,7 @@ function emailReducer(state: EmailState, action: EmailAction): EmailState {
   }
 }
 
-export default function EmailComposer() {
+const EmailComposer = React.memo(function EmailComposer() {
   const [state, dispatch] = useReducer(emailReducer, initialState);
   const { 
     users, loading, recipients, title, subject, contentHTML, 
@@ -659,4 +659,6 @@ export default function EmailComposer() {
     </div>
     </TooltipProvider>
   );
-}
+});
+
+export default EmailComposer;
