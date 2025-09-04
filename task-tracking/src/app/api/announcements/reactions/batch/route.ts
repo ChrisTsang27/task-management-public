@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Group reactions by announcement_id
+    // Group reactions by announcement_id and aggregate by emoji
     const groupedReactions: Record<string, { emoji: string; count: number; user_reacted: boolean }[]> = {};
     
     // Initialize empty arrays for all requested announcements
@@ -66,11 +66,29 @@ export async function POST(request: NextRequest) {
       groupedReactions[id] = [];
     });
 
-    // Group the reactions
+    // Group and aggregate reactions by emoji
     reactions?.forEach(reaction => {
-      if (groupedReactions[reaction.announcement_id]) {
-        groupedReactions[reaction.announcement_id].push(reaction);
+      const announcementId = reaction.announcement_id;
+      if (!groupedReactions[announcementId]) {
+        groupedReactions[announcementId] = [];
       }
+      
+      // Find existing emoji entry or create new one
+      let emojiEntry = groupedReactions[announcementId].find(r => r.emoji === reaction.emoji);
+      if (!emojiEntry) {
+        emojiEntry = {
+          emoji: reaction.emoji,
+          count: 0,
+          user_reacted: false
+        };
+        groupedReactions[announcementId].push(emojiEntry);
+      }
+      
+      // Increment count
+      emojiEntry.count++;
+      
+      // Note: user_reacted would need user context to determine properly
+      // For now, keeping it as false since we don't have current user info in this endpoint
     });
 
     return NextResponse.json(
