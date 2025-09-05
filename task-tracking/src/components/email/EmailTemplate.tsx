@@ -1,8 +1,24 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import UnifiedTemplateCustomizer from "./UnifiedTemplateCustomizer";
+
+interface TemplateCustomization {
+  companyName: string;
+  department: string;
+  primaryColor: string;
+  secondaryColor: string;
+  backgroundColor: string;
+  textColor: string;
+  logoUrl: string;
+  fontFamily: string;
+  headerText: string;
+  footerText: string;
+  previewBackgroundColor: string;
+  cardBackgroundColor: string;
+}
 
 interface EmailTemplateProps {
   onApplyTemplate: (templateHtml: string) => void;
@@ -18,12 +34,15 @@ interface Template {
 }
 
 const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentContent }) => {
+  const [customTemplates, setCustomTemplates] = useState<Template[]>([]);
+  const [savedCustomizations, setSavedCustomizations] = useState<Record<string, TemplateCustomization>>({});
+  
   const templates: Template[] = [
     {
       id: "stonegate",
-      name: "Stonegate Outdoor",
-      description: "Official Stonegate Outdoor template with company branding",
-      preview: "🏕️ Stonegate Outdoor template",
+      name: "Stonegate Industries",
+      description: "Official Stonegate Industries template with company branding",
+      preview: "🏭 Stonegate Industries template",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
           <!-- Header with Stonegate Logo -->
@@ -31,8 +50,8 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
             <div style="display: inline-block; margin-bottom: 10px;">
               <div style="width: 120px; height: 120px; margin: 0 auto; border: 3px solid #ff6b35; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #ffffff;">
                 <div style="text-align: center;">
-                  <div style="color: #ff6b35; font-size: 24px; font-weight: bold; margin-bottom: 5px;">▲</div>
-                  <div style="color: #333333; font-size: 14px; font-weight: bold; line-height: 1.2;">STONEGATE<br/>OUTDOOR</div>
+                  <div style="color: #ff6b35; font-size: 24px; font-weight: bold; margin-bottom: 5px;">▼</div>
+                  <div style="color: #333333; font-size: 14px; font-weight: bold; line-height: 1.2;">LOGO<br/>HERE</div>
                 </div>
               </div>
             </div>
@@ -62,8 +81,8 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
             <div style="text-align: center; margin-bottom: 15px;">
               <div style="width: 80px; height: 80px; margin: 0 auto; border: 2px solid #ff6b35; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #ffffff;">
                 <div style="text-align: center;">
-                  <div style="color: #ff6b35; font-size: 16px; font-weight: bold; margin-bottom: 2px;">▲</div>
-                  <div style="color: #333333; font-size: 10px; font-weight: bold; line-height: 1.1;">STONEGATE<br/>OUTDOOR</div>
+                  <div style="color: #ff6b35; font-size: 16px; font-weight: bold; margin-bottom: 2px;">▼</div>
+                  <div style="color: #333333; font-size: 10px; font-weight: bold; line-height: 1.1;">LOGO<br/>HERE</div>
                 </div>
               </div>
             </div>
@@ -195,6 +214,40 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
     onApplyTemplate(template.html);
   };
 
+  const handleSaveCustomTemplate = (customTemplate: Template) => {
+    setCustomTemplates(prev => [...prev, { ...customTemplate, id: `custom-${Date.now()}` }]);
+  };
+
+  const handleSaveCustomization = (templateId: string, customization: TemplateCustomization) => {
+    setSavedCustomizations(prev => ({
+      ...prev,
+      [templateId]: customization
+    }));
+  };
+
+  const getDisplayName = (template: Template) => {
+    const customization = savedCustomizations[template.id];
+    if (customization && customization.companyName && customization.companyName !== "Your Company") {
+      const baseName = customization.companyName;
+      const department = customization.department?.trim();
+      return department ? `${baseName} ${department} Template` : `${baseName} Template`;
+    }
+    return template.name;
+  };
+
+  const getDisplayDescription = (template: Template) => {
+    const customization = savedCustomizations[template.id];
+    if (customization && customization.companyName && customization.companyName !== "Your Company") {
+      const baseName = customization.companyName;
+      const department = customization.department?.trim();
+      const companyName = department ? `${baseName} ${department}` : baseName;
+      return `Customized ${template.name.toLowerCase()} template for ${companyName}`;
+    }
+    return template.description;
+  };
+
+  const allTemplates = [...templates, ...customTemplates];
+
   return (
     <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-600/50 shadow-xl">
       <CardHeader>
@@ -203,31 +256,44 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {templates.map((template) => (
-            <Tooltip key={template.id}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => handleApplyTemplate(template)}
-                  className="p-4 rounded-lg bg-gradient-to-br from-slate-700/80 to-slate-800/80 border border-slate-600/50 hover:from-slate-600/90 hover:to-slate-700/90 transition-all text-left group shadow-lg hover:shadow-xl ring-1 ring-slate-300/10 hover:ring-slate-300/20"
-                >
-                  <div className="text-lg mb-2">{template.preview}</div>
-                  <div className="font-medium text-white text-sm mb-1">{template.name}</div>
-                  <div className="text-xs text-slate-300">{template.description}</div>
-                  <div className="mt-3 text-xs text-blue-400 group-hover:text-blue-300 transition-colors">
-                    Click to apply →
-                  </div>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Apply {template.name} template</p>
-              </TooltipContent>
-            </Tooltip>
+          {allTemplates.map((template) => (
+            <div key={template.id} className="relative">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => handleApplyTemplate(template)}
+                    className="w-full p-4 rounded-lg bg-gradient-to-br from-slate-700/80 to-slate-800/80 border border-slate-600/50 hover:from-slate-600/90 hover:to-slate-700/90 transition-all text-left group shadow-lg hover:shadow-xl ring-1 ring-slate-300/10 hover:ring-slate-300/20"
+                  >
+                    <div className="text-lg mb-2">{template.preview}</div>
+                    <div className="font-medium text-white text-sm mb-1">{getDisplayName(template)}</div>
+                    <div className="text-xs text-slate-300">{getDisplayDescription(template)}</div>
+                    <div className="mt-3 text-xs text-blue-400 group-hover:text-blue-300 transition-colors">
+                      Click to apply →
+                    </div>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Apply {template.name} template</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              {/* Template Builder Button */}
+              <div className="absolute top-2 right-2">
+                <UnifiedTemplateCustomizer
+                template={template}
+                onSave={handleSaveCustomTemplate}
+                onApply={onApplyTemplate}
+                onCustomizationSave={(customization) => handleSaveCustomization(template.id, customization)}
+                mode="template"
+              />
+              </div>
+            </div>
           ))}
         </div>
         
         <div className="mt-4 p-3 bg-slate-700/50 rounded-lg border border-slate-600/30">
           <p className="text-xs text-slate-300">
-            💡 <strong>Tip:</strong> Templates include placeholders like [Your Name] and [Your Position] that you can customize after applying.
+            💡 <strong>Tip:</strong> Click &quot;Customize&quot; to personalize templates with your logo, colors, and branding. Templates include placeholders like [Your Name] and [Your Position] that you can customize after applying.
           </p>
         </div>
       </CardContent>

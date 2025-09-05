@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useCallback, useMemo, useReducer, useEffect, useState, lazy, Suspense } from "react";
+import React, { useCallback, useMemo, useReducer, useEffect, lazy, Suspense } from "react";
 import { LoadingCard } from "@/components/ui/LoadingSpinner";
 
 // Lazy load heavy components
 const RichTextEditor = lazy(() => import("@/components/email/RichTextEditor"));
 const EmailTemplate = lazy(() => import("@/components/email/EmailTemplate"));
-const TemplateCustomizer = lazy(() => import("@/components/email/TemplateCustomizer"));
+// UnifiedTemplateCustomizer removed - now only used in EmailTemplate
 import RdxSelect from "@/components/ui/RdxSelect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -188,9 +188,7 @@ const EmailComposer = React.memo(function EmailComposer() {
     sending, status, isDragging, occFilter, deptFilter, locFilter, userQuery 
   } = state;
   
-  // Template customizer state
-  const [showCustomizer, setShowCustomizer] = useState(false);
-  const [pendingTemplate, setPendingTemplate] = useState<string>("");
+  // Template customizer state - removed as we now use unified customization
 
 
 
@@ -336,25 +334,12 @@ const EmailComposer = React.memo(function EmailComposer() {
   }, [title, subject, contentHTML, recipients, contentIsEmpty]);
 
   const handleApplyTemplate = useCallback((templateHtml: string) => {
-    // Check if template has placeholders that need customization
-    const hasPlaceholders = /\[[^\]]+\]/.test(templateHtml);
-    
-    if (hasPlaceholders) {
-      setPendingTemplate(templateHtml);
-      setShowCustomizer(true);
-    } else {
-      dispatch({ type: 'SET_CONTENT', payload: templateHtml });
-    }
+    // Directly apply the template without showing another customizer
+    // The template should already be customized from the template mode
+    dispatch({ type: 'SET_CONTENT', payload: templateHtml });
   }, []);
 
-  const handleCustomizerUpdate = useCallback((updatedContent: string) => {
-    dispatch({ type: 'SET_CONTENT', payload: updatedContent });
-  }, []);
-
-  const handleCustomizerClose = useCallback(() => {
-    setShowCustomizer(false);
-    setPendingTemplate("");
-  }, []);
+  // Removed handleCustomizerUpdate and handleCustomizerClose as we now use unified customization
 
   // Complete lists from signup form
   const titleOptions = useMemo(() => [
@@ -700,16 +685,7 @@ const EmailComposer = React.memo(function EmailComposer() {
           </CardContent>
         </Card>
         
-        {/* Template Customizer Modal */}
-        {showCustomizer && (
-          <Suspense fallback={<LoadingCard />}>
-            <TemplateCustomizer
-              content={pendingTemplate}
-              onContentUpdate={handleCustomizerUpdate}
-              onClose={handleCustomizerClose}
-            />
-          </Suspense>
-        )}
+        {/* Template Customizer Modal removed - now using unified customization in template selection */}
     </div>
     </TooltipProvider>
   );

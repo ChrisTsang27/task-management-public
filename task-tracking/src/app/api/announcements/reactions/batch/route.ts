@@ -39,8 +39,19 @@ const supabaseAdmin = createClient(
 // POST /api/announcements/reactions/batch - Fetch reactions for multiple announcements
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { announcementIds } = body;
+    // Handle empty request body gracefully
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('Invalid JSON in request body:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
+    const { announcementIds } = body || {};
 
     if (!announcementIds || !Array.isArray(announcementIds) || announcementIds.length === 0) {
       return NextResponse.json(
