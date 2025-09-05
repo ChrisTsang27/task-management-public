@@ -22,6 +22,9 @@ const nextConfig = {
     ],
   },
   
+  // Output file tracing configuration
+  outputFileTracingRoot: __dirname,
+  
   // Turbopack configuration (moved from experimental.turbo)
   turbopack: {
     root: __dirname,
