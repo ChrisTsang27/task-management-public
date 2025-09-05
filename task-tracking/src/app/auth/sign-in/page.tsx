@@ -184,8 +184,8 @@ function SignInContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-slate-900 to-slate-950 text-foreground flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl p-8 bg-gradient-to-br from-slate-800/80 via-slate-700/80 to-slate-800/80 border border-slate-600/50 shadow-2xl backdrop-blur-xl text-slate-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-slate-900 to-slate-950 text-foreground flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-md rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-slate-800/80 via-slate-700/80 to-slate-800/80 border border-slate-600/50 shadow-2xl backdrop-blur-xl text-slate-100 relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-emerald-500/5 pointer-events-none"></div>
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-blue-400/10 to-cyan-400/10 rounded-full blur-3xl"></div>
@@ -193,13 +193,13 @@ function SignInContent() {
         
         <div className="relative z-10">
           {/* App Logo/Title */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 sm:mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-emerald-500 mb-4 shadow-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
               Task Management
             </h1>
             <p className="text-slate-400 text-sm mt-1">Welcome back! Please sign in to continue</p>

@@ -184,7 +184,7 @@ export default function Dashboard() {
       </header>
 
       <main className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
           {/* Sidebar */}
           <aside className="lg:col-span-3 space-y-4">
             <Card className="bg-slate-800/50 border-slate-700">
@@ -312,7 +312,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between">
                         <CardTitle>Tasks</CardTitle>
                         {/* Top tab buttons for small screens */}
-                        <div className="flex lg:hidden flex-wrap gap-2">
+                        <div className="flex lg:hidden flex-wrap gap-2 mb-4">
                           {availableTabs.map((tabConfig) => (
                             <Button
                               key={tabConfig.key}

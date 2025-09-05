@@ -377,7 +377,7 @@ const EmailComposer = React.memo(function EmailComposer() {
 
   return (
     <TooltipProvider delayDuration={300}>
-    <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto space-y-4 text-white bg-slate-800/60 backdrop-blur-sm border border-slate-600/50 shadow-xl p-6 rounded-xl">
+    <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto space-y-4 text-white bg-slate-800/60 backdrop-blur-sm border border-slate-600/50 shadow-xl p-4 sm:p-6 rounded-xl">
       <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Email Composer</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -431,7 +431,7 @@ const EmailComposer = React.memo(function EmailComposer() {
               />
             </div>
             {/* Filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
               <RdxSelect
                 value={occFilter}
                 onValueChange={(value) => dispatch({ type: 'SET_OCC_FILTER', payload: value })}
@@ -572,7 +572,7 @@ const EmailComposer = React.memo(function EmailComposer() {
                     </TooltipContent>
                   </Tooltip>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3" onDrop={onDropRecipient} onDragOver={onDragOverRecipient}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" onDrop={onDropRecipient} onDragOver={onDragOverRecipient}>
                     {recipients.map((u) => (
                       <div
                         key={u.id}

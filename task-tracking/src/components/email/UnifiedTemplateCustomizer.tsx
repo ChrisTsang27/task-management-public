@@ -42,6 +42,7 @@ interface TemplateCustomization {
   footerText: string;
   previewBackgroundColor: string;
   cardBackgroundColor: string;
+  domainExtension: string;
 }
 
 interface PlaceholderField {
@@ -76,7 +77,8 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     headerText: "Professional Communication",
     footerText: "Thank you for your business",
     previewBackgroundColor: "#ffffff",
-    cardBackgroundColor: "#ffffff"
+    cardBackgroundColor: "#ffffff",
+    domainExtension: ".com"
   });
   
   // Placeholder replacement state
@@ -137,12 +139,15 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     customHtml = customHtml.replace(/Your Company Name/g, customization.companyName);
     customHtml = customHtml.replace(/Stonegate Outdoor/g, customization.companyName);
     customHtml = customHtml.replace(/Professional Communication/g, customization.headerText);
-    customHtml = customHtml.replace(/Thank you for your business/g, customization.footerText);
+    // Replace footer text based on template type
+    customHtml = customHtml.replace(/Kind regards,/g, customization.footerText);
+    customHtml = customHtml.replace(/Best regards,/g, customization.footerText);
+    customHtml = customHtml.replace(/Sincerely,/g, customization.footerText);
     // Replace Stonegate-specific contact information
-    customHtml = customHtml.replace(/www\.stonegateindustries\.com\.au/g, `www.${customization.companyName.toLowerCase().replace(/\s+/g, '')}.com`);
-    customHtml = customHtml.replace(/outdoor@stonegateindustries\.com\.au/g, `contact@${customization.companyName.toLowerCase().replace(/\s+/g, '')}.com`);
-    customHtml = customHtml.replace(/https:\/\/www\.stonegateindustries\.com\.au/g, `https://www.${customization.companyName.toLowerCase().replace(/\s+/g, '')}.com`);
-    customHtml = customHtml.replace(/mailto:outdoor@stonegateindustries\.com\.au/g, `mailto:contact@${customization.companyName.toLowerCase().replace(/\s+/g, '')}.com`);
+    customHtml = customHtml.replace(/www\.stonegateindustries\.com\.au/g, `www.${customization.companyName.toLowerCase().replace(/\s+/g, '')}${customization.domainExtension}`);
+    customHtml = customHtml.replace(/outdoor@stonegateindustries\.com\.au/g, `contact@${customization.companyName.toLowerCase().replace(/\s+/g, '')}${customization.domainExtension}`);
+    customHtml = customHtml.replace(/https:\/\/www\.stonegateindustries\.com\.au/g, `https://www.${customization.companyName.toLowerCase().replace(/\s+/g, '')}${customization.domainExtension}`);
+    customHtml = customHtml.replace(/mailto:outdoor@stonegateindustries\.com\.au/g, `mailto:contact@${customization.companyName.toLowerCase().replace(/\s+/g, '')}${customization.domainExtension}`);
     customHtml = customHtml.replace(/#1e40af/g, customization.primaryColor);
     customHtml = customHtml.replace(/#3b82f6/g, customization.secondaryColor);
     // Apply card background color first (more specific)
@@ -322,7 +327,7 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
 
 
   const dialogContent = (
-    <DialogContent className="max-w-7xl max-h-[92vh] overflow-y-auto bg-gradient-to-br from-slate-50 to-white border-slate-200/50 shadow-2xl">
+    <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[92vh] overflow-y-auto bg-gradient-to-br from-slate-50 to-white border-slate-200/50 shadow-2xl">
       <DialogHeader className="border-b border-slate-200/50 pb-6">
         <DialogTitle className="flex items-center gap-3 text-xl font-semibold text-slate-900">
           <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
@@ -341,11 +346,11 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
         {/* Customization Panel */}
         <div className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="flex w-full bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/50">
+            <TabsList className="grid w-full grid-cols-2 sm:flex bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/50">
               {availableTabs.map(tab => {
                 const Icon = tab.icon;
                 return (
-                  <TabsTrigger key={tab.value} value={tab.value} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-blue-600">
+                  <TabsTrigger key={tab.value} value={tab.value} className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 rounded-lg font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-blue-600 text-xs sm:text-sm">
                     <Icon className="w-4 h-4" />
                     {tab.label}
                   </TabsTrigger>
@@ -609,6 +614,17 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
                       placeholder="Thank you for your business"
                       rows={3}
                       className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none text-slate-900 font-medium bg-white"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="domainExtension" className="text-sm font-medium text-slate-700">Domain Extension</Label>
+                    <Input
+                      id="domainExtension"
+                      value={customization.domainExtension}
+                      onChange={(e) => handleCustomizationChange('domainExtension', e.target.value)}
+                      placeholder=".com"
+                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
                     />
                   </div>
                 </CardContent>

@@ -55,6 +55,7 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
                 </div>
               </div>
             </div>
+            <p style="margin: 10px 0 0 0; color: #333333; font-size: 14px; font-weight: 500;">Professional Communication</p>
           </div>
           
           <!-- Content Area -->
@@ -255,19 +256,33 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
         <p className="text-sm text-slate-300">Choose a professional template to get started</p>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {allTemplates.map((template) => (
-            <div key={template.id} className="relative">
+            <div key={template.id} className="bg-gradient-to-br from-slate-700/80 to-slate-800/80 border border-slate-600/50 rounded-xl shadow-lg hover:shadow-xl ring-1 ring-slate-300/10 hover:ring-slate-300/20 transition-all overflow-hidden">
+              {/* Header with Customize Button */}
+              <div className="flex items-center justify-between p-3 border-b border-slate-600/30">
+                <div className="text-xl">{template.preview}</div>
+                <UnifiedTemplateCustomizer
+                  template={template}
+                  onSave={handleSaveCustomTemplate}
+                  onApply={onApplyTemplate}
+                  onCustomizationSave={(customization) => handleSaveCustomization(template.id, customization)}
+                  mode="template"
+                />
+              </div>
+              
+              {/* Content Area */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => handleApplyTemplate(template)}
-                    className="w-full p-4 rounded-lg bg-gradient-to-br from-slate-700/80 to-slate-800/80 border border-slate-600/50 hover:from-slate-600/90 hover:to-slate-700/90 transition-all text-left group shadow-lg hover:shadow-xl ring-1 ring-slate-300/10 hover:ring-slate-300/20"
+                    className="w-full p-4 text-left group hover:bg-slate-600/20 transition-all min-h-[120px] flex flex-col justify-between"
                   >
-                    <div className="text-lg mb-2">{template.preview}</div>
-                    <div className="font-medium text-white text-sm mb-1">{getDisplayName(template)}</div>
-                    <div className="text-xs text-slate-300">{getDisplayDescription(template)}</div>
-                    <div className="mt-3 text-xs text-blue-400 group-hover:text-blue-300 transition-colors">
+                    <div className="space-y-2">
+                      <div className="font-semibold text-white text-base leading-tight">{getDisplayName(template)}</div>
+                      <div className="text-sm text-slate-300 leading-relaxed">{getDisplayDescription(template)}</div>
+                    </div>
+                    <div className="mt-4 text-sm text-blue-400 group-hover:text-blue-300 transition-colors font-medium">
                       Click to apply →
                     </div>
                   </button>
@@ -276,17 +291,6 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
                   <p>Apply {template.name} template</p>
                 </TooltipContent>
               </Tooltip>
-              
-              {/* Template Builder Button */}
-              <div className="absolute top-2 right-2">
-                <UnifiedTemplateCustomizer
-                template={template}
-                onSave={handleSaveCustomTemplate}
-                onApply={onApplyTemplate}
-                onCustomizationSave={(customization) => handleSaveCustomization(template.id, customization)}
-                mode="template"
-              />
-              </div>
             </div>
           ))}
         </div>
