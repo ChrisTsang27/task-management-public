@@ -210,7 +210,12 @@ const EmailComposer = React.memo(function EmailComposer() {
         }
         
         // Fetch users with real emails from our API endpoint
-        const response = await fetch('/api/users');
+        const response = await fetch('/api/users', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch users');
         }

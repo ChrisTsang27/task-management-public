@@ -112,12 +112,14 @@ export async function fetchUsers({
   department,
   location,
   role,
-  search
+  search,
+  token
 }: {
   department?: string;
   location?: string;
   role?: string;
   search?: string;
+  token?: string;
 } = {}) {
   const params = new URLSearchParams();
   
@@ -126,7 +128,17 @@ export async function fetchUsers({
   if (role) params.set('role', role);
   if (search) params.set('search', search);
   
-  const response = await fetch(`/api/users?${params}`);
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(`/api/users?${params}`, {
+    headers
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch users: ${response.statusText}`);
   }
