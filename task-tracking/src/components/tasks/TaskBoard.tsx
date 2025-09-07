@@ -304,7 +304,7 @@ export function TaskBoard({
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950/30 via-transparent to-slate-950/40" />
       
       {/* Enhanced Header with Advanced Glassmorphism */}
-      <div className="sticky top-0 z-50 backdrop-blur-2xl bg-slate-900/90 border-b border-slate-700/50 shadow-2xl shadow-black/50">
+      <div className="sticky top-0 z-20 backdrop-blur-2xl bg-slate-900/90 border-b border-slate-700/50 shadow-2xl shadow-black/50">
         {/* Subtle Header Glow */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5" />
         
