@@ -310,14 +310,14 @@ const AnnouncementList = React.memo(function AnnouncementList({ onEdit, refreshT
               </div>
             </div>
             {/* Priority badges positioned absolutely relative to card */}
-            <div className="flex items-center gap-3 flex-shrink-0 absolute top-6 right-6 z-10">
+            <div className="flex items-center gap-3 flex-shrink-0 absolute top-6 right-6 z-20">
               <Badge className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${getPriorityColor(announcement.priority)} backdrop-blur-sm`}>
                 <span className="mr-1.5">{getPriorityIcon(announcement.priority)}</span>
                 {announcement.priority.toUpperCase()}
               </Badge>
               {expired && (
                 <Badge className="bg-gradient-to-r from-red-500/30 to-red-600/30 text-red-300 border-red-400/50 text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg shadow-red-500/20 backdrop-blur-sm">
-
+                  <AlertCircle className="h-3 w-3 mr-1" />
                   EXPIRED
                 </Badge>
               )}
@@ -448,13 +448,7 @@ const AnnouncementList = React.memo(function AnnouncementList({ onEdit, refreshT
                         </span>
                       </div>
                       
-                      {/* Enhanced expired indicator */}
-                      {expired && (
-                        <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-br from-red-500/40 to-red-600/30 rounded-xl border border-red-400/50 shadow-lg shadow-red-500/20 animate-pulse">
-                          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl" />
-                          <AlertCircle className="h-5 w-5 text-red-300 relative z-10 filter drop-shadow-sm" />
-                        </div>
-                      )}
+                      {/* Removed duplicate expired indicator - now shown in top badge */}
                     </CardTitle>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-slate-300 flex-wrap">
