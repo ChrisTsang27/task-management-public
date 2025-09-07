@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
@@ -12,9 +10,8 @@ import supabase from "@/lib/supabaseBrowserClient";
 import type { User } from "@supabase/supabase-js";
 
 function DashboardContent() {
-  const router = useRouter();
   const { profile, loading } = useSupabaseProfile();
-  const { permissions, userRole } = useRoleAccess();
+  const { userRole } = useRoleAccess();
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -77,36 +74,7 @@ function DashboardContent() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Common tasks and navigation
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Button className="w-full" onClick={() => router.push('/teams')}>
-                View Teams
-              </Button>
-              {permissions.canCreateTasks && (
-                <Button className="w-full" onClick={() => router.push('/tasks')}>
-                  Manage Tasks
-                </Button>
-              )}
-              {permissions.canViewReports && (
-                <Button className="w-full" onClick={() => router.push('/reports')}>
-                  View Reports
-                </Button>
-              )}
-              {permissions.canAccessAdmin && (
-                <Button className="w-full" onClick={() => router.push('/admin')}>
-                  Admin Panel
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
 
         <Card>
           <CardHeader>

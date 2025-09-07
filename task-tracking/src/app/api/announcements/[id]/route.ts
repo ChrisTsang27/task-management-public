@@ -32,6 +32,25 @@ interface RouteParams {
 // GET /api/announcements/[id] - Fetch single announcement
 export async function GET(request: Request, { params }: RouteParams) {
   try {
+    // Get user from session
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Authorization required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Invalid authentication' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     if (!id) {

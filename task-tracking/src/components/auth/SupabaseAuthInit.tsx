@@ -113,8 +113,8 @@ export default function SupabaseAuthInit() {
             const errorData = await response.json();
             console.error('API profile creation failed:', errorData);
           } else {
-            const result = await response.json();
-            console.log('Profile created via API:', result);
+            await response.json();
+            // Profile created successfully via API
           }
         } catch (apiError) {
           console.error('API fallback failed:', apiError);

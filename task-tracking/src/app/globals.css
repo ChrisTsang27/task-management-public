@@ -238,6 +238,281 @@
 
 
 
+/* Advanced Gradient Animations */
+@keyframes gradient-x {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+@keyframes gradient-y {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: center top;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: center bottom;
+  }
+}
+
+@keyframes gradient-xy {
+  0%, 100% {
+    background-size: 400% 400%;
+    background-position: left center;
+  }
+  25% {
+    background-size: 400% 400%;
+    background-position: center top;
+  }
+  50% {
+    background-size: 400% 400%;
+    background-position: right center;
+  }
+  75% {
+    background-size: 400% 400%;
+    background-position: center bottom;
+  }
+}
+
+@keyframes gradient-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes gradient-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes gradient-wave {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Gradient Animation Classes */
+.animate-gradient-x {
+  animation: gradient-x 3s ease infinite;
+}
+
+.animate-gradient-y {
+  animation: gradient-y 3s ease infinite;
+}
+
+.animate-gradient-xy {
+  animation: gradient-xy 4s ease infinite;
+}
+
+.animate-gradient-pulse {
+  animation: gradient-pulse 2s ease-in-out infinite;
+}
+
+.animate-gradient-shimmer {
+  background-size: 200% 100%;
+  animation: gradient-shimmer 2s linear infinite;
+}
+
+.animate-gradient-wave {
+  background-size: 400% 400%;
+  animation: gradient-wave 3s ease infinite;
+}
+
+/* Enhanced Gradient Utilities */
+.gradient-border {
+  position: relative;
+  background: linear-gradient(45deg, transparent, transparent);
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b);
+  border-radius: inherit;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+}
+
+.gradient-text-glow {
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+}
+
+.gradient-shadow {
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.gradient-shadow-lg {
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    0 0 30px rgba(59, 130, 246, 0.4),
+    0 0 60px rgba(139, 92, 246, 0.2);
+}
+
+.gradient-backdrop {
+  backdrop-filter: blur(12px) saturate(180%);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Theme-aware gradient variables */
+:root {
+  --gradient-primary: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  --gradient-secondary: linear-gradient(135deg, #6366f1, #4338ca);
+  --gradient-accent: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  --gradient-success: linear-gradient(135deg, #10b981, #059669);
+  --gradient-warning: linear-gradient(135deg, #f59e0b, #d97706);
+  --gradient-danger: linear-gradient(135deg, #ef4444, #dc2626);
+  --gradient-surface: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+}
+
+.dark {
+  --gradient-primary: linear-gradient(135deg, #60a5fa, #3b82f6);
+  --gradient-secondary: linear-gradient(135deg, #818cf8, #6366f1);
+  --gradient-accent: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  --gradient-success: linear-gradient(135deg, #34d399, #10b981);
+  --gradient-warning: linear-gradient(135deg, #fbbf24, #f59e0b);
+  --gradient-danger: linear-gradient(135deg, #f87171, #ef4444);
+  --gradient-surface: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+}
+
+/* Typography Animations */
+@keyframes text-wave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes text-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes text-reveal {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes text-glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+
+/* Typography Effect Classes */
+.text-shadow-glow {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.gradient-text-glow {
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4);
+  background-size: 200% 200%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 3s ease infinite;
+}
+
+.text-emboss {
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.1), -1px -1px 0px rgba(0, 0, 0, 0.5);
+}
+
+.text-neon {
+  color: #fff;
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px #00ffff,
+    0 0 35px #00ffff,
+    0 0 40px #00ffff;
+}
+
+.text-stroke {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
+  text-stroke: 1px rgba(255, 255, 255, 0.3);
+}
+
+.text-glitch {
+  animation: text-glitch 0.3s infinite;
+}
+
+.animate-text-wave {
+  animation: text-wave 2s ease-in-out infinite;
+}
+
+.animate-text-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 200% 100%;
+  animation: text-shimmer 2s infinite;
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.animate-typewriter {
+  overflow: hidden;
+  border-right: 2px solid;
+  white-space: nowrap;
+  animation: typewriter 3s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+.animate-text-reveal {
+  animation: text-reveal 0.6s ease-out forwards;
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: currentColor; }
+}
+
+/* Animation delays */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-500 { animation-delay: 500ms; }
+
+/* Responsive typography utilities */
+.text-responsive {
+  transition: font-size 0.3s ease, line-height 0.3s ease;
+}
+
 /* Reset to default cursors - will be handled by React components */
 body {
   cursor: default;

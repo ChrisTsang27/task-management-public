@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 interface Profile {
@@ -22,8 +22,27 @@ const supabaseAdmin = createClient(
   }
 );
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Get user from session
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Authorization required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userAuthError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (userAuthError || !user) {
+      return NextResponse.json(
+        { error: 'Invalid authentication' },
+        { status: 401 }
+      );
+    }
+
     // First, get all profiles
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, lazy, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createAnnouncement } from "@/lib/actions/announcements";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import { Paperclip, X, Calendar } from 'lucide-react';
-import RichTextEditor from '@/components/email/RichTextEditor';
+const RichTextEditor = lazy(() => import('@/components/email/RichTextEditor'));
 
 interface AnnouncementFormProps {
   onSuccess?: () => void;
@@ -193,11 +193,13 @@ export default function AnnouncementForm({ onSuccess, onCancel }: AnnouncementFo
               <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 opacity-70 group-focus-within:opacity-100 transition-opacity duration-200"></div>
               Content *
             </label>
-            <RichTextEditor
-              value={formData.content}
-              onChange={(content) => handleInputChange("content", content)}
-              placeholder="Write your announcement content with rich formatting..."
-            />
+            <Suspense fallback={<div className="h-32 bg-gray-50 rounded-md animate-pulse" />}>
+              <RichTextEditor
+                value={formData.content}
+                onChange={(content) => handleInputChange("content", content)}
+                placeholder="Write your announcement content with rich formatting..."
+              />
+            </Suspense>
           </div>
 
           {/* Priority, Expiration Date, and Attachments Row */}

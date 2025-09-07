@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -410,9 +411,11 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
                       <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
                         <div className="flex items-center justify-between">
                           <div className="w-16 h-16 border rounded-lg shadow-sm overflow-hidden bg-white flex items-center justify-center">
-                            <img 
+                            <Image 
                               src={logoPreview} 
                               alt="Logo preview" 
+                              width={64}
+                              height={64}
                               className="max-w-full max-h-full object-contain"
                             />
                           </div>

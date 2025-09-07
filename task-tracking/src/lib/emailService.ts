@@ -53,10 +53,9 @@ class EmailService {
   async verifyConnection(): Promise<boolean> {
     try {
       await this.transporter.verify();
-      console.log('SMTP connection verified successfully');
       return true;
-    } catch (error) {
-      console.error('SMTP connection failed:', error);
+    } catch {
+      // SMTP connection failed
       return false;
     }
   }
@@ -73,14 +72,13 @@ class EmailService {
       };
 
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('Email sent successfully:', info.messageId);
       
       return {
         success: true,
         messageId: info.messageId
       };
     } catch (error) {
-      console.error('Failed to send email:', error);
+      // Failed to send email
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

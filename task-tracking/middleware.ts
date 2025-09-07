@@ -99,8 +99,15 @@ export async function middleware(req: NextRequest) {
   }
 
   // Add user ID to headers for API routes if authenticated
-  if (session && req.nextUrl.pathname.startsWith('/api/')) {
-    response.headers.set('x-user-id', session.user.id);
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    console.log('Middleware: API route detected:', req.nextUrl.pathname);
+    console.log('Middleware: Session exists:', !!session);
+    if (session) {
+      console.log('Middleware: Setting x-user-id header:', session.user.id);
+      response.headers.set('x-user-id', session.user.id);
+    } else {
+      console.log('Middleware: No session found for API route');
+    }
   }
 
   // Add caching headers for static assets

@@ -8,7 +8,7 @@ export default function ServiceWorkerRegistration() {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
-          console.log('Service Worker registered successfully:', registration.scope);
+          // Service Worker registered successfully
           
           // Check for updates
           registration.addEventListener('updatefound', () => {
@@ -17,14 +17,14 @@ export default function ServiceWorkerRegistration() {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   // New content is available, notify user
-                  console.log('New content available! Please refresh.');
+                  // Could show a toast notification here
                 }
               });
             }
           });
         })
-        .catch((error) => {
-          console.error('Service Worker registration failed:', error);
+        .catch(() => {
+          // Service Worker registration failed - could log to error service
         });
     }
   }, []);

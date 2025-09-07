@@ -27,6 +27,25 @@ const AnnouncementSchema = z.object({
 // GET /api/announcements - Fetch all announcements
 export async function GET(request: Request) {
   try {
+    // Get user from session
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Authorization required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Invalid authentication' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const teamId = searchParams.get('team_id');
     const limit = parseInt(searchParams.get('limit') || '50');

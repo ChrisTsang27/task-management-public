@@ -104,8 +104,6 @@ export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { id: announcementId } = await params;
     const body = await request.json();
-    console.log('POST request body:', body);
-    console.log('Headers:', Object.fromEntries(request.headers.entries()));
     
     if (!announcementId) {
       return NextResponse.json(

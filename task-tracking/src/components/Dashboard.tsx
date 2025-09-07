@@ -6,18 +6,30 @@ import { LoadingCard } from "@/components/ui/LoadingSpinner";
 // Lazy load heavy components
 const EmailComposer = lazy(() => import("@/components/email/EmailComposer"));
 const AnnouncementManager = lazy(() => import("@/components/announcements/AnnouncementManager"));
+const TaskManager = lazy(() => import("@/components/tasks/TaskManager"));
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import supabase from "@/lib/supabaseBrowserClient";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Menu, X, LayoutGrid, List, Calendar, Filter, Search, Settings } from "lucide-react";
+import { TeamSelector } from "@/components/ui/team-selector";
+import { Team } from "@/types/tasks";
 
 type Role = "admin" | "user";
 type Tab = "Announcements" | "Email" | "Tasks";
+type TaskView = "kanban" | "list" | "calendar";
 
 interface TabConfig {
   key: Tab;
   roles: Role[];
+  icon: React.ReactNode;
+  tooltip: string;
+}
+
+interface TaskViewConfig {
+  key: TaskView;
+  label: string;
   icon: React.ReactNode;
   tooltip: string;
 }
@@ -80,15 +92,138 @@ export default function Dashboard() {
     return allTabs.filter((t) => t.roles.includes(role));
   }, [allTabs, role]);
 
-  const [tab, setTab] = useState<Tab>("Announcements");
+  // Initialize tab from localStorage or URL params, fallback to "Tasks" for better UX
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window !== 'undefined') {
+      // Check URL params first
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab') as Tab;
+      if (tabParam && ['Announcements', 'Email', 'Tasks'].includes(tabParam)) {
+        return tabParam;
+      }
+      // Then check localStorage
+      const savedTab = localStorage.getItem('dashboard-tab') as Tab;
+      if (savedTab && ['Announcements', 'Email', 'Tasks'].includes(savedTab)) {
+        return savedTab;
+      }
+    }
+    return "Tasks"; // Default to Tasks instead of Announcements for better UX
+  });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [taskView, setTaskView] = useState<TaskView>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTaskView = localStorage.getItem('dashboard-task-view') as TaskView;
+      if (savedTaskView && ['kanban', 'list', 'calendar'].includes(savedTaskView)) {
+        return savedTaskView;
+      }
+    }
+    return "kanban";
+  });
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const teamParam = urlParams.get('team');
+      // If team=all or no team param, return null to show TeamOverview
+      if (teamParam === 'all' || !teamParam) {
+        return null;
+      }
+      // For specific team IDs, we'll let the TeamSelector handle the team data loading
+      return null;
+    }
+    return null;
+  });
+
+  // Handle team selection from TeamOverview
+  useEffect(() => {
+    const handleTeamSelection = (event: CustomEvent) => {
+      const { teamId } = event.detail;
+      // Create a minimal team object - the TeamSelector will handle the full team data
+      const team = { id: teamId, name: '', created_at: '' };
+      setSelectedTeam(team);
+    };
+
+    window.addEventListener('teamSelected', handleTeamSelection as EventListener);
+    
+    return () => {
+      window.removeEventListener('teamSelected', handleTeamSelection as EventListener);
+    };
+  }, []);
+
+  // Handle URL parameter changes for team selection
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const teamParam = urlParams.get('team');
+      
+      if (teamParam === 'all') {
+        setSelectedTeam(null);
+      }
+    };
+
+    // Listen for popstate events (back/forward navigation)
+    window.addEventListener('popstate', handleUrlChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+    };
+  }, []);
+
+  // Task view configurations
+  const taskViewConfigs: TaskViewConfig[] = useMemo(() => [
+    {
+      key: "kanban",
+      label: "Kanban Board",
+      icon: <LayoutGrid className="w-4 h-4" />,
+      tooltip: "View tasks in a kanban board layout"
+    },
+    {
+      key: "list",
+      label: "List View",
+      icon: <List className="w-4 h-4" />,
+      tooltip: "View tasks in a detailed list"
+    },
+    {
+      key: "calendar",
+      label: "Calendar",
+      icon: <Calendar className="w-4 h-4" />,
+      tooltip: "View tasks in a calendar layout"
+    }
+  ], []);
+
+  // Handle tab change with persistence
+  const handleTabChange = useCallback((newTab: Tab) => {
+    setTab(newTab);
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dashboard-tab', newTab);
+      // Update URL without page reload
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', newTab);
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
+
+  // Handle task view change with persistence
+  const handleTaskViewChange = useCallback((newTaskView: TaskView) => {
+    setTaskView(newTaskView);
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dashboard-task-view', newTaskView);
+    }
+  }, []);
 
   // Update tab when role changes and current tab is not available
   useEffect(() => {
     const availableTabKeys = availableTabs.map(t => t.key);
     if (availableTabKeys.length > 0 && !availableTabKeys.includes(tab)) {
-      setTab(availableTabKeys[0]);
+      handleTabChange(availableTabKeys[0]);
     }
-  }, [availableTabs, tab]);
+  }, [availableTabs, tab, handleTabChange]);
+
+  // Close sidebar when tab changes
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [tab]);
 
   // Memoize sign out handler
   const handleSignOut = useCallback(async () => {
@@ -130,17 +265,35 @@ export default function Dashboard() {
     <TooltipProvider delayDuration={300}>
       <div className="min-h-screen text-foreground bg-gradient-to-b from-blue-950 via-slate-900 to-slate-950">
       <header className="sticky top-0 z-10 bg-gradient-to-r from-slate-900/70 via-slate-800/70 to-slate-900/70 border-b border-slate-600/30 shadow-2xl backdrop-blur-xl backdrop-saturate-150">
-        <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-            </svg>
-            <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              Task Management
-            </span>
-          </div>
-          {/* User info and sign out */}
-          <div className="flex items-center gap-3">
+        <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              {/* Sidebar toggle button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="p-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Toggle sidebar</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+              </svg>
+              <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                Task Management
+              </span>
+            </div>
+            {/* User info and sign out */}
+            <div className="flex items-center gap-3">
             <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-slate-600/50 shadow-lg">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -179,114 +332,157 @@ export default function Dashboard() {
                 <p>Sign out of your account</p>
               </TooltipContent>
             </Tooltip>
+            </div>
           </div>
+          
+          {/* Navigation tabs */}
+          <nav className="flex flex-wrap gap-2">
+            {availableTabs.map((tabConfig) => (
+              <Tooltip key={tabConfig.key}>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => handleTabChange(tabConfig.key)}
+                    variant={tab === tabConfig.key ? "default" : "ghost"}
+                    className={`h-10 px-4 rounded-lg transition-all duration-200 ${
+                      tab === tabConfig.key 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
+                        : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+                    }`}
+                  >
+                    <span className="mr-2">{tabConfig.icon}</span>
+                    {tabConfig.key}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{tabConfig.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </nav>
         </div>
       </header>
 
-      <main className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-          {/* Sidebar */}
-          <aside className="lg:col-span-3 space-y-4">
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm text-white uppercase tracking-wider font-medium">Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="text-white">
-                    <span className="font-medium">Role: {role}</span>
-                  </div>
-                  <div className="text-white">
-                    <span className="font-medium">Tabs: {availableTabs.map(t => t.key).join(" • ")}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-slate-800/50 border-slate-700 shadow-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-sm text-slate-300 uppercase tracking-wider font-medium">NAVIGATION</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <nav className="flex flex-col gap-2">
-                  {availableTabs.map((tabConfig) => (
-                    <Tooltip key={tabConfig.key}>
+      <div className="flex">
+        {/* Collapsible Sidebar */}
+        <aside className={`fixed left-0 top-0 h-full bg-slate-900/95 backdrop-blur-xl border-r border-slate-600/30 transition-transform duration-300 ease-in-out z-20 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } w-80`}>
+          <div className="p-6 pt-20">
+            {/* Sidebar header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-white">Quick Actions</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 text-slate-300 hover:text-white hover:bg-slate-700/50"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Task view options - only show when Tasks tab is active */}
+            {tab === "Tasks" && (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-slate-400 mb-3">Task Views</h3>
+                <div className="space-y-2">
+                  {taskViewConfigs.map((viewConfig) => (
+                    <Tooltip key={viewConfig.key}>
                       <TooltipTrigger asChild>
                         <Button
-                          onClick={() => setTab(tabConfig.key)}
-                          variant={tab === tabConfig.key ? "default" : "ghost"}
-                          className={`justify-start h-12 px-4 rounded-lg transition-all duration-200 ${
-                            tab === tabConfig.key 
-                              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
+                          onClick={() => {
+                            handleTaskViewChange(viewConfig.key);
+                            setSidebarOpen(false);
+                          }}
+                          variant={taskView === viewConfig.key ? "default" : "ghost"}
+                          className={`w-full justify-start h-10 ${
+                            taskView === viewConfig.key 
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                               : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
                           }`}
                         >
-                          <span className="mr-3">{tabConfig.icon}</span>
-                          {tabConfig.key}
+                          <span className="mr-3">{viewConfig.icon}</span>
+                          {viewConfig.label}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{tabConfig.tooltip}</p>
+                        <p>{viewConfig.tooltip}</p>
                       </TooltipContent>
                     </Tooltip>
                   ))}
-                </nav>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-slate-800/50 border-slate-700 shadow-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-sm text-slate-300 uppercase tracking-wider font-medium">QUICK ACTIONS</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button className="w-full h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium rounded-lg shadow-md transition-all duration-200">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      New Task
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Create a new task</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={() => setTab("Announcements")}
-                      className="w-full h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Create Announcement
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Create a new announcement</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button className="w-full h-12 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-purple-600 hover:via-pink-600 hover:to-red-600 text-white font-medium rounded-lg shadow-md transition-all duration-200">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      Full Email Composer
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Open full email composer</p>
-                  </TooltipContent>
-                </Tooltip>
-              </CardContent>
-            </Card>
-          </aside>
-
-          {/* Main content */}
-          <section className="lg:col-span-9 space-y-6">
+                </div>
+              </div>
+            )}
+            
+            {/* Quick actions */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-slate-400 mb-3">Quick Actions</h3>
+              <div className="space-y-2">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-slate-300 hover:bg-slate-700/50 hover:text-white"
+                >
+                  <Search className="w-4 h-4 mr-3" />
+                  Search Tasks
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-slate-300 hover:bg-slate-700/50 hover:text-white"
+                >
+                  <Filter className="w-4 h-4 mr-3" />
+                  Filter & Sort
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-slate-300 hover:bg-slate-700/50 hover:text-white"
+                >
+                  <Settings className="w-4 h-4 mr-3" />
+                  Preferences
+                </Button>
+              </div>
+            </div>
+          </div>
+        </aside>
+        
+        {/* Sidebar overlay for mobile */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-10 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Main content area */}
+        <main className={`flex-1 transition-all duration-300 ease-in-out ${
+          sidebarOpen ? 'lg:ml-80' : 'ml-0'
+        }`}>
+          <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto px-4 py-6">
+            {/* Task view indicator for Tasks tab */}
+            {tab === "Tasks" && (
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-400">Current view:</span>
+                  <div className="flex items-center gap-2 px-3 py-1 bg-slate-800/50 rounded-lg border border-slate-600/30">
+                    {taskViewConfigs.find(v => v.key === taskView)?.icon}
+                    <span className="text-sm font-medium text-white">
+                      {taskViewConfigs.find(v => v.key === taskView)?.label}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden"
+                >
+                  <Menu className="w-4 h-4 mr-2" />
+                  Options
+                </Button>
+              </div>
+            )}
+            
+            {/* Main content */}
+            <section className="space-y-6">
             {/* Tab-based content - only show if there are available tabs */}
             {availableTabs.length > 0 && (
               <>
@@ -307,45 +503,29 @@ export default function Dashboard() {
                 )}
                 
                 {tab === "Tasks" && (
-                  <Card className="bg-slate-800/50 border-slate-700 overflow-visible">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle>Tasks</CardTitle>
-                        {/* Top tab buttons for small screens */}
-                        <div className="flex lg:hidden flex-wrap gap-2 mb-4">
-                          {availableTabs.map((tabConfig) => (
-                            <Button
-                              key={tabConfig.key}
-                              onClick={() => setTab(tabConfig.key)}
-                              variant={tab === tabConfig.key ? "default" : "outline"}
-                              size="sm"
-                              title={`Switch to ${tabConfig.key} tab`}
-                            >
-                              {tabConfig.key}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-10 m-10 overflow-visible">
-                      <div className="space-y-3">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-lg">Task Board</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-muted-foreground text-sm">Placeholder – Kanban with assistance workflow next.</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <TeamSelector 
+                        selectedTeam={selectedTeam}
+                        onTeamChange={setSelectedTeam}
+                      />
+                    </div>
+                    <Suspense fallback={<LoadingCard title="Loading Task Manager..." description="Please wait while we load the task manager" />}>
+                      <TaskManager 
+                        currentUserId={user?.id}
+                        className="w-full"
+                        viewMode={taskView}
+                        selectedTeam={selectedTeam}
+                      />
+                    </Suspense>
+                  </div>
                 )}
               </>
             )}
-          </section>
-        </div>
-      </main>
+            </section>
+          </div>
+        </main>
+      </div>
       </div>
     </TooltipProvider>
   );
