@@ -264,7 +264,7 @@ export default function Dashboard() {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="min-h-screen text-foreground bg-gradient-to-b from-blue-950 via-slate-900 to-slate-950">
-      <header className="sticky top-0 z-10 bg-gradient-to-r from-slate-900/70 via-slate-800/70 to-slate-900/70 border-b border-slate-600/30 shadow-2xl backdrop-blur-xl backdrop-saturate-150">
+      <header className="sticky top-0 z-30 bg-gradient-to-r from-slate-900/70 via-slate-800/70 to-slate-900/70 border-b border-slate-600/30 shadow-2xl backdrop-blur-xl backdrop-saturate-150">
         <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
@@ -447,7 +447,7 @@ export default function Dashboard() {
         {/* Sidebar overlay for mobile */}
         {sidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black/50 z-10 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-25 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
