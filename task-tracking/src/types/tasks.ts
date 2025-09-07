@@ -12,6 +12,23 @@ export type TaskStatus =
   | 'on_hold'
   | 'cancelled';
 
+// AI Insights interface
+export interface AIInsights {
+  auto_generated?: boolean;
+  initial_score?: boolean;
+  priority_factors?: {
+    urgency?: number;
+    complexity?: number;
+    dependencies?: number;
+    team_workload?: number;
+  };
+  recommendations?: string[];
+  risk_factors?: string[];
+  estimated_completion?: string;
+  similar_tasks?: string[];
+  bottleneck_prediction?: boolean;
+}
+
 
 
 export interface Task {
@@ -20,12 +37,22 @@ export interface Task {
   created_by?: string;
   assignee_id?: string;
   title: string;
+  description?: string; // Plain text description
   description_json?: Record<string, unknown>; // TipTap JSON content
   status: TaskStatus;
   due_date?: string; // ISO date string
   is_request: boolean; // For assistance requests
   created_at: string;
   updated_at: string;
+  
+  // AI Prioritization fields
+  priority_score?: number;
+  ai_insights?: AIInsights;
+  complexity_score?: number;
+  estimated_hours?: number;
+  dependencies?: string[];
+  tags?: string[];
+  ai_last_updated?: string;
   
   // Joined data
   team?: Team;
@@ -64,6 +91,11 @@ export interface CreateTaskData {
   status?: TaskStatus;
   due_date?: string;
   is_request?: boolean;
+  // AI Prioritization fields
+  complexity_score?: number;
+  estimated_hours?: number;
+  dependencies?: string[];
+  tags?: string[];
 }
 
 export interface UpdateTaskData {
@@ -72,6 +104,12 @@ export interface UpdateTaskData {
   status?: TaskStatus;
   assignee_id?: string;
   due_date?: string;
+  // AI Prioritization fields
+  complexity_score?: number;
+  estimated_hours?: number;
+  dependencies?: string[];
+  tags?: string[];
+  ai_insights?: AIInsights;
 }
 
 // Task status transitions mapping

@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
 
     // Create task data
     const taskData = {
-      ...body,
+      ...(body as CreateTaskData),
       created_by: user.id,
       // Preserve the status from the form, only override for assistance requests
       status: body.is_request ? 'awaiting_approval' : (body.status || 'awaiting_approval')

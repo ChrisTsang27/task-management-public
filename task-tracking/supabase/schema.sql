@@ -73,6 +73,7 @@ create table public.tasks (
   status task_status not null default 'awaiting_approval',
   due_date date,
   is_request boolean not null default false,
+  target_team_id uuid references public.teams(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -27,6 +27,8 @@ interface KanbanColumnProps {
   onRejectRequest?: (taskId: string) => void;
   className?: string;
   currentUserId?: string;
+  activeTaskUsers?: Record<string, string[]>;
+  aiPriorityEnabled?: boolean;
 }
 
 export const KanbanColumn = React.memo(function KanbanColumn({
@@ -36,7 +38,7 @@ export const KanbanColumn = React.memo(function KanbanColumn({
   onApproveRequest,
   onRejectRequest,
   className = '',
-  currentUserId
+  activeTaskUsers
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
@@ -185,7 +187,7 @@ export const KanbanColumn = React.memo(function KanbanColumn({
                 onStatusChange={onTaskStatusChange}
                 onApproveRequest={onApproveRequest}
                 onRejectRequest={onRejectRequest}
-                currentUserId={currentUserId}
+                activeUsers={activeTaskUsers?.[task.id] || []}
                 className="cursor-pointer hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 animate-fade-in"
               />
             </div>

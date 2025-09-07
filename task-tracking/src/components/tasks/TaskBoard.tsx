@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -24,6 +24,26 @@ import { Plus, Filter, Search, Users, LayoutGrid, Building2 } from 'lucide-react
 import { Input } from '@/components/ui/input';
 import { TaskFiltersPanel, TaskFilters } from '@/components/ui/task-filters';
 import { Team } from '@/types/tasks';
+import { RealtimeCollaborationService } from '@/services/realtime-collaboration';
+import { ConflictResolutionService } from '@/services/conflict-resolution';
+
+// Import ConflictData type
+interface ConflictData {
+  id: string;
+  taskId: string;
+  task: Task;
+  conflicts: {
+    userId: string;
+    userName: string;
+    fromStatus: TaskStatus;
+    toStatus: TaskStatus;
+    timestamp: number;
+  }[];
+  timestamp: number;
+}
+import { AIPriorityToggle } from '@/components/ui/ai-priority-toggle';
+import { AIPrioritizationService } from '@/services/ai-prioritization';
+import { ConflictResolutionModal } from '@/components/ui/conflict-resolution-modal';
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -89,6 +109,13 @@ export function TaskBoard({
   currentUserId,
   selectedTeam
 }: TaskBoardProps) {
+  const [realtimeService] = useState(() => RealtimeCollaborationService.getInstance());
+  const [conflictService] = useState(() => ConflictResolutionService.getInstance());
+  const [aiService] = useState(() => AIPrioritizationService.getInstance());
+  const [activeTaskUsers, setActiveTaskUsers] = useState<Record<string, string[]>>({});
+  const [currentConflict, setCurrentConflict] = useState<ConflictData | null>(null);
+  const [aiPriorityEnabled, setAiPriorityEnabled] = useState(true);
+  const [isRecalculatingPriority, setIsRecalculatingPriority] = useState(false);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -105,6 +132,38 @@ export function TaskBoard({
       },
     })
   );
+
+  // Initialize real-time collaboration
+  useEffect(() => {
+    if (currentUserId && selectedTeam) {
+      realtimeService.joinTeam(selectedTeam.id);
+      
+      // Subscribe to presence updates
+      const unsubscribe = realtimeService.onPresenceUpdate((presence) => {
+        const taskUsers: Record<string, string[]> = {};
+        Object.entries(presence).forEach(([userId, data]) => {
+          if (data && typeof data === 'object' && 'taskId' in data && data.taskId) {
+            if (!taskUsers[data.taskId as string]) {
+              taskUsers[data.taskId as string] = [];
+            }
+            taskUsers[data.taskId as string].push(userId);
+          }
+        });
+        setActiveTaskUsers(taskUsers);
+      });
+      
+      // Subscribe to conflict events
+      const unsubscribeConflicts = conflictService.onConflict((conflict) => {
+        setCurrentConflict(conflict);
+      });
+      
+      return () => {
+        unsubscribe();
+        unsubscribeConflicts();
+        realtimeService.leaveTeam();
+      };
+    }
+  }, [currentUserId, selectedTeam, realtimeService, conflictService]);
 
   // Filter and sort tasks
   const filteredTasks = useMemo(() => {
@@ -153,6 +212,11 @@ export function TaskBoard({
     // Apply sorting
     if (filters.sortBy) {
       result.sort((a, b) => {
+        // AI Priority sorting takes precedence when enabled
+        if (aiPriorityEnabled && filters.sortBy === 'created_at' && a.priority_score !== undefined && b.priority_score !== undefined) {
+          return b.priority_score - a.priority_score; // Higher priority first
+        }
+        
         let aValue: string | Date | number, bValue: string | Date | number;
         
         switch (filters.sortBy) {
@@ -184,7 +248,7 @@ export function TaskBoard({
     }
     
     return result;
-  }, [tasks, searchTerm, filters, selectedTeam]);
+  }, [tasks, searchTerm, filters, selectedTeam, aiPriorityEnabled]);
 
   // Organize tasks into columns
   const columns = useMemo(() => {
@@ -232,12 +296,69 @@ export function TaskBoard({
 
     // Only update if status actually changed
     if (task.status !== newStatus) {
+      // Check for conflicts before making the change
+      if (currentUserId && selectedTeam) {
+        const conflict = conflictService.detectConflict({
+          taskId,
+          fromStatus: task.status,
+          toStatus: newStatus,
+          userId: currentUserId,
+          timestamp: Date.now()
+        });
+        
+        if (conflict) {
+          setCurrentConflict(conflict);
+          return;
+        }
+        
+        // Broadcast task movement in real-time
+        realtimeService.broadcastTaskMovement({
+          taskId,
+          task,
+          fromStatus: task.status,
+          toStatus: newStatus
+        });
+      }
+      
       onTaskStatusChange?.(taskId, newStatus);
     }
   };
 
   const handleTaskStatusChange = (taskId: string, newStatus: string) => {
+    // Broadcast task status change in real-time
+    if (currentUserId && selectedTeam) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        realtimeService.broadcastTaskMovement({
+          taskId,
+          task,
+          fromStatus: task.status,
+          toStatus: newStatus as TaskStatus
+        });
+      }
+    }
+    
     onTaskStatusChange?.(taskId, newStatus as TaskStatus);
+  };
+
+  // AI Priority functions
+  const handleRecalculatePriority = async () => {
+    if (!selectedTeam || !currentUserId) return;
+    
+    setIsRecalculatingPriority(true);
+    try {
+      // Recalculate priorities for all team tasks
+      const teamTasks = filteredTasks.filter(task => task.team_id === selectedTeam.id);
+      for (const task of teamTasks) {
+        await aiService.calculateTaskPriority(task);
+      }
+      // Trigger a refresh of tasks to get updated priority scores
+      window.location.reload(); // Simple refresh - in production, you'd want to refetch data
+    } catch (error) {
+      console.error('Failed to recalculate priorities:', error);
+    } finally {
+      setIsRecalculatingPriority(false);
+    }
   };
 
   if (loading) {
@@ -275,7 +396,7 @@ export function TaskBoard({
       
       {/* Organic Noise Texture */}
       <div className="absolute inset-0 opacity-[0.015]" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http:%2F%2Fwww.w3.org%2F2000%2Fsvg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'%2F%3E%3C%2Ffilter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'%2F%3E%3C%2Fsvg%3E")`
       }} />
       
       {/* Floating Ambient Particles */}
@@ -342,6 +463,14 @@ export function TaskBoard({
             </div>
             
             <div className="flex items-center gap-3">
+              {/* AI Priority Toggle */}
+              <AIPriorityToggle
+                enabled={aiPriorityEnabled}
+                onToggle={setAiPriorityEnabled}
+                onRecalculate={handleRecalculatePriority}
+                isRecalculating={isRecalculatingPriority}
+              />
+              
               {/* Enhanced Search */}
               <div className="relative group">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-400 transition-colors" />
@@ -396,6 +525,25 @@ export function TaskBoard({
           </div>
         </div>
       </div>
+
+      {/* Conflict Resolution Modal */}
+       {currentConflict && (
+         <ConflictResolutionModal
+           conflict={currentConflict}
+           onResolve={async (resolution, selectedStatus) => {
+             try {
+               await conflictService.resolveConflict(currentConflict.id, resolution, selectedStatus);
+               setCurrentConflict(null);
+               // Refresh tasks after conflict resolution
+               window.location.reload();
+             } catch (error) {
+               console.error('Failed to resolve conflict:', error);
+             }
+           }}
+           onClose={() => setCurrentConflict(null)}
+           currentUserId={currentUserId}
+         />
+       )}
 
       {/* Enhanced Filters Panel */}
       {showFilters && (
@@ -540,6 +688,8 @@ export function TaskBoard({
                           onApproveRequest={onApproveRequest}
                           onRejectRequest={onRejectRequest}
                           currentUserId={currentUserId}
+                          activeTaskUsers={activeTaskUsers}
+                          aiPriorityEnabled={aiPriorityEnabled}
                         />
                       </div>
                     </div>

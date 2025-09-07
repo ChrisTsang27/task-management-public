@@ -33,6 +33,7 @@ import { format } from 'date-fns';
 import { CalendarIcon, Users, AlertCircle, Send } from 'lucide-react';
 import { Team, CreateAssistanceRequestData } from '@/types/tasks';
 import { useToast } from '@/hooks/use-toast';
+import supabase from '@/lib/supabaseBrowserClient';
 
 interface AssistanceRequestFormProps {
   open: boolean;
@@ -66,12 +67,23 @@ export function AssistanceRequestForm({
     const fetchTeams = async () => {
       setLoadingTeams(true);
       try {
-        const response = await fetch('/api/teams');
+        // Get current session for authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.access_token) {
+          throw new Error('Authentication required');
+        }
+
+        const response = await fetch('/api/teams', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
         if (!response.ok) throw new Error('Failed to fetch teams');
         
         const data = await response.json();
         // Filter out current team
-        const availableTeams = data.teams?.filter((team: Team) => team.id !== currentTeamId) || [];
+         const availableTeams = data.teams?.filter((team: Team) => team.id !== currentTeamId) || [];
         setTeams(availableTeams);
       } catch (error) {
         console.error('Error fetching teams:', error);
@@ -186,7 +198,7 @@ export function AssistanceRequestForm({
             {selectedTeam && (
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="outline" className="bg-blue-900/20 border-blue-600 text-blue-400">
-                  Requesting from: {selectedTeam.name}
+                  Requesting help from: {selectedTeam.name}
                 </Badge>
               </div>
             )}

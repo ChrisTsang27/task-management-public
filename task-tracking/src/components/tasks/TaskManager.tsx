@@ -128,10 +128,17 @@ export function TaskManager({
   // Handle assistance request submission
   const handleAssistanceRequest = useCallback(async (data: CreateAssistanceRequestData) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No authentication session');
+      }
+
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           ...data,

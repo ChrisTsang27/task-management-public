@@ -9,7 +9,7 @@ import {
   TASK_STATUS_LABELS
 } from '@/types/tasks';
 import { getStatusTransitionButtons } from '@/utils/workflow';
-import { Calendar, User, Clock, GripVertical, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, User, Clock, GripVertical, CheckCircle, XCircle, Brain, Zap, Users, AlertTriangle, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface TaskCardProps {
@@ -20,7 +20,7 @@ interface TaskCardProps {
   onRejectRequest?: (taskId: string) => void;
   isDragging?: boolean;
   className?: string;
-  currentUserId?: string;
+  activeUsers?: string[]; // Users currently viewing/editing this task
 }
 
 export const TaskCard = React.memo(function TaskCard({ 
@@ -30,7 +30,8 @@ export const TaskCard = React.memo(function TaskCard({
   onApproveRequest,
   onRejectRequest,
   isDragging = false,
-  className = ''
+  className = '',
+  activeUsers
 }: TaskCardProps) {
   const {
     attributes,
@@ -50,6 +51,28 @@ export const TaskCard = React.memo(function TaskCard({
   };
 
   const isOverdue = task.due_date && new Date(task.due_date) < new Date();
+
+  // AI Priority helpers
+  const getPriorityColor = (score: number) => {
+    if (score >= 80) return 'from-red-500 to-red-600';
+    if (score >= 60) return 'from-orange-500 to-orange-600';
+    if (score >= 40) return 'from-yellow-500 to-yellow-600';
+    return 'from-green-500 to-green-600';
+  };
+
+  const getPriorityLabel = (score: number) => {
+    if (score >= 80) return 'Critical';
+    if (score >= 60) return 'High';
+    if (score >= 40) return 'Medium';
+    return 'Low';
+  };
+
+  const getPriorityIcon = (score: number) => {
+    if (score >= 80) return <AlertTriangle className="w-3 h-3" />;
+    if (score >= 60) return <TrendingUp className="w-3 h-3" />;
+    if (score >= 40) return <Zap className="w-3 h-3" />;
+    return <CheckCircle className="w-3 h-3" />;
+  };
 
   // Extract text from description JSON
   const getDescriptionText = () => {
@@ -98,6 +121,29 @@ export const TaskCard = React.memo(function TaskCard({
     >
       {/* Enhanced Glow Effect */}
       <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/8 via-purple-500/6 to-emerald-500/8 opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out" />
+      
+      {/* AI Priority Indicator */}
+      {task.priority_score !== undefined && task.priority_score !== null && (
+        <div className="absolute -top-2 -right-2 z-10">
+          <div className={`px-2 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r ${getPriorityColor(task.priority_score)} shadow-lg border border-white/20 flex items-center gap-1`}>
+            {getPriorityIcon(task.priority_score)}
+            {getPriorityLabel(task.priority_score)}
+          </div>
+        </div>
+      )}
+      
+      {/* Real-time Collaboration Indicators */}
+      {activeUsers && activeUsers.length > 0 && (
+        <div className="absolute -top-1 -left-1 z-10">
+          <div className="flex items-center gap-1">
+            <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 shadow-lg border border-white/20">
+              <Users className="w-3 h-3" />
+              {activeUsers.length}
+            </div>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          </div>
+        </div>
+      )}
       <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-400/3 via-transparent to-violet-400/3 opacity-0 group-hover:opacity-100 transition-all duration-1000 ease-out delay-100" />
       
       {/* Header */}
@@ -116,14 +162,26 @@ export const TaskCard = React.memo(function TaskCard({
               {task.title}
             </h3>
             
-            {/* Status */}
-            <div className="flex items-center gap-2 mb-3">
+            {/* Status and AI Insights */}
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
               <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-slate-700/80 to-slate-600/80 text-slate-200 font-medium border border-slate-600/50 shadow-sm">
                 {TASK_STATUS_LABELS[task.status]}
               </span>
               {task.is_request && (
                 <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-900/80 to-purple-800/80 text-purple-200 font-medium border border-purple-700/50 shadow-sm">
                   Help Request
+                </span>
+              )}
+              {task.complexity_score !== undefined && task.complexity_score !== null && (
+                <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-blue-900/80 to-blue-800/80 text-blue-200 font-medium border border-blue-700/50 shadow-sm flex items-center gap-1">
+                  <Brain className="w-3 h-3" />
+                  {task.complexity_score}/10
+                </span>
+              )}
+              {task.estimated_hours && (
+                <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-amber-900/80 to-amber-800/80 text-amber-200 font-medium border border-amber-700/50 shadow-sm flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {task.estimated_hours}h
                 </span>
               )}
             </div>
@@ -174,6 +232,40 @@ export const TaskCard = React.memo(function TaskCard({
           <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/30 border border-slate-700/30">
             <User className="w-3.5 h-3.5 text-amber-400" />
             <span className="font-medium">Assigned to {task.assignee_profile.full_name || 'Unknown'}</span>
+          </div>
+        )}
+        
+        {/* AI Insights */}
+        {task.ai_insights && (
+          <div className="p-3 rounded-lg bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-700/30">
+            <div className="flex items-center gap-2 mb-2">
+              <Brain className="w-3.5 h-3.5 text-purple-400" />
+              <span className="font-medium text-purple-300">AI Insights</span>
+            </div>
+            <div className="text-xs text-slate-300 space-y-1">
+              {task.ai_insights.recommendations && task.ai_insights.recommendations.length > 0 && (
+                <div>• {task.ai_insights.recommendations[0]}</div>
+              )}
+              {task.ai_insights.recommendations && task.ai_insights.recommendations.length > 0 && (
+                <div>• {task.ai_insights.recommendations[0]}</div>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Tags */}
+        {task.tags && task.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {task.tags.slice(0, 3).map((tag, index) => (
+              <span key={index} className="text-xs px-2 py-1 rounded-full bg-slate-700/50 text-slate-300 border border-slate-600/50">
+                #{tag}
+              </span>
+            ))}
+            {task.tags.length > 3 && (
+              <span className="text-xs px-2 py-1 rounded-full bg-slate-700/50 text-slate-400 border border-slate-600/50">
+                +{task.tags.length - 3} more
+              </span>
+            )}
           </div>
         )}
       </div>
