@@ -149,55 +149,55 @@ export function getStatusTransitionButtons(
       status: 'awaiting_approval',
       label: 'Submit for Approval',
       variant: 'outline',
-      color: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200'
+      color: 'bg-blue-600 text-white border-blue-500 hover:bg-blue-700 hover:border-blue-600 shadow-md'
     },
     approved: {
       status: 'approved',
       label: 'Approve',
       variant: 'outline',
-      color: 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200'
+      color: 'bg-green-600 text-white border-green-500 hover:bg-green-700 hover:border-green-600 shadow-md'
     },
     in_progress: {
       status: 'in_progress',
       label: 'Approve & Start', // Updated label to reflect direct approval to in_progress
       variant: 'outline',
-      color: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200'
+      color: 'bg-blue-600 text-white border-blue-500 hover:bg-blue-700 hover:border-blue-600 shadow-md'
     },
     blocked: {
       status: 'blocked',
       label: 'Mark Blocked',
       variant: 'outline',
-      color: 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200'
+      color: 'bg-orange-600 text-white border-orange-500 hover:bg-orange-700 hover:border-orange-600 shadow-md'
     },
     pending_review: {
       status: 'pending_review',
       label: 'Ready for Review',
       variant: 'outline',
-      color: 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200'
+      color: 'bg-purple-600 text-white border-purple-500 hover:bg-purple-700 hover:border-purple-600 shadow-md'
     },
     done: {
       status: 'done',
       label: 'Mark Complete',
       variant: 'outline',
-      color: 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200'
+      color: 'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-700 hover:border-emerald-600 shadow-md'
     },
     cancelled: {
       status: 'cancelled',
       label: 'Cancel',
       variant: 'destructive',
-      color: 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200'
+      color: 'bg-red-600 text-white border-red-500 hover:bg-red-700 hover:border-red-600 shadow-md'
     },
     rework: {
       status: 'rework',
       label: 'Request Rework',
       variant: 'outline',
-      color: 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200'
+      color: 'bg-yellow-600 text-white border-yellow-500 hover:bg-yellow-700 hover:border-yellow-600 shadow-md'
     },
     on_hold: {
       status: 'on_hold',
       label: 'Put On Hold',
       variant: 'outline',
-      color: 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200'
+      color: 'bg-amber-600 text-white border-amber-500 hover:bg-amber-700 hover:border-amber-600 shadow-md'
     }
   };
 

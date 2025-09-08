@@ -1,37 +1,41 @@
 "use client";
-
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { 
   Task, 
-  TASK_STATUS_LABELS
+  TASK_STATUS_LABELS,
+  Team
 } from '@/types/tasks';
 import { getStatusTransitionButtons } from '@/utils/workflow';
-import { Calendar, User, Clock, GripVertical, CheckCircle, XCircle, Brain, Zap, Users, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Calendar, User, Clock, GripVertical, CheckCircle, XCircle, Brain, Zap, Users, AlertTriangle, TrendingUp, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface TaskCardProps {
   task: Task;
+  teams?: Team[];
   onClick?: (task: Task) => void;
   onStatusChange?: (taskId: string, newStatus: string) => void;
   onApproveRequest?: (taskId: string) => void;
   onRejectRequest?: (taskId: string) => void;
+  onDeleteTask?: (taskId: string) => void;
   isDragging?: boolean;
   className?: string;
   activeUsers?: string[]; // Users currently viewing/editing this task
 }
 
-export const TaskCard = React.memo(function TaskCard({ 
-  task, 
-  onClick, 
-  onStatusChange, 
+export const TaskCard = React.memo(function TaskCard({
+  task,
+  teams,
+  onClick,
+  onStatusChange,
   onApproveRequest,
   onRejectRequest,
+  onDeleteTask,
+  activeUsers = [],
   isDragging = false,
-  className = '',
-  activeUsers
+  className = ''
 }: TaskCardProps) {
   const {
     attributes,
@@ -46,36 +50,58 @@ export const TaskCard = React.memo(function TaskCard({
     transition,
   };
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     onClick?.(task);
-  };
+  }, [onClick, task]);
 
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date();
+  // Memoize expensive calculations
+  const requestingTeamName = useMemo(() => {
+    if (!task.is_request || !task.description_json?._metadata?.requesting_team_id) {
+      return null;
+    }
+    
+    const requestingTeam = teams?.find(team => team.id === task.description_json?._metadata?.requesting_team_id);
+    return requestingTeam?.name || 'Unknown Team';
+  }, [task.is_request, task.description_json, teams]);
 
-  // AI Priority helpers
-  const getPriorityColor = (score: number) => {
-    if (score >= 80) return 'from-red-500 to-red-600';
-    if (score >= 60) return 'from-orange-500 to-orange-600';
-    if (score >= 40) return 'from-yellow-500 to-yellow-600';
-    return 'from-green-500 to-green-600';
-  };
+  const isOverdue = useMemo(() => 
+    task.due_date && new Date(task.due_date) < new Date(), [task.due_date]);
 
-  const getPriorityLabel = (score: number) => {
-    if (score >= 80) return 'Critical';
-    if (score >= 60) return 'High';
-    if (score >= 40) return 'Medium';
-    return 'Low';
-  };
+  // Memoize priority calculations
+  const priorityData = useMemo(() => {
+    const score = task.priority_score;
+    if (score === undefined || score === null) return null;
+    
+    const getPriorityColor = (score: number) => {
+      if (score >= 80) return 'from-red-500 to-red-600';
+      if (score >= 60) return 'from-orange-500 to-orange-600';
+      if (score >= 40) return 'from-yellow-500 to-yellow-600';
+      return 'from-green-500 to-green-600';
+    };
 
-  const getPriorityIcon = (score: number) => {
-    if (score >= 80) return <AlertTriangle className="w-3 h-3" />;
-    if (score >= 60) return <TrendingUp className="w-3 h-3" />;
-    if (score >= 40) return <Zap className="w-3 h-3" />;
-    return <CheckCircle className="w-3 h-3" />;
-  };
+    const getPriorityLabel = (score: number) => {
+      if (score >= 80) return 'Critical';
+      if (score >= 60) return 'High';
+      if (score >= 40) return 'Medium';
+      return 'Low';
+    };
 
-  // Extract text from description JSON
-  const getDescriptionText = () => {
+    const getPriorityIcon = (score: number) => {
+      if (score >= 80) return <AlertTriangle className="w-3 h-3" />;
+      if (score >= 60) return <TrendingUp className="w-3 h-3" />;
+      if (score >= 40) return <Zap className="w-3 h-3" />;
+      return <CheckCircle className="w-3 h-3" />;
+    };
+    
+    return {
+      color: getPriorityColor(score),
+      label: getPriorityLabel(score),
+      icon: getPriorityIcon(score)
+    };
+  }, [task.priority_score]);
+
+  // Memoize description text extraction
+  const descriptionText = useMemo(() => {
     if (!task.description_json) return '';
     
     if (typeof task.description_json === 'string') {
@@ -97,7 +123,36 @@ export const TaskCard = React.memo(function TaskCard({
     };
     
     return extractText(task.description_json) || '';
-  };
+  }, [task.description_json]);
+
+  // Memoize action handlers
+  const handleApprove = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onApproveRequest) {
+      onApproveRequest(task.id);
+    } else if (onStatusChange) {
+      onStatusChange(task.id, 'in_progress');
+    }
+  }, [onApproveRequest, onStatusChange, task.id]);
+
+  const handleReject = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRejectRequest?.(task.id);
+  }, [onRejectRequest, task.id]);
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDeleteTask?.(task.id);
+  }, [onDeleteTask, task.id]);
+
+  const handleStatusChange = useCallback((status: string) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onStatusChange?.(task.id, status);
+  }, [onStatusChange, task.id]);
+
+  // Memoize status transition buttons
+  const statusButtons = useMemo(() => 
+    getStatusTransitionButtons(task.status).slice(0, 2), [task.status]);
 
   return (
     <div 
@@ -123,11 +178,11 @@ export const TaskCard = React.memo(function TaskCard({
       <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/8 via-purple-500/6 to-emerald-500/8 opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out" />
       
       {/* AI Priority Indicator */}
-      {task.priority_score !== undefined && task.priority_score !== null && (
+      {priorityData && (
         <div className="absolute -top-2 -right-2 z-10">
-          <div className={`px-2 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r ${getPriorityColor(task.priority_score)} shadow-lg border border-white/20 flex items-center gap-1`}>
-            {getPriorityIcon(task.priority_score)}
-            {getPriorityLabel(task.priority_score)}
+          <div className={`px-2 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r ${priorityData.color} shadow-lg border border-white/20 flex items-center gap-1`}>
+            {priorityData.icon}
+            {priorityData.label}
           </div>
         </div>
       )}
@@ -190,14 +245,22 @@ export const TaskCard = React.memo(function TaskCard({
       </div>
       
       {/* Description */}
-      {getDescriptionText() && (
+      {descriptionText && (
         <div className="relative text-slate-300 text-sm mb-4 line-clamp-2 leading-relaxed group-hover:text-slate-200 transition-all duration-400 ease-out">
-          {getDescriptionText()}
+          {descriptionText}
         </div>
       )}
       
       {/* Metadata */}
       <div className="relative space-y-2.5 text-xs text-slate-400 group-hover:text-slate-300 transition-all duration-400 ease-out">
+        {/* Requesting Team for Assistance Requests */}
+        {task.is_request && requestingTeamName && (
+          <div className="flex items-center gap-2.5 p-2 rounded-lg bg-amber-900/20 border border-amber-700/30">
+            <Users className="w-3.5 h-3.5 text-amber-400" />
+            <span className="font-medium text-amber-300">Request from {requestingTeamName}</span>
+          </div>
+        )}
+        
         {/* Creator */}
         {task.created_by_profile && (
           <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/30 border border-slate-700/30">
@@ -277,14 +340,7 @@ export const TaskCard = React.memo(function TaskCard({
              size="sm"
              variant="outline"
              className="flex-1 flex items-center justify-center gap-2 text-green-300 border-green-500/50 hover:bg-green-500/20 hover:border-green-400/60 bg-green-900/20 transition-all duration-300 ease-out hover:scale-105 active:scale-95 font-medium"
-             onClick={(e) => {
-               e.stopPropagation();
-               if (onApproveRequest) {
-                 onApproveRequest(task.id);
-               } else {
-                 onStatusChange(task.id, 'in_progress'); // Direct transition to in_progress
-               }
-             }}
+             onClick={handleApprove}
            >
              <CheckCircle className="w-3.5 h-3.5" />
              Approve & Start
@@ -293,10 +349,7 @@ export const TaskCard = React.memo(function TaskCard({
              size="sm"
              variant="outline"
              className="flex-1 flex items-center justify-center gap-2 text-red-300 border-red-500/50 hover:bg-red-500/20 hover:border-red-400/60 bg-red-900/20 transition-all duration-300 ease-out hover:scale-105 active:scale-95 font-medium"
-             onClick={(e) => {
-               e.stopPropagation();
-               onRejectRequest(task.id);
-             }}
+             onClick={handleReject}
            >
              <XCircle className="w-3.5 h-3.5" />
              Reject
@@ -305,22 +358,47 @@ export const TaskCard = React.memo(function TaskCard({
        ) : (
         onStatusChange && (
           <div className="relative flex gap-3 mt-4 pt-4 border-t border-slate-600/50">
-            {getStatusTransitionButtons(task.status).slice(0, 2).map((button) => (
+            {statusButtons.map((button) => (
               <Button
                 key={button.status}
                 size="sm"
                 variant="outline"
                 className="flex-1 text-slate-200 border-slate-500/50 hover:bg-slate-600/30 hover:border-slate-400/60 bg-slate-800/30 transition-all duration-300 ease-out hover:scale-105 active:scale-95 font-medium"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStatusChange(task.id, button.status);
-                }}
+                onClick={handleStatusChange(button.status)}
               >
                 {button.label}
               </Button>
             ))}
           </div>
         )
+      )}
+      
+      {/* Delete and Reject Actions */}
+      {(onDeleteTask || (onRejectRequest && !task.is_request)) && (
+        <div className="relative flex gap-3 mt-3 pt-3 border-t border-slate-600/30">
+          {onRejectRequest && !task.is_request && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 flex items-center justify-center gap-2 text-orange-300 border-orange-500/50 hover:bg-orange-500/20 hover:border-orange-400/60 bg-orange-900/20 transition-all duration-300 ease-out hover:scale-105 active:scale-95 font-medium"
+              onClick={handleReject}
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              Reject
+            </Button>
+          )}
+          {onDeleteTask && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 flex items-center justify-center gap-2 text-red-300 border-red-500/50 hover:bg-red-500/20 hover:border-red-400/60 bg-red-900/20 transition-all duration-300 ease-out hover:scale-105 active:scale-95 font-medium"
+              onClick={handleDelete}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

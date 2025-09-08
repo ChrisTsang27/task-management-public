@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,7 @@ export function StatusTransitionDialog({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Early return after all hooks are defined
   if (!task) return null;
 
   const validation = validateStatusTransition(

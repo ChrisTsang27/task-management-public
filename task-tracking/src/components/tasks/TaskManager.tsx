@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { TaskBoard } from './TaskBoard';
 import { TaskForm } from './TaskForm';
 import { TaskDetails } from './TaskDetails';
 import { StatusTransitionDialog } from './StatusTransitionDialog';
 import { AssistanceRequestForm } from './AssistanceRequestForm';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import TeamOverview from '../TeamOverview';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ interface TaskManagerProps {
   selectedTeam?: Team | null;
 }
 
-export function TaskManager({
+export const TaskManager = React.memo(function TaskManager({
   className = '',
   currentUserId,
   teamId,
@@ -40,6 +41,7 @@ export function TaskManager({
 }: TaskManagerProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<Array<{ id: string; name: string; email: string }>>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -50,8 +52,22 @@ export function TaskManager({
     newStatus: TaskStatus;
   } | null>(null);
   const [showAssistanceForm, setShowAssistanceForm] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    open: boolean;
+    taskId: string;
+    taskTitle: string;
+  }>({ open: false, taskId: '', taskTitle: '' });
+  const [rejectConfirmation, setRejectConfirmation] = useState<{
+    open: boolean;
+    taskId: string;
+    taskTitle: string;
+  }>({ open: false, taskId: '', taskTitle: '' });
+  const [confirmationLoading, setConfirmationLoading] = useState(false);
 
   const { toast } = useToast();
+
+  // Memoize effective team ID to prevent unnecessary re-renders
+  const effectiveTeamId = useMemo(() => selectedTeam?.id || teamId, [selectedTeam?.id, teamId]);
 
   // Fetch users from database
   const fetchUsers = useCallback(async () => {
@@ -75,10 +91,31 @@ export function TaskManager({
     }
   }, []);
 
-  // Load users only once on component mount
+  // Fetch teams from database
+  const fetchTeams = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const response = await fetch('/api/teams', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTeams(data.teams || []);
+      }
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    }
+  }, []);
+
+  // Load users and teams only once on component mount
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchTeams();
+  }, [fetchUsers, fetchTeams]);
 
   // Fetch tasks from API
   const fetchTasks = useCallback(async () => {
@@ -86,8 +123,6 @@ export function TaskManager({
       setLoading(true);
       const params = new URLSearchParams();
       
-      // Use selectedTeam.id if available, otherwise fall back to teamId
-      const effectiveTeamId = selectedTeam?.id || teamId;
       if (effectiveTeamId) params.append('team_id', effectiveTeamId);
       
       // Get session for authentication
@@ -118,12 +153,17 @@ export function TaskManager({
     } finally {
       setLoading(false);
     }
-  }, [selectedTeam?.id, teamId, toast]);
+  }, [effectiveTeamId, toast, teamId]);
 
   // Load tasks when dependencies change
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+
+  // Memoize filtered tasks for performance
+  const memoizedTasks = useMemo(() => tasks, [tasks]);
+  const memoizedUsers = useMemo(() => users, [users]);
+  const memoizedTeams = useMemo(() => teams, [teams]);
 
   // Handle assistance request submission
   const handleAssistanceRequest = useCallback(async (data: CreateAssistanceRequestData) => {
@@ -142,6 +182,7 @@ export function TaskManager({
         },
         body: JSON.stringify({
           ...data,
+          team_id: teamId, // Include the requesting team's ID
           is_request: true,
           status: 'awaiting_approval'
         }),
@@ -154,7 +195,7 @@ export function TaskManager({
       const newRequest = await response.json();
       
       // Add to tasks list if it's for the current team
-      if (newRequest.team_id === teamId) {
+      if (newRequest.team_id === effectiveTeamId) {
         setTasks(prevTasks => [newRequest, ...prevTasks]);
       }
 
@@ -171,7 +212,7 @@ export function TaskManager({
       });
       throw error;
     }
-  }, [teamId, toast]);
+  }, [effectiveTeamId, toast]);
 
   // Change task status
   const handleTaskStatusChange = useCallback(async (taskId: string, newStatus: TaskStatus, comment?: string) => {
@@ -201,6 +242,8 @@ export function TaskManager({
         throw new Error('Authentication required');
       }
 
+
+
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: 'PUT',
         headers: {
@@ -208,13 +251,14 @@ export function TaskManager({
           'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          status: newStatus,
-          comment: comment
+          status: newStatus
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update task status');
+        const errorData = await response.text();
+        console.error('API Error:', response.status, response.statusText, errorData);
+        throw new Error(`Failed to update task status: ${response.status} ${response.statusText}`);
       }
 
       const updatedTask = await response.json();
@@ -239,10 +283,30 @@ export function TaskManager({
     await handleTaskStatusChange(taskId, 'in_progress');
   }, [handleTaskStatusChange]);
 
-  // Handle assistance request rejection
-  const handleRejectRequest = useCallback(async (taskId: string) => {
-    await handleTaskStatusChange(taskId, 'cancelled');
-  }, [handleTaskStatusChange]);
+  // Show reject confirmation dialog
+  const handleRejectRequest = useCallback((taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      setRejectConfirmation({
+        open: true,
+        taskId,
+        taskTitle: task.title
+      });
+    }
+  }, [tasks]);
+
+  // Actually reject the task after confirmation
+  const confirmRejectTask = async () => {
+    try {
+      setConfirmationLoading(true);
+      await handleTaskStatusChange(rejectConfirmation.taskId, 'done', 'Task rejected by user');
+      setRejectConfirmation({ open: false, taskId: '', taskTitle: '' });
+    } catch (error) {
+      console.error('Error rejecting task:', error);
+    } finally {
+      setConfirmationLoading(false);
+    }
+  };
 
   // Create new task
   const handleCreateTask = async (data: CreateTaskRequest) => {
@@ -349,18 +413,56 @@ export function TaskManager({
     }
   };
 
-  // Delete task
-  const handleDeleteTask = async (taskId: string) => {
+  // Show delete confirmation dialog
+  const handleDeleteTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      setDeleteConfirmation({
+        open: true,
+        taskId,
+        taskTitle: task.title
+      });
+    }
+  };
+
+  // Actually delete the task after confirmation
+  const confirmDeleteTask = async () => {
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      setConfirmationLoading(true);
+      
+      // Get current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch(`/api/tasks/${deleteConfirmation.taskId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete task');
+        const errorText = await response.text();
+        let errorMessage = 'Failed to delete task';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If not JSON, use the text as is
+          errorMessage = errorText || errorMessage;
+        }
+        
+        console.error('Error deleting task:', errorMessage);
+        
+        throw new Error(`${errorMessage} (${response.status})`);
       }
 
-      setTasks(prev => prev.filter(task => task.id !== taskId));
+      setTasks(prev => prev.filter(task => task.id !== deleteConfirmation.taskId));
+      setDeleteConfirmation({ open: false, taskId: '', taskTitle: '' });
       
       toast({
         title: 'Success',
@@ -373,7 +475,8 @@ export function TaskManager({
         description: 'Failed to delete task. Please try again.',
         variant: 'destructive',
       });
-      throw error;
+    } finally {
+      setConfirmationLoading(false);
     }
   };
 
@@ -405,6 +508,12 @@ export function TaskManager({
     }
   };
 
+  // Handle team selection from overview
+  const handleTeamSelect = useCallback((teamId: string) => {
+    // Notify parent component about team selection
+    window.dispatchEvent(new CustomEvent('teamSelected', { detail: { teamId } }));
+  }, []);
+
   if (loading) {
     return (
       <div className={`flex items-center justify-center min-h-[400px] ${className}`}>
@@ -415,12 +524,6 @@ export function TaskManager({
       </div>
     );
   }
-
-  // Handle team selection from overview
-  const handleTeamSelect = (teamId: string) => {
-    // Notify parent component about team selection
-    window.dispatchEvent(new CustomEvent('teamSelected', { detail: { teamId } }));
-  };
 
   // Render different views based on viewMode
   const renderTaskView = () => {
@@ -435,13 +538,15 @@ export function TaskManager({
       case 'kanban':
         return (
           <TaskBoard
-            tasks={tasks}
+            tasks={memoizedTasks}
+            teams={memoizedTeams}
             onTaskClick={handleTaskClick}
             onTaskStatusChange={handleTaskStatusChange}
             onCreateTask={handleCreateTaskClick}
             onRequestAssistance={() => setShowAssistanceForm(true)}
             onApproveRequest={handleApproveRequest}
             onRejectRequest={handleRejectRequest}
+            onDeleteTask={handleDeleteTask}
             loading={loading}
             selectedTeam={selectedTeam}
           />
@@ -533,13 +638,15 @@ export function TaskManager({
       default:
         return (
           <TaskBoard
-            tasks={tasks}
+            tasks={memoizedTasks}
+            teams={memoizedTeams}
             onTaskClick={handleTaskClick}
             onTaskStatusChange={handleTaskStatusChange}
             onCreateTask={handleCreateTaskClick}
             onRequestAssistance={() => setShowAssistanceForm(true)}
             onApproveRequest={handleApproveRequest}
             onRejectRequest={handleRejectRequest}
+            onDeleteTask={handleDeleteTask}
             loading={loading}
           />
         );
@@ -558,7 +665,7 @@ export function TaskManager({
         task={editingTask}
         onSubmit={handleFormSubmit}
         loading={loading}
-        users={users}
+        users={memoizedUsers}
       />
 
       {/* Task Details Dialog */}
@@ -588,12 +695,42 @@ export function TaskManager({
       <AssistanceRequestForm
         open={showAssistanceForm}
         onOpenChange={setShowAssistanceForm}
-        currentTeamId={selectedTeam?.id || teamId || ''}
+        currentTeamId={effectiveTeamId || ''}
         onSubmit={handleAssistanceRequest}
         loading={loading}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteConfirmation.open}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmation({ open: false, taskId: '', taskTitle: '' });
+        }}
+        title="Delete Task"
+        description={`Are you sure you want to delete "${deleteConfirmation.taskTitle}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteTask}
+        loading={confirmationLoading}
+        variant="destructive"
+      />
+
+      {/* Reject Confirmation Dialog */}
+      <ConfirmationDialog
+        open={rejectConfirmation.open}
+        onOpenChange={(open) => {
+          if (!open) setRejectConfirmation({ open: false, taskId: '', taskTitle: '' });
+        }}
+        title="Reject Task"
+        description={`Are you sure you want to reject "${rejectConfirmation.taskTitle}"? This will cancel the task.`}
+        confirmText="Reject"
+        cancelText="Cancel"
+        onConfirm={confirmRejectTask}
+        loading={confirmationLoading}
+        variant="warning"
+      />
     </div>
   );
-}
+});
 
 export default TaskManager;

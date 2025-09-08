@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -13,7 +13,8 @@ import {
   Task, 
   TaskStatus, 
   KanbanColumn as KanbanColumnType,
-  TASK_STATUS_LABELS 
+  TASK_STATUS_LABELS,
+  Team 
 } from '@/types/tasks';
 import { cn } from '@/lib/utils';
 import { Plus, Sparkles, Target, Clock, CheckCircle2 } from 'lucide-react';
@@ -21,10 +22,12 @@ import { typography, TYPOGRAPHY_PRESETS, getContextualTypography } from '@/lib/t
 
 interface KanbanColumnProps {
   column: KanbanColumnType;
+  teams?: Team[];
   onTaskClick?: (task: Task) => void;
   onTaskStatusChange?: (taskId: string, newStatus: string) => void;
   onApproveRequest?: (taskId: string) => void;
   onRejectRequest?: (taskId: string) => void;
+  onDeleteTask?: (taskId: string) => void;
   className?: string;
   currentUserId?: string;
   activeTaskUsers?: Record<string, string[]>;
@@ -33,10 +36,12 @@ interface KanbanColumnProps {
 
 export const KanbanColumn = React.memo(function KanbanColumn({
   column,
+  teams = [],
   onTaskClick,
   onTaskStatusChange,
   onApproveRequest,
   onRejectRequest,
+  onDeleteTask,
   className = '',
   activeTaskUsers
 }: KanbanColumnProps) {
@@ -48,10 +53,13 @@ export const KanbanColumn = React.memo(function KanbanColumn({
   const [rippleEffect, setRippleEffect] = useState(false);
   const [particleAnimation, setParticleAnimation] = useState(false);
 
-  const taskIds = column.tasks.map(task => task.id);
+  // Memoize expensive calculations
+  const taskIds = useMemo(() => column.tasks.map(task => task.id), [column.tasks]);
+  const memoizedTeams = useMemo(() => teams || [], [teams]);
+  const memoizedActiveTaskUsers = useMemo(() => activeTaskUsers || {}, [activeTaskUsers]);
 
-  // Advanced styling based on column status
-  const getColumnStyling = () => {
+  // Memoize styling calculations
+  const columnStyling = useMemo(() => {
     const baseStyle = 'relative overflow-hidden backdrop-blur-xl border border-slate-700/50 rounded-2xl';
     
     switch (column.id) {
@@ -66,9 +74,9 @@ export const KanbanColumn = React.memo(function KanbanColumn({
       default:
         return `${baseStyle} bg-gradient-to-br from-slate-900/60 via-slate-800/80 to-slate-900/60 shadow-slate-500/10`;
     }
-  };
+  }, [column.id]);
 
-  const getColumnIcon = () => {
+  const columnIcon = useMemo(() => {
     switch (column.id) {
       case 'awaiting_approval':
         return <Clock className="w-5 h-5 text-amber-400" />;
@@ -81,7 +89,28 @@ export const KanbanColumn = React.memo(function KanbanColumn({
       default:
         return <Plus className="w-5 h-5 text-slate-400" />;
     }
-  };
+  }, [column.id]);
+
+  // Memoize handlers
+  const handleTaskClick = useCallback((task: Task) => {
+    onTaskClick?.(task);
+  }, [onTaskClick]);
+
+  const handleTaskStatusChange = useCallback((taskId: string, newStatus: string) => {
+    onTaskStatusChange?.(taskId, newStatus);
+  }, [onTaskStatusChange]);
+
+  const handleApproveRequest = useCallback((taskId: string) => {
+    onApproveRequest?.(taskId);
+  }, [onApproveRequest]);
+
+  const handleRejectRequest = useCallback((taskId: string) => {
+    onRejectRequest?.(taskId);
+  }, [onRejectRequest]);
+
+  const handleDeleteTask = useCallback((taskId: string) => {
+    onDeleteTask?.(taskId);
+  }, [onDeleteTask]);
 
   // Trigger effects on drop
   useEffect(() => {
@@ -101,7 +130,7 @@ export const KanbanColumn = React.memo(function KanbanColumn({
       ref={setNodeRef}
       className={cn(
         'relative p-6 space-y-4 min-h-[600px] transition-all duration-500 transform',
-        getColumnStyling(),
+        columnStyling,
         isOver && 'scale-105 shadow-2xl ring-2 ring-blue-400/50 ring-offset-2 ring-offset-slate-900',
         rippleEffect && 'animate-pulse',
         className
@@ -144,7 +173,7 @@ export const KanbanColumn = React.memo(function KanbanColumn({
             'border-slate-700/50',
             'bg-gradient-to-br from-slate-800/60 to-slate-700/60'
           )}>
-            {getColumnIcon()}
+            {columnIcon}
           </div>
           <div>
             <h3 className={`${TYPOGRAPHY_PRESETS.heading.h3} ${typography().setEffect('glow').build()} mb-1`}>
@@ -183,11 +212,13 @@ export const KanbanColumn = React.memo(function KanbanColumn({
             >
               <TaskCard
                 task={task}
-                onClick={() => onTaskClick?.(task)}
-                onStatusChange={onTaskStatusChange}
-                onApproveRequest={onApproveRequest}
-                onRejectRequest={onRejectRequest}
-                activeUsers={activeTaskUsers?.[task.id] || []}
+                teams={memoizedTeams}
+                onClick={() => handleTaskClick(task)}
+                onStatusChange={handleTaskStatusChange}
+                onApproveRequest={handleApproveRequest}
+                onRejectRequest={handleRejectRequest}
+                onDeleteTask={handleDeleteTask}
+                activeUsers={memoizedActiveTaskUsers[task.id] || []}
                 className="cursor-pointer hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 animate-fade-in"
               />
             </div>
@@ -220,7 +251,7 @@ export const KanbanColumn = React.memo(function KanbanColumn({
               'transition-all duration-300',
               isOver ? 'animate-bounce' : ''
             )}>
-              {getColumnIcon()}
+              {columnIcon}
             </div>
             
             {/* Ripple Effect */}

@@ -144,7 +144,7 @@ export default function AnnouncementManager() {
             Back to Announcements
           </Button>
         </div>
-        {/* TODO: Create EditAnnouncementForm component */}
+        {/* Edit functionality can be added here if needed */}
         <Card className="bg-slate-800/50 border-slate-700">
           <CardContent className="p-8 text-center">
             <p className="text-slate-400">Edit functionality coming soon...</p>

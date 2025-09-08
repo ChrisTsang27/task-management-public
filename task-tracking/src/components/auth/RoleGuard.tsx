@@ -22,6 +22,9 @@ export default function RoleGuard({
 }: RoleGuardProps) {
   const { canAccess, loading, userRole } = useRoleAccess();
   const router = useRouter();
+  
+  // Calculate hasAccess before any conditional returns
+  const hasAccess = canAccess(requiredRoles);
 
   if (loading) {
     return (
@@ -30,8 +33,6 @@ export default function RoleGuard({
       </div>
     );
   }
-
-  const hasAccess = canAccess(requiredRoles);
 
   if (!hasAccess) {
     if (fallback) {

@@ -132,9 +132,11 @@ export async function PUT(
     }
 
     // Check permissions (simplified - in production, implement proper role-based access)
+    // Allow rejecting tasks for any authenticated user, but restrict other edits
     const canEdit = 
       currentTask.created_by === user.id || 
-      currentTask.assignee_id === user.id;
+      currentTask.assignee_id === user.id ||
+      (body.status === 'done' && currentTask.status === 'awaiting_approval'); // Allow anyone to reject pending requests
     
     if (!canEdit) {
       return NextResponse.json(
@@ -226,8 +228,20 @@ export async function DELETE(
       );
     }
 
-    // Check permissions (only creator or admin can delete)
-    const canDelete = currentTask.created_by === user.id;
+    // Get user profile to check role
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const isAdmin = userProfile?.role === 'admin';
+
+    // Check permissions (creator, assignee, or admin can delete)
+    const canDelete = 
+      currentTask.created_by === user.id || 
+      currentTask.assignee_id === user.id ||
+      isAdmin;
     
     if (!canDelete) {
       return NextResponse.json(

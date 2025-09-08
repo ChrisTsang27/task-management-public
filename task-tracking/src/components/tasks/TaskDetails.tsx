@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
+import supabase from '@/lib/supabaseBrowserClient';
 import {
   Dialog,
   DialogContent,
@@ -55,7 +56,32 @@ export function TaskDetails({
   currentUserId
 }: TaskDetailsProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [teams, setTeams] = useState<{id: string, name: string}[]>([]);
 
+  // Fetch teams for name lookup
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        const response = await fetch('/api/teams', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setTeams(data.teams || []);
+        }
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+      }
+    };
+    fetchTeams();
+  }, []);
+
+  // Early return after all hooks are defined
   if (!task) return null;
 
   const isOverdue = task.due_date && isAfter(new Date(), new Date(task.due_date));
@@ -127,7 +153,7 @@ export function TaskDetails({
             </div>
             
             {/* Action buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-6">
               {canEdit && onEdit && (
                 <Button
                   variant="outline"
@@ -144,7 +170,7 @@ export function TaskDetails({
                   size="sm"
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="bg-slate-800 border-slate-600 text-red-400 hover:bg-red-900/20 hover:border-red-600"
+                  className="bg-slate-800 border-slate-600 text-red-400 hover:bg-red-900/20 hover:border-red-600 mr-4"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -208,10 +234,10 @@ export function TaskDetails({
                       <Avatar className="w-6 h-6">
                         <AvatarImage src={`/api/users/${task.assignee_id}/avatar`} />
                         <AvatarFallback className="bg-slate-700 text-slate-300 text-xs">
-                          {getInitials(task.assignee_id)}
+                          {getInitials(task.assignee_profile?.full_name || task.assignee_id)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm">{task.assignee_id}</span>
+                      <span className="text-sm">{task.assignee_profile?.full_name || task.assignee_id}</span>
                     </div>
                   ) : (
                     <span className="text-sm text-slate-500">Unassigned</span>
@@ -248,12 +274,23 @@ export function TaskDetails({
 
 
               {/* Team */}
-              {task.team_id && (
+              {(task.team?.name || task.team_id) && (
                 <div className="flex items-center gap-3">
                   <User className="w-4 h-4 text-slate-400" />
                   <div>
-                    <div className="text-sm text-slate-400">Team</div>
-                    <div className="text-sm mt-1">{task.team_id}</div>
+                    <div className="text-sm text-slate-400">
+                      {task.is_request ? 'Request from' : 'Team'}
+                    </div>
+                    <div className="text-sm mt-1">
+                      {task.is_request 
+                        ? (() => {
+                            const requestingTeamId = task.description_json?._metadata?.requesting_team_id;
+                            const requestingTeam = teams.find(t => t.id === requestingTeamId);
+                            return requestingTeam?.name || requestingTeamId || 'Unknown Team';
+                          })()
+                        : (task.team?.name || task.team_id)
+                      }
+                    </div>
                   </div>
                 </div>
               )}

@@ -29,16 +29,29 @@ export interface AIInsights {
   bottleneck_prediction?: boolean;
 }
 
+// TipTap JSON content structure
+export interface TaskDescriptionJson {
+  type?: string;
+  content?: Record<string, unknown>[];
+  _metadata?: {
+    requesting_team_id?: string;
+    target_team_id?: string;
+    is_assistance_request?: boolean;
+  };
+  [key: string]: unknown;
+}
+
 
 
 export interface Task {
   id: string;
   team_id?: string;
+  target_team_id?: string; // For assistance requests - the team being requested for help
   created_by?: string;
   assignee_id?: string;
   title: string;
   description?: string; // Plain text description
-  description_json?: Record<string, unknown>; // TipTap JSON content
+  description_json?: TaskDescriptionJson; // TipTap JSON content
   status: TaskStatus;
   due_date?: string; // ISO date string
   is_request: boolean; // For assistance requests
@@ -85,9 +98,10 @@ export interface TeamMember {
 // Task creation and update interfaces
 export interface CreateTaskData {
   team_id?: string;
+  target_team_id?: string; // For assistance requests
   assignee_id?: string;
   title: string;
-  description_json?: Record<string, unknown>;
+  description_json?: TaskDescriptionJson;
   status?: TaskStatus;
   due_date?: string;
   is_request?: boolean;
@@ -100,7 +114,7 @@ export interface CreateTaskData {
 
 export interface UpdateTaskData {
   title?: string;
-  description_json?: Record<string, unknown>;
+  description_json?: TaskDescriptionJson;
   status?: TaskStatus;
   assignee_id?: string;
   due_date?: string;
@@ -194,7 +208,7 @@ export interface TaskResponse {
 // Form validation schemas (to be used with zod)
 export interface TaskFormData {
   title: string;
-  description_json?: Record<string, unknown>;
+  description_json?: TaskDescriptionJson;
   assignee_id?: string;
   due_date?: string;
   team_id?: string;
@@ -255,24 +269,25 @@ export interface AssistanceRequest extends Task {
 export interface CreateAssistanceRequestData {
   target_team_id: string;
   title: string;
-  description_json?: Record<string, unknown>;
+  description_json?: TaskDescriptionJson;
   due_date?: string;
 }
 
 // Request types for API endpoints
 export interface CreateTaskRequest {
   title: string;
-  description_json?: Record<string, unknown>;
+  description_json?: TaskDescriptionJson;
   status?: TaskStatus;
   assignee_id?: string;
   due_date?: string;
   team_id?: string;
+  target_team_id?: string; // For assistance requests
   is_request?: boolean;
 }
 
 export interface UpdateTaskRequest {
   title?: string;
-  description_json?: Record<string, unknown>;
+  description_json?: TaskDescriptionJson;
   status?: TaskStatus;
   assignee_id?: string;
   due_date?: string;

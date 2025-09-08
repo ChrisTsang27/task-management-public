@@ -135,17 +135,37 @@ export default function Dashboard() {
 
   // Handle team selection from TeamOverview
   useEffect(() => {
-    const handleTeamSelection = (event: CustomEvent) => {
+    const handleTeamSelection = async (event: CustomEvent) => {
       const { teamId } = event.detail;
-      // Create a minimal team object - the TeamSelector will handle the full team data
-      const team = { id: teamId, name: '', created_at: '' };
-      setSelectedTeam(team);
+      
+      // Fetch complete team data instead of creating minimal object
+      try {
+        const { data, error } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('id', teamId)
+          .single();
+          
+        if (error) throw error;
+        if (data) {
+          setSelectedTeam(data);
+        }
+      } catch (error) {
+        console.error('Error fetching team data:', error);
+        // Fallback to minimal team object if fetch fails
+        const team = { id: teamId, name: '', created_at: '' };
+        setSelectedTeam(team);
+      }
     };
 
-    window.addEventListener('teamSelected', handleTeamSelection as EventListener);
+    const eventHandler = (event: Event) => {
+      handleTeamSelection(event as CustomEvent);
+    };
+    
+    window.addEventListener('teamSelected', eventHandler);
     
     return () => {
-      window.removeEventListener('teamSelected', handleTeamSelection as EventListener);
+      window.removeEventListener('teamSelected', eventHandler);
     };
   }, []);
 

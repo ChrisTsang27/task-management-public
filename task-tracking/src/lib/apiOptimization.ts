@@ -231,26 +231,7 @@ export function updateReactionCache(
 }
 
 // ===== DEBOUNCED SEARCH =====
-export function createDebouncedSearch<T extends unknown[]>(
-  searchFn: (...args: T) => Promise<unknown>,
-  delay: number = 300
-) {
-  let timeoutId: NodeJS.Timeout;
-  
-  return (...args: T): Promise<unknown> => {
-    return new Promise((resolve, reject) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(async () => {
-        try {
-          const result = await searchFn(...args);
-          resolve(result);
-        } catch (error) {
-          reject(error);
-        }
-      }, delay);
-    });
-  };
-}
+// Debounced search function removed - not being used
 
 // ===== PREFETCHING UTILITIES =====
 
@@ -276,18 +257,7 @@ export async function prefetchAnnouncementData(
 
 // ===== BACKGROUND SYNC =====
 
-// Background sync for critical data
-export function setupBackgroundSync(queryClient: QueryClient) {
-  // Sync announcements every 5 minutes
-  setInterval(() => {
-    queryClient.invalidateQueries({ queryKey: ['announcements'] });
-  }, 5 * 60 * 1000);
-  
-  // Sync user data every 10 minutes
-  setInterval(() => {
-    queryClient.invalidateQueries({ queryKey: ['users'] });
-  }, 10 * 60 * 1000);
-}
+// Background sync function removed - not being used
 
 // ===== ERROR HANDLING =====
 
@@ -326,35 +296,7 @@ export function handleAPIError(error: unknown): APIError {
 
 // ===== PERFORMANCE MONITORING =====
 
-export function measureAPIPerformance<T>(
-  apiCall: () => Promise<T>,
-  operationName: string
-): Promise<T> {
-  const startTime = performance.now();
-  
-  return apiCall()
-    .then((result) => {
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-      
-      // Log slow operations (> 1 second)
-      if (duration > 1000) {
-        console.warn(`Slow API operation: ${operationName} took ${duration.toFixed(2)}ms`);
-      }
-      
-      // Optional: Send to analytics service
-      // analytics.track('api_performance', { operation: operationName, duration });
-      
-      return result;
-    })
-    .catch((error) => {
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-      
-      console.error(`API operation failed: ${operationName} after ${duration.toFixed(2)}ms`, error);
-      throw error;
-    });
-}
+// API performance measurement function removed - not being used
 
 // ===== EXPORT OPTIMIZED HOOKS =====
 

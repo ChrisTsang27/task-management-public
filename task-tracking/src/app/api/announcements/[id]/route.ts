@@ -42,9 +42,9 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    const { data: { user: _user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
-    if (authError || !user) {
+    if (authError || !_user) {
       return NextResponse.json(
         { error: 'Invalid authentication' },
         { status: 401 }

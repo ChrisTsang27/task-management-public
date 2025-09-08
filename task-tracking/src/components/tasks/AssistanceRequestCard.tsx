@@ -1,8 +1,7 @@
 "use client";
-
-import React from 'react';
 import {
   Task,
+  Team,
   TASK_STATUS_LABELS,
   TASK_STATUS_COLORS
 } from '@/types/tasks';
@@ -22,6 +21,7 @@ import { cn } from '@/lib/utils';
 
 interface AssistanceRequestCardProps {
   task: Task;
+  teams?: Team[];
   onClick?: () => void;
   onApprove?: (taskId: string) => void;
   onReject?: (taskId: string) => void;
@@ -33,6 +33,7 @@ interface AssistanceRequestCardProps {
 
 export function AssistanceRequestCard({
   task,
+  teams = [],
   onClick,
   onApprove,
   onReject,
@@ -62,8 +63,9 @@ export function AssistanceRequestCard({
   };
 
   const getRequestingTeamName = () => {
-    // This would come from the task data in a real implementation
-    return task.team?.name || 'Unknown Team';
+    const requestingTeamId = task.description_json?._metadata?.requesting_team_id;
+    const requestingTeam = teams.find(t => t.id === requestingTeamId);
+    return requestingTeam?.name || requestingTeamId || 'Unknown Team';
   };
 
   return (

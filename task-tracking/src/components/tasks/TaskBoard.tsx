@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -47,12 +47,14 @@ import { ConflictResolutionModal } from '@/components/ui/conflict-resolution-mod
 
 interface TaskBoardProps {
   tasks: Task[];
+  teams?: Team[];
   onTaskClick?: (task: Task) => void;
   onTaskStatusChange?: (taskId: string, newStatus: TaskStatus) => void;
   onCreateTask?: () => void;
   onRequestAssistance?: () => void;
   onApproveRequest?: (taskId: string) => void;
   onRejectRequest?: (taskId: string) => void;
+  onDeleteTask?: (taskId: string) => void;
   loading?: boolean;
   className?: string;
   currentUserId?: string;
@@ -96,14 +98,16 @@ const KANBAN_COLUMNS: KanbanColumnType[] = [
 
 
 
-export function TaskBoard({
+export const TaskBoard = React.memo(function TaskBoard({
   tasks,
+  teams = [],
   onTaskClick,
   onTaskStatusChange,
   onCreateTask,
   onRequestAssistance,
   onApproveRequest,
   onRejectRequest,
+  onDeleteTask,
   loading = false,
   className = '',
   currentUserId,
@@ -165,13 +169,32 @@ export function TaskBoard({
     }
   }, [currentUserId, selectedTeam, realtimeService, conflictService]);
 
+  // Memoize expensive calculations
+
   // Filter and sort tasks
   const filteredTasks = useMemo(() => {
     let result = [...tasks];
     
     // Apply team filter first
     if (selectedTeam) {
-      result = result.filter(task => task.team_id === selectedTeam.id);
+      result = result.filter(task => {
+        // Include tasks that belong to this team
+        if (task.team_id === selectedTeam.id) {
+          // For assistance requests, check if this is actually a request from another team
+          if (task.is_request && task.description_json && 
+              typeof task.description_json === 'object' && 
+              task.description_json._metadata &&
+              typeof task.description_json._metadata === 'object' &&
+              task.description_json._metadata.is_assistance_request) {
+            // This is an assistance request targeted to this team
+            return true;
+          }
+          // Regular task belonging to this team
+          if (!task.is_request) return true;
+        }
+        
+        return false;
+      });
     }
     
     // Apply search filter
@@ -250,7 +273,7 @@ export function TaskBoard({
     return result;
   }, [tasks, searchTerm, filters, selectedTeam, aiPriorityEnabled]);
 
-  // Organize tasks into columns
+  // Memoize column data to prevent unnecessary re-renders
   const columns = useMemo(() => {
     return KANBAN_COLUMNS.map(column => {
       let columnTasks = filteredTasks.filter(task => task.status === column.id);
@@ -270,12 +293,13 @@ export function TaskBoard({
 
 
 
-  const handleDragStart = (event: DragStartEvent) => {
+  // Memoize drag handlers to prevent re-creation on every render
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     const task = filteredTasks.find(t => t.id === event.active.id);
     setActiveTask(task || null);
-  };
+  }, [filteredTasks]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
 
@@ -322,9 +346,9 @@ export function TaskBoard({
       
       onTaskStatusChange?.(taskId, newStatus);
     }
-  };
+  }, [filteredTasks, currentUserId, selectedTeam, conflictService, realtimeService, onTaskStatusChange]);
 
-  const handleTaskStatusChange = (taskId: string, newStatus: string) => {
+  const handleTaskStatusChange = useCallback((taskId: string, newStatus: string) => {
     // Broadcast task status change in real-time
     if (currentUserId && selectedTeam) {
       const task = tasks.find(t => t.id === taskId);
@@ -339,10 +363,10 @@ export function TaskBoard({
     }
     
     onTaskStatusChange?.(taskId, newStatus as TaskStatus);
-  };
+  }, [tasks, currentUserId, selectedTeam, realtimeService, onTaskStatusChange]);
 
   // AI Priority functions
-  const handleRecalculatePriority = async () => {
+  const handleRecalculatePriority = useCallback(async () => {
     if (!selectedTeam || !currentUserId) return;
     
     setIsRecalculatingPriority(true);
@@ -359,7 +383,7 @@ export function TaskBoard({
     } finally {
       setIsRecalculatingPriority(false);
     }
-  };
+  }, [selectedTeam, currentUserId, filteredTasks, aiService]);
 
   if (loading) {
     return (
@@ -683,10 +707,12 @@ export function TaskBoard({
                       <div className="relative p-4">
                         <KanbanColumn
                           column={column}
+                          teams={teams}
                           onTaskClick={onTaskClick}
                           onTaskStatusChange={handleTaskStatusChange}
                           onApproveRequest={onApproveRequest}
                           onRejectRequest={onRejectRequest}
+                          onDeleteTask={onDeleteTask}
                           currentUserId={currentUserId}
                           activeTaskUsers={activeTaskUsers}
                           aiPriorityEnabled={aiPriorityEnabled}
@@ -713,6 +739,7 @@ export function TaskBoard({
                 <div className="relative">
                   <TaskCard
                     task={activeTask}
+                    teams={teams}
                     isDragging
                     className="shadow-2xl shadow-blue-500/50 border-2 border-blue-400/60 bg-slate-800/90"
                   />
@@ -788,6 +815,6 @@ export function TaskBoard({
       )}
     </div>
   );
-}
+});
 
 export default TaskBoard;

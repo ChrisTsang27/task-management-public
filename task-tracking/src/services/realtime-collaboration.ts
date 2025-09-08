@@ -92,11 +92,9 @@ export class RealtimeCollaborationService {
       try {
         // In a real implementation, this would connect to your WebSocket server
         // For now, we'll simulate the connection
-        console.log(`Connecting to realtime service for team ${teamId}`);
         
         // Simulate WebSocket connection
         setTimeout(() => {
-          console.log('Connected to realtime service');
           this.reconnectAttempts = 0;
           resolve();
         }, 100);
@@ -230,7 +228,6 @@ export class RealtimeCollaborationService {
   private sendMessage(message: RealtimeMessage): void {
     // In a real implementation, this would send through WebSocket
     // For now, we'll simulate the behavior
-    console.log('Sending realtime message:', message);
     
     // Simulate receiving the message back for testing
     setTimeout(() => {
@@ -267,7 +264,7 @@ export class RealtimeCollaborationService {
         break;
 
       default:
-        console.log('Unknown message type:', message.type);
+        // Unknown message type - ignore
     }
   }
 
@@ -281,8 +278,6 @@ export class RealtimeCollaborationService {
     this.teamId = null;
     this.userId = null;
     this.userName = null;
-    
-    console.log('Disconnected from realtime service');
   }
 
   // Get connection status

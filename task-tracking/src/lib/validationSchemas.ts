@@ -136,44 +136,4 @@ export type AnnouncementFilters = z.infer<typeof announcementFiltersSchema>;
 export type TaskFilters = z.infer<typeof taskFiltersSchema>;
 export type PaginationParams = z.infer<typeof paginationSchema>;
 
-// Validation helper functions
-export const validateEmail = (email: string) => {
-  try {
-    emailSchema.parse(email);
-    return { isValid: true, error: null };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { isValid: false, error: error.errors[0].message };
-    }
-    return { isValid: false, error: 'Invalid email' };
-  }
-};
-
-export const validatePassword = (password: string) => {
-  try {
-    passwordSchema.parse(password);
-    return { isValid: true, error: null };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { isValid: false, error: error.errors[0].message };
-    }
-    return { isValid: false, error: 'Invalid password' };
-  }
-};
-
-export const validateForm = <T>(schema: z.ZodSchema<T>, data: unknown) => {
-  try {
-    const validatedData = schema.parse(data);
-    return { isValid: true, data: validatedData, errors: null };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const fieldErrors = error.errors.reduce((acc, err) => {
-        const path = err.path.join('.');
-        acc[path] = err.message;
-        return acc;
-      }, {} as Record<string, string>);
-      return { isValid: false, data: null, errors: fieldErrors };
-    }
-    return { isValid: false, data: null, errors: { general: 'Validation failed' } };
-  }
-};
+// Utility functions removed - they were not being used in the codebase

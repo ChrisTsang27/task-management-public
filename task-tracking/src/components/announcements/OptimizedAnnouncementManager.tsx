@@ -215,9 +215,13 @@ export const OptimizedAnnouncementManager: React.FC = () => {
     limit: 20
   });
 
-  // Determine which query to use
-  const activeQuery = searchTerm.length >= 2 ? searchQuery : 
-                     viewMode === 'infinite' ? infiniteQuery : paginatedQuery;
+  // Determine which query to use - always use the same query object structure
+  const activeQuery = useMemo(() => {
+    if (searchTerm.length >= 2) {
+      return searchQuery;
+    }
+    return viewMode === 'infinite' ? infiniteQuery : paginatedQuery;
+  }, [searchTerm.length, searchQuery, viewMode, infiniteQuery, paginatedQuery]);
 
   // Memoized handlers
   const handleCreateNew = useCallback(() => {

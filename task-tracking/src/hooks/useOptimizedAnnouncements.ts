@@ -259,11 +259,29 @@ export function useAnnouncementSearch({
     search: debouncedSearch || undefined
   }), [filters, debouncedSearch]);
 
-  return useOptimizedAnnouncements({
+  // Always call the hook but conditionally enable it
+  const shouldSearch = debouncedSearch.length >= 2;
+  
+  const result = useOptimizedAnnouncements({
     filters: searchFilters,
     limit,
-    enabled: debouncedSearch.length >= 2 // Only search with 2+ characters
+    enabled: shouldSearch
   });
+
+  // Return empty results when search term is too short to maintain consistent hook calls
+  if (!shouldSearch) {
+    return {
+      ...result,
+      announcements: [],
+      pagination: undefined,
+      filters: undefined,
+      data: undefined,
+      isLoading: false,
+      isFetching: false
+    };
+  }
+
+  return result;
 }
 
 // Mutation hooks

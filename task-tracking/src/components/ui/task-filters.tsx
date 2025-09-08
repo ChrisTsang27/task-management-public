@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Select,
   SelectContent,
@@ -53,7 +53,7 @@ const SORT_OPTIONS = [
   { value: 'status', label: 'Status' },
 ];
 
-export function TaskFiltersPanel({
+export const TaskFiltersPanel = React.memo(function TaskFiltersPanel({
   filters,
   onFiltersChange,
   availableAssignees = [],
@@ -63,31 +63,31 @@ export function TaskFiltersPanel({
   const [isAnimating, setIsAnimating] = useState(false);
   const [hoveredFilter, setHoveredFilter] = useState<string | null>(null);
   const [ripplePosition, setRipplePosition] = useState<{ x: number; y: number } | null>(null);
-  const updateFilter = (key: keyof TaskFilters, value: string | string[] | boolean | undefined) => {
+  const updateFilter = useCallback((key: keyof TaskFilters, value: string | string[] | boolean | undefined) => {
     setIsAnimating(true);
     onFiltersChange({ ...filters, [key]: value });
     setTimeout(() => setIsAnimating(false), 300);
-  };
+  }, [filters, onFiltersChange]);
 
-  const toggleArrayFilter = (key: 'status' | 'assignee' | 'team', value: string) => {
+  const toggleArrayFilter = useCallback((key: 'status' | 'assignee' | 'team', value: string) => {
     const currentArray = filters[key] || [];
     const newArray = currentArray.includes(value)
       ? currentArray.filter(item => item !== value)
       : [...currentArray, value];
     
     updateFilter(key, newArray.length > 0 ? newArray : undefined);
-  };
+  }, [filters, updateFilter]);
 
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     setIsAnimating(true);
     onFiltersChange({
       sortBy: filters.sortBy,
       sortOrder: filters.sortOrder
     });
     setTimeout(() => setIsAnimating(false), 500);
-  };
+  }, [filters.sortBy, filters.sortOrder, onFiltersChange]);
 
-  const handleRippleClick = (event: React.MouseEvent, callback: () => void) => {
+  const handleRippleClick = useCallback((event: React.MouseEvent, callback: () => void) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setRipplePosition({
       x: event.clientX - rect.left,
@@ -95,17 +95,18 @@ export function TaskFiltersPanel({
     });
     callback();
     setTimeout(() => setRipplePosition(null), 600);
-  };
+  }, []);
 
-  const hasActiveFilters = !!(filters.status?.length || 
-    filters.assignee?.length || filters.team?.length || filters.isRequest !== undefined);
+  // Memoize expensive calculations
+  const hasActiveFilters = useMemo(() => !!(filters.status?.length || 
+    filters.assignee?.length || filters.team?.length || filters.isRequest !== undefined), [filters]);
 
-  const activeFilterCount = (
+  const activeFilterCount = useMemo(() => (
     (filters.status?.length || 0) +
     (filters.assignee?.length || 0) +
     (filters.team?.length || 0) +
     (filters.isRequest !== undefined ? 1 : 0)
-  );
+  ), [filters]);
 
   return (
     <Card className={`relative overflow-hidden backdrop-blur-xl border shadow-2xl transition-all duration-500 transform ${isAnimating ? 'scale-[1.02]' : 'scale-100'} ${hasActiveFilters ? 'bg-gradient-to-br from-slate-800/80 via-slate-700/60 to-slate-800/80 border-blue-500/30 shadow-blue-500/20' : 'bg-gradient-to-br from-slate-800/60 via-slate-900/60 to-slate-800/60 border-slate-700/50'} ${className}`}>
@@ -452,4 +453,4 @@ export function TaskFiltersPanel({
       </CardContent>
     </Card>
   );
-}
+});
