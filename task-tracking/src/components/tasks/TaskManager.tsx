@@ -153,7 +153,7 @@ export const TaskManager = React.memo(function TaskManager({
     } finally {
       setLoading(false);
     }
-  }, [effectiveTeamId, toast, teamId]);
+  }, [effectiveTeamId, toast]);
 
   // Load tasks when dependencies change
   useEffect(() => {
@@ -212,7 +212,7 @@ export const TaskManager = React.memo(function TaskManager({
       });
       throw error;
     }
-  }, [effectiveTeamId, toast]);
+  }, [effectiveTeamId, toast, teamId]);
 
   // Change task status
   const handleTaskStatusChange = useCallback(async (taskId: string, newStatus: TaskStatus, comment?: string) => {

@@ -20,7 +20,8 @@ export const GET = withErrorHandling(async (request: NextRequest): Promise<NextR
   if (!authResult.success) {
     return authResult.error!;
   }
-  const { user, supabase } = authResult;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { user: _user, supabase } = authResult;
 
   const { searchParams } = new URL(request.url);
   
@@ -160,6 +161,7 @@ export const POST = withErrorHandling(async (request: NextRequest): Promise<Next
   }
 
   // Remove target_team_id from top level since column doesn't exist
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { target_team_id: _target_team_id, ...taskDataWithoutTargetTeam } = finalTaskData;
   
   if (!supabase) {
