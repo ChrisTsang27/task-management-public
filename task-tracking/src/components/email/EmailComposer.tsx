@@ -304,13 +304,28 @@ const EmailComposer = React.memo(function EmailComposer() {
     e.dataTransfer.dropEffect = "copy";
   }, []);
 
-  const contentIsEmpty = useMemo(() => 
-    !contentHTML || !contentHTML.replace(/<[^>]+>/g, "").trim(), 
-    [contentHTML]
-  );
+  const contentIsEmpty = useMemo(() => {
+     if (!contentHTML) return true;
+     
+     // Remove HTML tags and check for actual text content
+     const textContent = contentHTML.replace(/<[^>]+>/g, "").trim();
+     
+     // If there's text content, it's not empty
+     if (textContent) return false;
+     
+     // If no text but has meaningful HTML structure (like templates), consider it not empty
+     // Check for common template elements that indicate content structure
+     const hasTemplateStructure = /(<div|<p|<table|<img|<h[1-6])/i.test(contentHTML);
+     
+     return !hasTemplateStructure;
+   }, [contentHTML]);
+
+  const contentTooLong = useMemo(() => {
+    return contentHTML.length > 900000; // Warn at 90% of limit
+  }, [contentHTML]);
 
   const handleSend = useCallback(async () => {
-    if (recipients.length === 0 || !subject.trim() || contentIsEmpty) return;
+    if (recipients.length === 0 || !subject.trim() || contentIsEmpty || contentTooLong) return;
     
     dispatch({ type: 'SET_SENDING', payload: true });
     dispatch({ type: 'SET_STATUS', payload: null });
@@ -329,14 +344,31 @@ const EmailComposer = React.memo(function EmailComposer() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      dispatch({ type: 'SET_STATUS', payload: { ok: res.ok, msg: data.message || (res.ok ? "Sent" : "Failed") } });
+      
+      // Show detailed validation errors if available
+      let errorMessage = data.message || (res.ok ? "Sent" : "Failed");
+      if (!res.ok && data.issues) {
+        const fieldErrors = data.issues.fieldErrors;
+        if (fieldErrors) {
+          const errors = [];
+          if (fieldErrors.subject) errors.push(`Subject: ${fieldErrors.subject.join(', ')}`);
+          if (fieldErrors.content) errors.push(`Content: ${fieldErrors.content.join(', ')}`);
+          if (fieldErrors.recipients) errors.push(`Recipients: ${fieldErrors.recipients.join(', ')}`);
+          if (fieldErrors.title) errors.push(`Title: ${fieldErrors.title.join(', ')}`);
+          if (errors.length > 0) {
+            errorMessage = `Validation errors: ${errors.join('; ')}`;
+          }
+        }
+      }
+      
+      dispatch({ type: 'SET_STATUS', payload: { ok: res.ok, msg: errorMessage } });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Send failed";
       dispatch({ type: 'SET_STATUS', payload: { ok: false, msg: errorMessage } });
     } finally {
       dispatch({ type: 'SET_SENDING', payload: false });
     }
-  }, [title, subject, contentHTML, recipients, contentIsEmpty]);
+  }, [title, subject, contentHTML, recipients, contentIsEmpty, contentTooLong]);
 
   const handleApplyTemplate = useCallback((templateHtml: string) => {
     // Directly apply the template without showing another customizer
@@ -669,8 +701,13 @@ const EmailComposer = React.memo(function EmailComposer() {
               </Suspense>
               <p className="text-xs text-slate-400">Timestamp is added on send.</p>
             </div>
+            {contentTooLong && (
+              <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 mb-2">
+                ⚠️ Content is too long ({contentHTML.length.toLocaleString()} characters). Please reduce content size.
+              </div>
+            )}
             <button
-              disabled={sending || recipients.length === 0 || !subject.trim() || contentIsEmpty}
+              disabled={sending || recipients.length === 0 || !subject.trim() || contentIsEmpty || contentTooLong}
               onClick={handleSend}
               className="w-full rounded-lg px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-600 text-white text-glow drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] font-semibold ring-1 ring-cyan-300 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300 shadow-[0_10px_30px_-12px_rgba(16,185,129,.45)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >

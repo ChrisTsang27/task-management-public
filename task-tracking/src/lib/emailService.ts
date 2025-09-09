@@ -68,7 +68,11 @@ class EmailService {
         to: Array.isArray(message.to) ? message.to.join(', ') : message.to,
         subject: message.subject,
         text: message.text,
-        html: message.html
+        html: message.html,
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8',
+          'MIME-Version': '1.0'
+        }
       };
 
       const info = await this.transporter.sendMail(mailOptions);

@@ -162,17 +162,29 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     if (customization.logoUrl && template.id === 'stonegate') {
       // Replace the header Stonegate logo placeholder with uploaded logo
       const headerLogoHtml = `<img src="${customization.logoUrl}" alt="${customization.companyName}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #ff6b35;" />`;
-      customHtml = customHtml.replace(
-        /<div style="width: 120px; height: 120px; margin: 0 auto; border: 3px solid #ff6b35; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #ffffff;">\s*<div style="text-align: center;">\s*<div style="color: #ff6b35; font-size: 24px; font-weight: bold; margin-bottom: 5px;">▼<\/div>\s*<div style="color: #333333; font-size: 14px; font-weight: bold; line-height: 1.2;">LOGO<br\/>HERE<\/div>\s*<\/div>\s*<\/div>/gi,
-        headerLogoHtml
-      );
+      
+      // Use a more targeted approach - look for the specific placeholder text
+      const headerPlaceholder = 'LOGO<br/>HERE';
+      if (customHtml.includes(headerPlaceholder)) {
+        // Find the div containing the 120px width and replace the entire logo container
+        const headerStart = customHtml.indexOf('<div style="width: 120px; height: 120px;');
+        if (headerStart !== -1) {
+          const headerEnd = customHtml.indexOf('</div>', customHtml.indexOf('</div>', headerStart) + 6) + 6;
+          const headerSection = customHtml.substring(headerStart, headerEnd);
+          customHtml = customHtml.replace(headerSection, headerLogoHtml);
+        }
+      }
       
       // Replace the footer Stonegate logo placeholder with uploaded logo
       const footerLogoHtml = `<img src="${customization.logoUrl}" alt="${customization.companyName}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #ff6b35;" />`;
-      customHtml = customHtml.replace(
-        /<div style="width: 80px; height: 80px; margin: 0 auto; border: 2px solid #ff6b35; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #ffffff;">\s*<div style="text-align: center;">\s*<div style="color: #ff6b35; font-size: 16px; font-weight: bold; margin-bottom: 2px;">▼<\/div>\s*<div style="color: #333333; font-size: 10px; font-weight: bold; line-height: 1.1;">LOGO<br\/>HERE<\/div>\s*<\/div>\s*<\/div>/gi,
-        footerLogoHtml
-      );
+      
+      // Similar approach for footer logo
+      const footerStart = customHtml.indexOf('<div style="width: 80px; height: 80px;');
+      if (footerStart !== -1) {
+        const footerEnd = customHtml.indexOf('</div>', customHtml.indexOf('</div>', footerStart) + 6) + 6;
+        const footerSection = customHtml.substring(footerStart, footerEnd);
+        customHtml = customHtml.replace(footerSection, footerLogoHtml);
+      }
     }
     
     return customHtml;
@@ -182,10 +194,9 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     let updatedContent = htmlContent;
     
     placeholderFields.forEach(field => {
-      if (field.value.trim()) {
-        const regex = new RegExp(`\\[${field.key}\\]`, 'g');
-        updatedContent = updatedContent.replace(regex, field.value);
-      }
+      const regex = new RegExp(`\\[${field.key}\\]`, 'g');
+      // Replace with field value or empty string if no value provided
+      updatedContent = updatedContent.replace(regex, field.value || '');
     });
     
     return updatedContent;

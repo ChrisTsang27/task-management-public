@@ -40,12 +40,42 @@ function isSafeHttpUrl(url: string) {
 
 const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, placeholder }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isTemplateMode, setIsTemplateMode] = useState(false);
+  const [rawHtmlContent, setRawHtmlContent] = useState('');
+
+  // Detect if content is a complex email template
+  const isComplexTemplate = useCallback((content: string) => {
+    if (!content || content.length < 100) return false;
+    
+    // Check for multiple template indicators
+    const hasInlineStyles = content.includes('style=');
+    const hasTemplateStructure = content.includes('max-width: 600px') || 
+                                content.includes('max-width:600px');
+    const hasComplexStyling = content.includes('background-color:') || 
+                             content.includes('border-radius:') ||
+                             content.includes('font-family:') ||
+                             content.includes('linear-gradient') ||
+                             content.includes('box-shadow') ||
+                             content.includes('padding:') ||
+                             content.includes('margin:');
+    const hasTemplateElements = content.includes('<!-- Header') || 
+                               content.includes('<!-- Content') ||
+                               content.includes('<!-- Footer') ||
+                               content.includes('Professional Communication') ||
+                               content.includes('Important Announcement');
+    
+    return hasInlineStyles && (hasTemplateStructure || hasComplexStyling || hasTemplateElements);
+   }, []);
 
   const onUpdateDebounced = useCallback((html: string) => {
     if (!onChange) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => onChange(html), 300);
-  }, [onChange]);
+    debounceRef.current = setTimeout(() => {
+      // When in template mode, the user is directly editing the template HTML
+      // so we pass through the edited content with all styling preserved
+      onChange(html);
+     }, 300);
+   }, [onChange, isTemplateMode, rawHtmlContent]);
 
   const editor = useEditor({
     extensions: [
@@ -53,6 +83,12 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
         heading: { levels: [1, 2, 3, 4] },
         dropcursor: false,
         gapcursor: false,
+        // Preserve more HTML content
+        document: {
+          parseOptions: {
+            preserveWhitespace: 'full',
+          },
+        },
       }),
       Underline,
       Subscript,
@@ -62,8 +98,8 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
         openOnClick: false,
         validate: (href) => isSafeHttpUrl(href),
       }),
-      // Disallow base64 to reduce payload/risks; URL validation is enforced
-      Image.configure({ inline: false, allowBase64: false }),
+      // Allow base64 images for template logos and uploaded images
+      Image.configure({ inline: false, allowBase64: true }),
       Placeholder.configure({ placeholder: placeholder || "Write your content..." }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Table.configure({ resizable: true, lastColumnResizable: true }),
@@ -76,10 +112,13 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
     ],
     content: value || "",
     onUpdate: ({ editor }) => onUpdateDebounced(editor.getHTML()),
+    parseOptions: {
+      preserveWhitespace: 'full',
+    },
     editorProps: {
       attributes: {
         class:
-          "min-h-[260px] w-full rounded-b-xl bg-transparent px-4 py-3 outline-none max-w-none rte custom-text-cursor cursor-text [&_img]:max-w-full [&_img]:max-h-[400px] [&_img]:object-contain [&_img]:rounded-md [&_p]:text-slate-100 [&_h1]:text-slate-50 [&_h2]:text-slate-50 [&_h3]:text-slate-50 [&_h4]:text-slate-50 [&_li]:text-slate-100 [&_blockquote]:text-slate-200 [&_code]:text-violet-300 [&_pre]:bg-slate-800/80",
+          "min-h-[260px] w-full rounded-b-xl bg-transparent px-4 py-3 outline-none max-w-none rte custom-text-cursor cursor-text [&_img]:max-w-full [&_img]:max-h-[400px] [&_img]:object-contain [&_img]:rounded-md [&_code]:text-violet-300 [&_pre]:bg-slate-800/80",
         style: "cursor: inherit !important;",
       },
     },
@@ -89,9 +128,28 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
   // Update editor content when value prop changes (for template application)
   useEffect(() => {
     if (editor && value !== undefined && editor.getHTML() !== value) {
-      editor.commands.setContent(value, false);
+      const isTemplate = isComplexTemplate(value);
+      console.log('Template detection:', { isTemplate, valueLength: value.length, hasMaxWidth: value.includes('max-width: 600px') });
+      setIsTemplateMode(isTemplate);
+      
+      if (isTemplate) {
+        // Store the raw HTML for complex templates
+        setRawHtmlContent(value);
+        // Apply the template HTML directly while preserving all styling
+        editor.commands.setContent(value, false);
+      } else {
+        setRawHtmlContent('');
+        // Use insertContent with emitUpdate: false to preserve HTML structure better
+        editor.commands.clearContent(false);
+        editor.commands.insertContent(value, {
+          parseOptions: {
+            preserveWhitespace: 'full',
+          },
+          updateSelection: false,
+        });
+      }
     }
-  }, [editor, value]);
+  }, [editor, value, isComplexTemplate]);
 
   const [openHead, setOpenHead] = useState(false);
   const [openAdd, setOpenAdd] = useState(false);
