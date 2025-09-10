@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import AIPrioritizationService from '@/lib/services/aiPrioritization';
 import { headers } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { createClient } from '@supabase/supabase-js';
+
+import AIPrioritizationService from '@/lib/services/aiPrioritization';
 
 // Initialize Supabase client
 const supabase = createClient(

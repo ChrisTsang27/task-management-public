@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, lazy, Suspense } from 'react';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,18 +11,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 
 const RichTextEditor = lazy(() => import('@/components/ui/rich-text-editor'));
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+
 import { AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+
+import { useToast } from '@/hooks/use-toast';
 import { Task, TaskStatus, TASK_STATUS_LABELS } from '@/types/tasks';
 import {
   validateStatusTransition,
   getStatusChangeNotification
 } from '@/utils/workflow';
-import { useToast } from '@/hooks/use-toast';
 
 interface StatusTransitionDialogProps {
   open: boolean;

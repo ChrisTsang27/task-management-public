@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Eye, Save, Palette, Type, Image as ImageIcon, Edit3, X } from "lucide-react";
+import { Upload, XCircle, Save, Palette, Type, Image as ImageIcon, Edit3, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Template {
@@ -329,7 +329,7 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     <Button 
       variant="outline" 
       size="sm" 
-      className="ml-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-blue-600 shadow-md hover:shadow-lg transition-all duration-200"
+      className="ml-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-blue-500 shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
     >
       <Palette className="w-4 h-4 mr-1" />
       Customize
@@ -419,25 +419,30 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
                       </div>
                     </div>
                     {logoPreview && (
-                      <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <div className="w-16 h-16 border rounded-lg shadow-sm overflow-hidden bg-white flex items-center justify-center">
-                            <Image 
-                              src={logoPreview} 
-                              alt="Logo preview" 
-                              width={64}
-                              height={64}
-                              className="max-w-full max-h-full object-contain"
-                            />
+                      <div className="mt-4 p-4 border rounded-lg">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 border rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                              <Image 
+                                src={logoPreview} 
+                                alt="Logo preview" 
+                                width={64}
+                                height={64}
+                                className="max-w-full max-h-full object-contain"
+                              />
+                            </div>
+                            <div className="text-sm">
+                              <p className="font-medium">Logo Preview</p>
+                              <p className="text-muted-foreground">Click remove to delete</p>
+                            </div>
                           </div>
                           <Button
                             type="button"
-                            variant="outline"
+                            variant="destructive"
                             size="sm"
                             onClick={handleLogoRemove}
-                            className="ml-3 text-white bg-red-600 hover:bg-red-700 hover:border-red-400 border-red-600 transition-all duration-200"
                           >
-                            <X className="w-4 h-4 mr-1" />
+                            <X className="w-4 h-4 mr-2" />
                             Remove
                           </Button>
                         </div>
@@ -688,23 +693,23 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
           </Tabs>
           
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-6 border-t border-slate-200/50">
+          <div className="flex gap-3 pt-6 border-t">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={handlePreview} variant="outline" className="flex-1 border-slate-300 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 transition-all duration-200">
-                  <Eye className="w-4 h-4 mr-2" />
-                  Preview
+                <Button onClick={onClose} variant="outline" size="default" className="flex-1">
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Cancel
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Preview your customizations</p>
+                <p>Cancel and close customizer</p>
               </TooltipContent>
             </Tooltip>
             
             {onSave && mode === 'template' && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button onClick={handleSave} variant="outline" className="border-slate-300 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 transition-all duration-200">
+                  <Button onClick={handleSave} variant="secondary" size="default">
                     <Save className="w-4 h-4 mr-2" />
                     Save
                   </Button>
@@ -717,7 +722,7 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
             
             <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button onClick={handleApply} className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-medium">
+                    <Button onClick={handleApply} variant="default" size="default" className="flex-1">
                       <span className="flex items-center gap-2">
                         <span>Apply Customizations</span>
                         <div className="w-1 h-1 bg-white/60 rounded-full animate-pulse"></div>
@@ -732,7 +737,7 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
             {mode === 'content' && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button onClick={handleSkip} variant="outline" className="border-slate-300 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 transition-all duration-200">
+                  <Button onClick={handleSkip} variant="ghost" size="default">
                     Skip
                   </Button>
                 </TooltipTrigger>
@@ -756,7 +761,7 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
         <div className="space-y-6">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg">
-              <Eye className="w-4 h-4 text-white" />
+              <XCircle className="w-4 h-4 text-white" />
             </div>
             <h3 className="font-semibold text-lg text-slate-900">Live Preview</h3>
           </div>

@@ -1,4 +1,7 @@
 "use client";
+import { AlertTriangle, Trash2, XCircle } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,8 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Trash2, XCircle } from 'lucide-react';
 
 interface ConfirmationDialogProps {
   open: boolean;

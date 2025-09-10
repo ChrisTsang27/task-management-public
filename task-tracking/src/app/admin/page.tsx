@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LoadingCard } from '@/components/ui/LoadingSpinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { LoadingCard } from '@/components/ui/LoadingSpinner';
-import supabase from '@/lib/supabaseBrowserClient';
 import { UserRole } from '@/hooks/useRoleAccess';
+import supabase from '@/lib/supabaseBrowserClient';
 
 // Lazy load RoleGuard for better code splitting
 const RoleGuard = lazy(() => import('@/components/auth/RoleGuard'));

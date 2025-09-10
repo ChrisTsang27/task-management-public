@@ -1,26 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import supabase from '@/lib/supabaseBrowserClient';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Task, 
-  TaskStatus, 
-  TASK_STATUS_LABELS,
-  TASK_STATUS_COLORS
-} from '@/types/tasks';
-import { getStatusTransitionButtons } from '@/utils/workflow';
+
+import { format, formatDistanceToNow, isAfter, isBefore, addDays } from 'date-fns';
 import { 
   Calendar, 
   User, 
@@ -32,9 +14,29 @@ import {
   AlertCircle,
   Clock3
 } from 'lucide-react';
-import { format, formatDistanceToNow, isAfter, isBefore, addDays } from 'date-fns';
-import { cn } from '@/lib/utils';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { Separator } from '@/components/ui/separator';
+import supabase from '@/lib/supabaseBrowserClient';
+import { cn } from '@/lib/utils';
+import { 
+  Task, 
+  TaskStatus, 
+  TASK_STATUS_LABELS,
+  TASK_STATUS_COLORS
+} from '@/types/tasks';
+import { getStatusTransitionButtons } from '@/utils/workflow';
 
 interface TaskDetailsProps {
   open: boolean;

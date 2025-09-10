@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 
 export default function UserMenu() {

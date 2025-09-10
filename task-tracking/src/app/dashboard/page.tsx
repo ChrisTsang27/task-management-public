@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
-import { useRoleAccess } from "@/hooks/useRoleAccess";
+
 import RoleGuard from "@/components/auth/RoleGuard";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import supabase from "@/lib/supabaseBrowserClient";
+
 import type { User } from "@supabase/supabase-js";
 
 function DashboardContent() {

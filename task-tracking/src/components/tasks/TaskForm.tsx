@@ -1,9 +1,15 @@
 "use client";
 
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { useForm } from 'react-hook-form';
+
 import { zodResolver } from '@hookform/resolvers/zod';
+import { format } from 'date-fns';
+import { CalendarIcon, Loader2, FileText, User, CheckCircle2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
@@ -29,22 +35,18 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 const RichTextEditor = lazy(() => import('@/components/ui/rich-text-editor'));
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { 
   Task, 
   CreateTaskRequest,
   UpdateTaskRequest,
   TASK_STATUS_LABELS
 } from '@/types/tasks';
-import { CalendarIcon, Loader2, FileText, User, CheckCircle2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 // Form validation schema
 const taskFormSchema = z.object({

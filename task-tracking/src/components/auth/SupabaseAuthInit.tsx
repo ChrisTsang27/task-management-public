@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+
 import supabase from "@/lib/supabaseBrowserClient";
+
 import type { User } from "@supabase/supabase-js";
 
 // Runs once on load to ensure the auth session from the URL hash is captured,

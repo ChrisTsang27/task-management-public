@@ -1,6 +1,12 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
+
+import { X, SortAsc, SortDesc, Filter, Sparkles, Zap, Target } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -8,12 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { X, SortAsc, SortDesc, Filter, Sparkles, Zap, Target } from 'lucide-react';
-import { TaskStatus } from '@/types/tasks';
 import { typography, TYPOGRAPHY_PRESETS, getContextualTypography } from '@/lib/typography';
+import { TaskStatus } from '@/types/tasks';
 
 export interface TaskFilters {
   status?: TaskStatus[];

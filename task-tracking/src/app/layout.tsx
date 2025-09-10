@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+
 import { Inter } from "next/font/google";
+
 import "./globals.css";
 import SupabaseAuthInit from "@/components/auth/SupabaseAuthInit";
 import ErrorBoundary from "@/components/ErrorBoundary";

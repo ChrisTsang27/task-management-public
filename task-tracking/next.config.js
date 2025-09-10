@@ -118,8 +118,6 @@ const nextConfig = {
   
   // Development optimizations
   ...(process.env.NODE_ENV === 'development' && {
-    // Faster development builds
-    swcMinify: false,
     // Reduce memory usage in development
     onDemandEntries: {
       maxInactiveAge: 25 * 1000,

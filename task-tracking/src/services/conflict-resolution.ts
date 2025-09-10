@@ -1,4 +1,5 @@
 import { Task, TaskStatus } from '@/types/tasks';
+
 import { RealtimeCollaborationService } from './realtime-collaboration';
 
 interface ConflictData {

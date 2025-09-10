@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, Suspense, lazy } from "react";
+
 import { useSearchParams, useRouter } from "next/navigation";
-import supabase from "@/lib/supabaseBrowserClient";
+
 import { LoadingCard } from "@/components/ui/LoadingSpinner";
+import supabase from "@/lib/supabaseBrowserClient";
 
 // Lazy load heavy components
 const RdxSelect = lazy(() => import("@/components/ui/RdxSelect"));

@@ -1,14 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
 import { useDroppable } from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { Plus, Sparkles, Target, Clock, CheckCircle2 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
-import { TaskCard } from './TaskCard';
+import { typography, TYPOGRAPHY_PRESETS, getContextualTypography } from '@/lib/typography';
+import { cn } from '@/lib/utils';
 import { 
   Task, 
   TaskStatus, 
@@ -16,9 +19,9 @@ import {
   TASK_STATUS_LABELS,
   Team 
 } from '@/types/tasks';
-import { cn } from '@/lib/utils';
-import { Plus, Sparkles, Target, Clock, CheckCircle2 } from 'lucide-react';
-import { typography, TYPOGRAPHY_PRESETS, getContextualTypography } from '@/lib/typography';
+
+import { TaskCard } from './TaskCard';
+
 
 interface KanbanColumnProps {
   column: KanbanColumnType;

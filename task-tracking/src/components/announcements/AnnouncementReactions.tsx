@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Button } from "@/components/ui/button";
-import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
-import { useReactions } from "@/contexts/ReactionsContext";
+
 import { Heart, ThumbsUp, ThumbsDown, Smile, Frown, Star } from 'lucide-react';
+
+import { Button } from "@/components/ui/button";
+import { useReactions } from "@/contexts/ReactionsContext";
+import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 
 
 

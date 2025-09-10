@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { LoadingCard } from "@/components/ui/LoadingSpinner";
+import { ReactionsProvider } from '@/contexts/ReactionsContext';
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import { getAnnouncements } from "@/lib/actions/announcements";
-import { ReactionsProvider } from '@/contexts/ReactionsContext';
-import { LoadingCard } from "@/components/ui/LoadingSpinner";
 
 // Lazy load heavy components
 const AnnouncementForm = lazy(() => import("./AnnouncementForm"));

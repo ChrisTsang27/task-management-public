@@ -1,8 +1,9 @@
 "use client";
 
+import React from "react";
+
 import * as Select from "@radix-ui/react-select";
 import { clsx } from "clsx";
-import React from "react";
 
 type Item = { value: string; label: string };
 

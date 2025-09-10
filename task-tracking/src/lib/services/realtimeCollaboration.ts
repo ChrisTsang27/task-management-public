@@ -1,4 +1,5 @@
 import { createClient, RealtimeChannel } from '@supabase/supabase-js';
+
 import { Task } from '@/types/tasks';
 
 // Initialize Supabase client

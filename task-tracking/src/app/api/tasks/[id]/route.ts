@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@supabase/supabase-js';
+
 import { UpdateTaskData, TASK_STATUS_TRANSITIONS, TaskStatus } from '@/types/tasks';
 
 // Initialize Supabase client

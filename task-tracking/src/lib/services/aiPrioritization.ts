@@ -1,5 +1,6 @@
-import { Task, AIInsights } from '@/types/tasks';
 import { createClient } from '@supabase/supabase-js';
+
+import { Task, AIInsights } from '@/types/tasks';
 
 // Initialize Supabase client
 const supabase = createClient(

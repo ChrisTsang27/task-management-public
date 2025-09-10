@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+
 import type { Transporter } from 'nodemailer';
 
 // Email configuration interface

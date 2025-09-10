@@ -1,6 +1,13 @@
 "use client";
 
 import { useState, useEffect, lazy, Suspense } from 'react';
+
+import { format } from 'date-fns';
+import { CalendarIcon, Users, AlertCircle, Send } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
@@ -9,11 +16,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 const RichTextEditor = lazy(() => import('@/components/ui/rich-text-editor'));
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -21,19 +32,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { CalendarIcon, Users, AlertCircle, Send } from 'lucide-react';
-import { Team, CreateAssistanceRequestData } from '@/types/tasks';
 import { useToast } from '@/hooks/use-toast';
 import supabase from '@/lib/supabaseBrowserClient';
+import { cn } from '@/lib/utils';
+import { Team, CreateAssistanceRequestData } from '@/types/tasks';
 
 interface AssistanceRequestFormProps {
   open: boolean;

@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { MessageCircle, Send, User, Calendar, Trash2 } from 'lucide-react';
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
-import { MessageCircle, Send, User, Calendar, Trash2 } from 'lucide-react';
+
 
 interface Comment {
   id: string;

@@ -1,16 +1,20 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getAnnouncements, deleteAnnouncement, toggleAnnouncementPin } from "@/lib/actions/announcements";
-import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
+
 import { Trash2, Edit, Calendar, User, Clock, AlertCircle, MessageCircle, Paperclip, Download, FileText, Image, Eye, X, Maximize2, Pin, PinOff } from 'lucide-react';
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useReactions } from '@/contexts/ReactionsContext';
+import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
+import { getAnnouncements, deleteAnnouncement, toggleAnnouncementPin } from "@/lib/actions/announcements";
+
 import AnnouncementComments from './AnnouncementComments';
 import AnnouncementReactions from './AnnouncementReactions';
-import { useReactions } from '@/contexts/ReactionsContext';
+
 
 
 interface Attachment {

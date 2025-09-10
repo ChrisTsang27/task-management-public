@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+
 import {
   DndContext,
   DragEndEvent,
@@ -11,21 +12,17 @@ import {
   useSensors,
   closestCorners,
 } from '@dnd-kit/core';
-import { Button } from '@/components/ui/button';
-import { TaskCard } from './TaskCard';
-import { KanbanColumn } from './KanbanColumn';
-import { 
-  Task, 
-  TaskStatus, 
-  KanbanColumn as KanbanColumnType,
-  TASK_STATUS_TRANSITIONS 
-} from '@/types/tasks';
 import { Plus, Filter, Search, Users, LayoutGrid, Building2 } from 'lucide-react';
+
+import { AIPriorityToggle } from '@/components/ui/ai-priority-toggle';
+import { Button } from '@/components/ui/button';
+import { ConflictResolutionModal } from '@/components/ui/conflict-resolution-modal';
 import { Input } from '@/components/ui/input';
 import { TaskFiltersPanel, TaskFilters } from '@/components/ui/task-filters';
-import { Team } from '@/types/tasks';
-import { RealtimeCollaborationService } from '@/services/realtime-collaboration';
+import { AIPrioritizationService } from '@/services/ai-prioritization';
 import { ConflictResolutionService } from '@/services/conflict-resolution';
+import { RealtimeCollaborationService } from '@/services/realtime-collaboration';
+import { Team } from '@/types/tasks';
 
 // Import ConflictData type
 interface ConflictData {
@@ -41,9 +38,15 @@ interface ConflictData {
   }[];
   timestamp: number;
 }
-import { AIPriorityToggle } from '@/components/ui/ai-priority-toggle';
-import { AIPrioritizationService } from '@/services/ai-prioritization';
-import { ConflictResolutionModal } from '@/components/ui/conflict-resolution-modal';
+import { 
+  Task, 
+  TaskStatus, 
+  KanbanColumn as KanbanColumnType,
+  TASK_STATUS_TRANSITIONS 
+} from '@/types/tasks';
+
+import { KanbanColumn } from './KanbanColumn';
+import { TaskCard } from './TaskCard';
 
 interface TaskBoardProps {
   tasks: Task[];

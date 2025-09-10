@@ -1,19 +1,21 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback, lazy, Suspense } from "react";
+
+import { Menu, X, LayoutGrid, List, Calendar, Filter, Search, Settings } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { LoadingCard } from "@/components/ui/LoadingSpinner";
 
 // Lazy load heavy components
 const EmailComposer = lazy(() => import("@/components/email/EmailComposer"));
 const AnnouncementManager = lazy(() => import("@/components/announcements/AnnouncementManager"));
 const TaskManager = lazy(() => import("@/components/tasks/TaskManager"));
+import { TeamSelector } from "@/components/ui/team-selector";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import supabase from "@/lib/supabaseBrowserClient";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Menu, X, LayoutGrid, List, Calendar, Filter, Search, Settings } from "lucide-react";
-import { TeamSelector } from "@/components/ui/team-selector";
 import { Team } from "@/types/tasks";
 
 type Role = "admin" | "user";

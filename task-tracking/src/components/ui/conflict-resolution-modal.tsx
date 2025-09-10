@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Users, Clock, ArrowRight, CheckCircle, XCircle } from 'lucide-react';
-import { Task, TaskStatus, TASK_STATUS_LABELS } from '@/types/tasks';
-import { cn } from '@/lib/utils';
+
 import { format } from 'date-fns';
+import { AlertTriangle, Users, Clock, ArrowRight, CheckCircle, XCircle } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Task, TaskStatus, TASK_STATUS_LABELS } from '@/types/tasks';
+
 
 interface ConflictData {
   id: string;

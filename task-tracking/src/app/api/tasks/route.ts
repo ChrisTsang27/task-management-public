@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+import { CreateTaskSchema, TaskFiltersSchema } from '@/lib/api/schemas';
 import {
   authenticateRequest,
   createSuccessResponse,
@@ -11,7 +13,6 @@ import {
   createPaginatedResponse,
   STANDARD_SELECTS
 } from '@/lib/api/utils';
-import { CreateTaskSchema, TaskFiltersSchema } from '@/lib/api/schemas';
 
 // GET /api/tasks - Fetch tasks with filtering and sorting
 export const GET = withErrorHandling(async (request: NextRequest): Promise<NextResponse> => {

@@ -1,7 +1,11 @@
 "use client";
 import React, { useMemo, useCallback } from 'react';
+
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { format } from 'date-fns';
+import { Calendar, User, Clock, GripVertical, CheckCircle, XCircle, Brain, Zap, Users, AlertTriangle, TrendingUp, Trash2 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { 
   Task, 
@@ -9,8 +13,7 @@ import {
   Team
 } from '@/types/tasks';
 import { getStatusTransitionButtons } from '@/utils/workflow';
-import { Calendar, User, Clock, GripVertical, CheckCircle, XCircle, Brain, Zap, Users, AlertTriangle, TrendingUp, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
+
 
 interface TaskCardProps {
   task: Task;

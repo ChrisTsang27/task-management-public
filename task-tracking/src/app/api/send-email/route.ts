@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
+
 import emailService from "@/lib/emailService";
 
 const EmailPayload = z.object({

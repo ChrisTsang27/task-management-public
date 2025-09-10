@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useReducer, useEffect, lazy, Suspense } from "react";
+
 import { LoadingCard } from "@/components/ui/LoadingSpinner";
 
 // Lazy load heavy components

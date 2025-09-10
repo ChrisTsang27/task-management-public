@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+
 import { ChevronDown, Users, Building2 } from 'lucide-react';
-import { Team } from '@/types/tasks';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import supabase from '@/lib/supabaseBrowserClient';
 import { cn } from '@/lib/utils';
+import { Team } from '@/types/tasks';
 
 interface TeamSelectorProps {
   selectedTeam: Team | null;
