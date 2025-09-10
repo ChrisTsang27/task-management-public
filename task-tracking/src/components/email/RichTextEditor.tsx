@@ -42,6 +42,8 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isTemplateMode, setIsTemplateMode] = useState(false);
   const [rawHtmlContent, setRawHtmlContent] = useState('');
+  const isUpdatingFromTemplate = useRef(false);
+  const isUpdatingFromUser = useRef(false);
 
   // Detect if content is a complex email template
   const isComplexTemplate = useCallback((content: string) => {
@@ -67,13 +69,32 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
     return hasInlineStyles && (hasTemplateStructure || hasComplexStyling || hasTemplateElements);
    }, []);
 
-  const onUpdateDebounced = useCallback((html: string) => {
-    if (!onChange) return;
+  const onUpdateDebounced = useCallback((html: string, editorInstance?: any) => {
+    if (!onChange || isUpdatingFromTemplate.current) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      // When in template mode, the user is directly editing the template HTML
-      // so we pass through the edited content with all styling preserved
-      onChange(html);
+      // Set flag to indicate this change comes from user input
+      isUpdatingFromUser.current = true;
+      
+      if (isTemplateMode && rawHtmlContent) {
+        // Template mode: Replace CONTENT HERE placeholder with editor content
+        // Use the editor content as-is - no cleaning needed since we control what goes into the editor
+        let editorContent = html && html.trim() ? html : '<p></p>';
+        
+        const templateWithContent = rawHtmlContent.replace(
+          /CONTENT HERE/g, 
+          editorContent
+        );
+        onChange(templateWithContent);
+      } else {
+        // Normal mode - pass through the editor content
+        onChange(html);
+      }
+      
+      // Reset the flag after a short delay
+      setTimeout(() => {
+        isUpdatingFromUser.current = false;
+      }, 100);
      }, 300);
    }, [onChange, isTemplateMode, rawHtmlContent]);
 
@@ -94,7 +115,11 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
       }),
       // Allow base64 images for template logos and uploaded images
       Image.configure({ inline: false, allowBase64: true }),
-      Placeholder.configure({ placeholder: placeholder || "Write your content..." }),
+      Placeholder.configure({
+        placeholder: "Enter your message here...",
+        showOnlyWhenEditable: true,
+        showOnlyCurrent: true,
+      }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Table.configure({ resizable: true, lastColumnResizable: true }),
       TableRow,
@@ -104,8 +129,8 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
       Dropcursor.configure({ class: "tiptap-dropcursor" }),
       Gapcursor,
     ],
-    content: value || "",
-    onUpdate: ({ editor }) => onUpdateDebounced(editor.getHTML()),
+    content: value || "<p></p>",
+    onUpdate: ({ editor }) => onUpdateDebounced(editor.getHTML(), editor),
     parseOptions: {
       preserveWhitespace: 'full',
     },
@@ -121,16 +146,62 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
 
   // Update editor content when value prop changes (for template application)
   useEffect(() => {
-    if (editor && value !== undefined && editor.getHTML() !== value) {
+    if (editor && value !== undefined && editor.getHTML() !== value && !isUpdatingFromTemplate.current && !isUpdatingFromUser.current) {
       const isTemplate = isComplexTemplate(value);
-      console.log('Template detection:', { isTemplate, valueLength: value.length, hasMaxWidth: value.includes('max-width: 600px') });
+      console.log('Template detection:', { 
+        isTemplate, 
+        valueLength: value.length, 
+        hasMaxWidth: value.includes('max-width: 600px'),
+        hasAddress: value.includes('Unit 1, 739 Boundary Road'),
+        valuePreview: value.substring(0, 200)
+      });
+      
+      // Set flag to prevent feedback loop
+      isUpdatingFromTemplate.current = true;
+      
       setIsTemplateMode(isTemplate);
       
       if (isTemplate) {
         // Store the raw HTML for complex templates
         setRawHtmlContent(value);
-        // Apply the template HTML directly while preserving all styling
-        editor.commands.setContent(value, false);
+        
+        // For templates, we need to extract editable content and show it in the editor
+        // while preserving the full template structure in rawHtmlContent
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = value;
+        
+        // Simplified template content initialization
+        let editableContent = '';
+        
+        if (value.includes('CONTENT HERE')) {
+          // Fresh template application - provide starter content without Hi since template already has it
+          editableContent = '<p>Enter your message here...</p>';
+        } else {
+          // Template has been used before - extract only the content that was inserted
+          // Look for content between template structure elements
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = value;
+          
+          // Find paragraphs that don't contain template-specific text
+          const paragraphs = Array.from(tempDiv.querySelectorAll('p'));
+          const userParagraphs = paragraphs.filter(p => {
+            const text = p.textContent || '';
+            return !text.includes('Professional Communication') && 
+                   !text.includes('Important Announcement') &&
+                   !text.includes('Unit 1, 739 Boundary Road') &&
+                   !text.includes('Best regards') &&
+                   text.trim().length > 0;
+          });
+          
+          if (userParagraphs.length > 0) {
+            editableContent = userParagraphs.map(p => p.outerHTML).join('');
+          } else {
+            editableContent = '<p>Enter your message here...</p>';
+          }
+        }
+        
+        // Set the content in the editor without aggressive cleaning
+        editor.commands.setContent(editableContent || '<p></p>', false);
       } else {
         setRawHtmlContent('');
         // Use insertContent with emitUpdate: false to preserve HTML structure better
@@ -142,6 +213,11 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
           updateSelection: false,
         });
       }
+      
+      // Reset flag after a short delay to allow the editor to update
+      setTimeout(() => {
+        isUpdatingFromTemplate.current = false;
+      }, 100);
     }
   }, [editor, value, isComplexTemplate]);
 

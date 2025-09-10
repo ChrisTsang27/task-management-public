@@ -70,9 +70,15 @@ class EmailService {
         text: message.text,
         html: message.html,
         headers: {
-          'Content-Type': 'text/html; charset=UTF-8',
+          'X-Mailer': 'Task Tracking System',
+          'X-Priority': '3',
           'MIME-Version': '1.0'
-        }
+        },
+        // Ensure HTML content is properly formatted
+        alternatives: message.html ? [{
+          contentType: 'text/html; charset=UTF-8',
+          content: message.html
+        }] : undefined
       };
 
       const info = await this.transporter.sendMail(mailOptions);

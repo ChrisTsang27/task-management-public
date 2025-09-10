@@ -10,9 +10,8 @@ const config = {
     extend: {},
   },
   plugins: [
-    // Using dynamic import for tailwind-scrollbar
-    await import('tailwind-scrollbar').then(module => module.default),
+    require('tailwind-scrollbar'),
   ],
 }
 
-export default config;
+module.exports = config;

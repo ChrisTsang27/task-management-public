@@ -92,6 +92,7 @@ type EmailState = {
   deptFilter: string;
   locFilter: string;
   userQuery: string;
+  appliedTemplate: string | null;
 };
 
 type EmailAction = 
@@ -110,6 +111,7 @@ type EmailAction =
   | { type: 'SET_DEPT_FILTER'; payload: string }
   | { type: 'SET_LOC_FILTER'; payload: string }
   | { type: 'SET_USER_QUERY'; payload: string }
+  | { type: 'SET_APPLIED_TEMPLATE'; payload: string | null }
   | { type: 'RESET_FILTERS' };
 
 const initialState: EmailState = {
@@ -125,7 +127,8 @@ const initialState: EmailState = {
   occFilter: "all",
   deptFilter: "all",
   locFilter: "all",
-  userQuery: ""
+  userQuery: "",
+  appliedTemplate: null
 };
 
 function emailReducer(state: EmailState, action: EmailAction): EmailState {
@@ -168,6 +171,8 @@ function emailReducer(state: EmailState, action: EmailAction): EmailState {
       return { ...state, locFilter: action.payload };
     case 'SET_USER_QUERY':
       return { ...state, userQuery: action.payload };
+    case 'SET_APPLIED_TEMPLATE':
+      return { ...state, appliedTemplate: action.payload };
     case 'RESET_FILTERS':
       return { 
         ...state, 
@@ -183,9 +188,21 @@ function emailReducer(state: EmailState, action: EmailAction): EmailState {
 
 const EmailComposer = React.memo(function EmailComposer() {
   const [state, dispatch] = useReducer(emailReducer, initialState);
-  const { 
-    users, loading, recipients, title, subject, contentHTML, 
-    sending, status, isDragging, occFilter, deptFilter, locFilter, userQuery 
+  const {
+    users,
+    loading,
+    recipients,
+    title,
+    subject,
+    contentHTML,
+    sending,
+    status,
+    isDragging,
+    occFilter,
+    deptFilter,
+    locFilter,
+    userQuery,
+    appliedTemplate
   } = state;
   
   // Template customizer state - removed as we now use unified customization
@@ -370,11 +387,43 @@ const EmailComposer = React.memo(function EmailComposer() {
     }
   }, [title, subject, contentHTML, recipients, contentIsEmpty, contentTooLong]);
 
-  const handleApplyTemplate = useCallback((templateHtml: string) => {
-    // Directly apply the template without showing another customizer
-    // The template should already be customized from the template mode
-    dispatch({ type: 'SET_CONTENT', payload: templateHtml });
-  }, []);
+  // Helper function to replace placeholders with actual data
+  const replacePlaceholders = useCallback((html: string) => {
+    let processedHtml = html;
+    
+    // Replace common placeholders with recipient data if available
+    if (recipients.length > 0) {
+      const firstRecipient = recipients[0];
+      processedHtml = processedHtml
+        .replace(/\[Your Name\]/g, firstRecipient.name || '[Your Name]')
+        .replace(/\[Your Position\]/g, firstRecipient.occupation || '[Your Position]')
+        .replace(/\[Your Department\]/g, firstRecipient.department || '[Your Department]')
+        .replace(/\[Your Location\]/g, firstRecipient.location || '[Your Location]');
+    }
+    
+    // Replace company placeholders
+    processedHtml = processedHtml
+      .replace(/\[Your Company\]/g, 'Stonegate Industries')
+      .replace(/Your Company/g, 'Stonegate Industries')
+      .replace(/\[email@company\.com\]/g, 'info@stonegateindustries.com')
+      .replace(/\[website\.com\]/g, 'stonegateindustries.com')
+      .replace(/\[phone\]/g, '+61 7 3000 0000');
+    
+    return processedHtml;
+  }, [recipients]);
+
+  const handleApplyTemplate = useCallback((templateHtml: string, templateName?: string) => {
+    const processedTemplate = replacePlaceholders(templateHtml);
+    
+    // With simplified approach, templates always replace content since they contain the full structure
+    // Preserve the CONTENT HERE placeholder so the RichTextEditor can handle it appropriately
+    // This allows the editor to show a prompt for user input where the content should go
+    
+    dispatch({ type: 'SET_CONTENT', payload: processedTemplate });
+    
+    // Track applied template
+    dispatch({ type: 'SET_APPLIED_TEMPLATE', payload: templateName || 'Unknown Template' });
+  }, [replacePlaceholders]);
 
   // Removed handleCustomizerUpdate and handleCustomizerClose as we now use unified customization
 
@@ -670,8 +719,26 @@ const EmailComposer = React.memo(function EmailComposer() {
         {/* Email Section - Outside the grid */}
         <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-600/50 shadow-xl">
           <CardHeader>
-            <CardTitle className="text-xl">Compose Email</CardTitle>
-            <CardDescription>Create and send your email message</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl">Compose Email</CardTitle>
+                <CardDescription>Create and send your email message</CardDescription>
+              </div>
+              {appliedTemplate && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-600/20 border border-green-500/30 rounded-lg">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-green-300">Template: {appliedTemplate}</span>
+                  <button
+                    onClick={() => dispatch({ type: 'SET_APPLIED_TEMPLATE', payload: null })}
+                    className="text-green-300 hover:text-green-200 ml-1"
+                    title="Clear template"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+            </div>
+
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -695,11 +762,62 @@ const EmailComposer = React.memo(function EmailComposer() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-200">Content</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-slate-200">Content</label>
+                {appliedTemplate && (
+                  <button
+                    onClick={() => {
+                      const previewWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+                      if (previewWindow) {
+                        // Get the current template HTML and replace CONTENT HERE with editor content
+                        let previewContent = contentHTML;
+                        
+                        // If we have a template applied, we need to reconstruct the full email
+                        // by finding the template structure and showing the CONTENT HERE placeholder
+                        // This helps users understand where their content will appear in the template
+                        if (appliedTemplate && contentHTML.includes('CONTENT HERE')) {
+                          // Keep the CONTENT HERE placeholder for preview to show structure
+                          previewContent = contentHTML;
+                        } else if (appliedTemplate) {
+                          // Legacy content - show as is
+                          previewContent = contentHTML;
+                        }
+                        
+                        previewWindow.document.write(`
+                          <!DOCTYPE html>
+                          <html>
+                            <head>
+                              <title>Email Preview - ${appliedTemplate}</title>
+                              <style>
+                                body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+                                .preview-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                                .preview-header { background: #1e40af; color: white; padding: 10px 20px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0; }
+                              </style>
+                            </head>
+                            <body>
+                              <div class="preview-container">
+                                <div class="preview-header">
+                                  <h2 style="margin: 0;">📧 Email Preview: ${appliedTemplate}</h2>
+                                  <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Subject: ${subject || 'No subject'}</p>
+                                </div>
+                                ${previewContent}
+                              </div>
+                            </body>
+                          </html>
+                        `);
+                        previewWindow.document.close();
+                      }
+                    }}
+                    className="text-xs px-3 py-1.5 bg-blue-600/20 border border-blue-500/30 rounded-lg text-blue-300 hover:bg-blue-600/30 transition-all"
+                  >
+                    📧 Preview Email
+                  </button>
+                )}
+              </div>
               <Suspense fallback={<LoadingCard title="Loading Editor..." description="Please wait while we load the rich text editor" />}>
                 <RichTextEditor value={contentHTML} onChange={(value) => dispatch({ type: 'SET_CONTENT', payload: value })} placeholder="Write rich content (text, images, links, lists, tables, emojis)..." />
               </Suspense>
-              <p className="text-xs text-slate-400">Timestamp is added on send.</p>
+              <p className="text-xs text-slate-400">Timestamp is added on send. {appliedTemplate && `Template "${appliedTemplate}" is active.`}</p>
             </div>
             {contentTooLong && (
               <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 mb-2">

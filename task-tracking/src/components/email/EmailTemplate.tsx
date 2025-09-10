@@ -21,7 +21,7 @@ interface TemplateCustomization {
 }
 
 interface EmailTemplateProps {
-  onApplyTemplate: (templateHtml: string) => void;
+  onApplyTemplate: (templateHtml: string, templateName?: string) => void;
   currentContent: string;
 }
 
@@ -65,9 +65,7 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
             
             <!-- Main Content -->
             <div style="margin: 20px 0; line-height: 1.6; color: #333333;">
-              <p style="margin: 0 0 15px 0;">I'm very sorry to hear about the issue with your [Product] and I sincerely apologise for the inconvenience this has caused you.</p>
-              <p style="margin: 0 0 15px 0;">Please send through a photo of the seam so we can review the warranty claim for you. In your email, you mentioned this is the [Issue Description].</p>
-              <p style="margin: 0 0 15px 0;">We'll do our best to resolve this for you as quickly as possible.</p>
+              CONTENT HERE
             </div>
             
             <!-- Signature -->
@@ -118,8 +116,8 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
             <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151;">Dear Valued Team Member,</p>
             
             <!-- Main Content Placeholder -->
-            <div style="margin: 20px 0; min-height: 100px; padding: 20px; background-color: #f9fafb; border: 2px dashed #d1d5db; border-radius: 8px; text-align: center; color: #6b7280;">
-              <p style="margin: 0; font-style: italic;">Your email content will appear here...</p>
+            <div style="margin: 20px 0; color: #374151;">
+              CONTENT HERE
             </div>
           </div>
           
@@ -154,8 +152,8 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
           <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151;">Hello,</p>
           
           <!-- Content Placeholder -->
-          <div style="margin: 20px 0; min-height: 100px; padding: 20px; background-color: #f9fafb; border-left: 4px solid #3b82f6; color: #6b7280;">
-            <p style="margin: 0; font-style: italic;">Your message content goes here...</p>
+          <div style="margin: 20px 0; color: #374151;">
+            CONTENT HERE
           </div>
           
           <!-- Simple Signature -->
@@ -185,8 +183,8 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
             <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151;">Dear Team,</p>
             
             <!-- Announcement Content -->
-            <div style="margin: 25px 0; padding: 25px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 8px; border-left: 4px solid #f59e0b;">
-              <p style="margin: 0; font-style: italic; color: #92400e; text-align: center;">Your announcement content will be displayed here...</p>
+            <div style="margin: 25px 0; color: #374151;">
+              CONTENT HERE
             </div>
             
             <p style="margin: 20px 0 0 0; font-size: 14px; color: #6b7280;">Thank you for your attention to this matter.</p>
@@ -204,15 +202,9 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
   ];
 
   const handleApplyTemplate = (template: Template) => {
-    // If there's existing content, show a confirmation or merge option
-    if (currentContent && currentContent.trim() !== "") {
-      const confirmed = window.confirm(
-        "You have existing content. Do you want to replace it with the template? Click Cancel to keep your current content."
-      );
-      if (!confirmed) return;
-    }
-    
-    onApplyTemplate(template.html);
+    // Pass both template HTML and name to the parent component
+    // The parent will handle content merging based on template mode
+    onApplyTemplate(template.html, template.name);
   };
 
   const handleSaveCustomTemplate = (customTemplate: Template) => {
