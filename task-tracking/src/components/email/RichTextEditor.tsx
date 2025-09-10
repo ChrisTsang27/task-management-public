@@ -238,7 +238,9 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
     if (editor) {
       const updateContent = () => setEditorContent(editor.getHTML());
       editor.on('update', updateContent);
-      return () => editor.off('update', updateContent);
+      return () => {
+        editor.off('update', updateContent);
+      };
     }
   }, [editor]);
   
