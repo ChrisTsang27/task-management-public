@@ -668,7 +668,10 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
           <div className="flex gap-3 pt-6 border-t">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={onClose} variant="outline" size="default" className="flex-1">
+                <Button onClick={() => {
+                  setIsOpen(false);
+                  if (onClose) onClose();
+                }} variant="outline" size="default" className="flex-1">
                   <XCircle className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
@@ -747,7 +750,10 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
 
   // For both template and content modes, use the Dialog component
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open && onClose) onClose();
+    }}>
       {triggerButton && (
         <DialogTrigger asChild>
           {triggerButton}
