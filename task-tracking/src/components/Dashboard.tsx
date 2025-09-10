@@ -19,7 +19,7 @@ import supabase from "@/lib/supabaseBrowserClient";
 import { Team } from "@/types/tasks";
 
 type Role = "admin" | "user";
-type Tab = "Announcements" | "Email" | "Tasks";
+type Tab = "Announcements" | "Email" | "Tasks" | "Calendar";
 type TaskView = "kanban" | "list" | "calendar";
 
 interface TabConfig {
@@ -85,6 +85,14 @@ export default function Dashboard() {
         ),
         tooltip: "Manage tasks and project workflow"
       },
+      { 
+        key: "Calendar", 
+        roles: ["admin", "user"],
+        icon: (
+          <Calendar className="w-5 h-5" />
+        ),
+        tooltip: "View calendar and schedule events"
+      },
     ],
     []
   );
@@ -100,12 +108,12 @@ export default function Dashboard() {
       // Check URL params first
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get('tab') as Tab;
-      if (tabParam && ['Announcements', 'Email', 'Tasks'].includes(tabParam)) {
+      if (tabParam && ['Announcements', 'Email', 'Tasks', 'Calendar'].includes(tabParam)) {
         return tabParam;
       }
       // Then check localStorage
       const savedTab = localStorage.getItem('dashboard-tab') as Tab;
-      if (savedTab && ['Announcements', 'Email', 'Tasks'].includes(savedTab)) {
+      if (savedTab && ['Announcements', 'Email', 'Tasks', 'Calendar'].includes(savedTab)) {
         return savedTab;
       }
     }
@@ -541,6 +549,19 @@ export default function Dashboard() {
                       />
                     </Suspense>
                   </div>
+                )}
+                
+                {tab === "Calendar" && (
+                  <Card className="bg-slate-800/50 border-slate-700">
+                    <CardContent className="p-6">
+                      <div className="text-center py-12">
+                        <Calendar className="w-16 h-16 mx-auto mb-4 text-blue-400" />
+                        <h3 className="text-xl font-semibold text-white mb-2">Calendar Feature</h3>
+                        <p className="text-slate-400 mb-4">Calendar functionality will be implemented here.</p>
+                        <p className="text-sm text-slate-500">This is a placeholder for the upcoming calendar feature.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
               </>
             )}
