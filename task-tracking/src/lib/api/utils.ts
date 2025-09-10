@@ -174,7 +174,7 @@ export function createPaginatedResponse<T>(
 export const STANDARD_SELECTS = {
   task: `
     *,
-    team:teams(id, name),
+    team:teams!tasks_team_id_fkey(id, name),
     created_by_profile:profiles!tasks_created_by_fkey(id, full_name, title, department),
     assignee_profile:profiles!tasks_assignee_id_fkey(id, full_name, title, department)
   `,
