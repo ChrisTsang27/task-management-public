@@ -231,6 +231,17 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
   const [isDraggingOverEditor, setIsDraggingOverEditor] = useState(false);
 
   const characterCount = editor?.storage.characterCount as { words?: () => number; characters?: () => number } | undefined;
+  const [editorContent, setEditorContent] = useState(editor?.getHTML() || '');
+  
+  // Update content state when editor changes
+  useEffect(() => {
+    if (editor) {
+      const updateContent = () => setEditorContent(editor.getHTML());
+      editor.on('update', updateContent);
+      return () => editor.off('update', updateContent);
+    }
+  }, [editor]);
+  
   const counts = useMemo(() => ({
     words:
       typeof characterCount?.words === "function"
@@ -240,7 +251,7 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
       typeof characterCount?.characters === "function"
         ? characterCount.characters()
         : editor?.getText().length || 0,
-  }), [characterCount, editor]);
+  }), [characterCount, editor, editorContent]);
 
   const currentBlock: "p" | "h1" | "h2" | "h3" | "h4" = useMemo(() => 
     editor?.isActive("heading", { level: 1 })
