@@ -7,6 +7,7 @@ declare module 'sanitize-html' {
     allowProtocolRelative?: boolean;
     disallowedTagsMode?: 'discard' | 'escape';
     transformTags?: Record<string, (tagName: string, attribs: Record<string, string>) => { tagName: string; attribs: Record<string, string> }>;
+    allowedStyles?: Record<string, Record<string, RegExp[]>>;
   }
   interface SanitizeHtml {
     (dirty: string, options?: Options): string;

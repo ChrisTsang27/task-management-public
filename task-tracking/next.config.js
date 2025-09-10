@@ -20,6 +20,10 @@ const nextConfig = {
       '@tiptap/react',
       '@tiptap/starter-kit'
     ],
+    // Enable faster refresh for development
+    optimizeCss: true,
+    // Enable faster builds
+    webpackBuildWorker: true,
   },
   
   // Output file tracing configuration
@@ -107,6 +111,17 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  
+  // Development optimizations
+  ...(process.env.NODE_ENV === 'development' && {
+    // Faster development builds
+    swcMinify: false,
+    // Reduce memory usage in development
+    onDemandEntries: {
+      maxInactiveAge: 25 * 1000,
+      pagesBufferLength: 2,
+    },
+  }),
 };
 
 export default withBundleAnalyzer(nextConfig);

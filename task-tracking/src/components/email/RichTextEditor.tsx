@@ -83,12 +83,6 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
         heading: { levels: [1, 2, 3, 4] },
         dropcursor: false,
         gapcursor: false,
-        // Preserve more HTML content
-        document: {
-          parseOptions: {
-            preserveWhitespace: 'full',
-          },
-        },
       }),
       Underline,
       Subscript,
