@@ -12,6 +12,7 @@ import { LoadingCard } from "@/components/ui/LoadingSpinner";
 const EmailComposer = lazy(() => import("@/components/email/EmailComposer"));
 const AnnouncementManager = lazy(() => import("@/components/announcements/AnnouncementManager"));
 const TaskManager = lazy(() => import("@/components/tasks/TaskManager"));
+const CalendarView = lazy(() => import("./calendar/CalendarView").then(module => ({ default: module.CalendarView })));
 import { TeamSelector } from "@/components/ui/team-selector";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
@@ -554,12 +555,9 @@ export default function Dashboard() {
                 {tab === "Calendar" && (
                   <Card className="bg-slate-800/50 border-slate-700">
                     <CardContent className="p-6">
-                      <div className="text-center py-12">
-                        <Calendar className="w-16 h-16 mx-auto mb-4 text-blue-400" />
-                        <h3 className="text-xl font-semibold text-white mb-2">Calendar Feature</h3>
-                        <p className="text-slate-400 mb-4">Calendar functionality will be implemented here.</p>
-                        <p className="text-sm text-slate-500">This is a placeholder for the upcoming calendar feature.</p>
-                      </div>
+                      <Suspense fallback={<LoadingCard title="Loading Calendar..." description="Please wait while we load the calendar" />}>
+                        <CalendarView teamId={selectedTeam?.id} />
+                      </Suspense>
                     </CardContent>
                   </Card>
                 )}
