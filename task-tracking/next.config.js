@@ -41,7 +41,7 @@ const nextConfig = {
   // },
   
   // Webpack optimizations - temporarily simplified
-  webpack: (config, { dev, isServer }) => {
+  webpack: (config, { dev: _dev, isServer: _isServer }) => {
     // Basic configuration only
     /*
     if (!dev && !isServer) {

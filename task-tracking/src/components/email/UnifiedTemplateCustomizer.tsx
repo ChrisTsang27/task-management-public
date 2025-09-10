@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, XCircle, Save, Palette, Type, Image as ImageIcon, Edit3, X } from "lucide-react";
+import { Upload, XCircle, Save, Palette, Type, Image as ImageIcon, Edit3, X, Phone, Contact } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Template {
@@ -43,7 +43,11 @@ interface TemplateCustomization {
   footerText: string;
   previewBackgroundColor: string;
   cardBackgroundColor: string;
-  domainExtension: string;
+  // Contact Information
+  contactTel: string;
+  contactWeb: string;
+  contactEmail: string;
+  contactAddress: string;
 }
 
 interface PlaceholderField {
@@ -63,23 +67,27 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
   mode = 'template'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('branding');
+  const [activeTab, setActiveTab] = useState('general');
   
   // Visual customization state
   const [customization, setCustomization] = useState<TemplateCustomization>({
-    companyName: "Your Company",
-    department: "",
+    companyName: "[Company Name]",
+    department: "[Department]",
     primaryColor: "#1e40af",
     secondaryColor: "#3b82f6",
     backgroundColor: "#ffffff",
     textColor: "#374151",
     logoUrl: "",
     fontFamily: "Arial, sans-serif",
-    headerText: "Professional Communication",
-    footerText: "Thank you for your business",
+    headerText: "",
+    footerText: "",
     previewBackgroundColor: "#ffffff",
     cardBackgroundColor: "#ffffff",
-    domainExtension: ".com"
+    // Contact Information defaults
+    contactTel: "",
+    contactWeb: "",
+    contactEmail: "",
+    contactAddress: ""
   });
   
   // Placeholder replacement state
@@ -139,16 +147,18 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     customHtml = customHtml.replace(/Your Company/g, customization.companyName);
     customHtml = customHtml.replace(/Your Company Name/g, customization.companyName);
     customHtml = customHtml.replace(/Stonegate Outdoor/g, customization.companyName);
-    customHtml = customHtml.replace(/Professional Communication/g, customization.headerText);
+    customHtml = customHtml.replace(/Professional Communication/g, customization.headerText || '[Header Text]');
     // Replace footer text based on template type
-    customHtml = customHtml.replace(/Kind regards,/g, customization.footerText);
-    customHtml = customHtml.replace(/Best regards,/g, customization.footerText);
-    customHtml = customHtml.replace(/Sincerely,/g, customization.footerText);
-    // Replace Stonegate-specific contact information
-    customHtml = customHtml.replace(/www\.stonegateindustries\.com\.au/g, `www.${customization.companyName.toLowerCase().replace(/\s+/g, '')}${customization.domainExtension}`);
-    customHtml = customHtml.replace(/outdoor@stonegateindustries\.com\.au/g, `contact@${customization.companyName.toLowerCase().replace(/\s+/g, '')}${customization.domainExtension}`);
-    customHtml = customHtml.replace(/https:\/\/www\.stonegateindustries\.com\.au/g, `https://www.${customization.companyName.toLowerCase().replace(/\s+/g, '')}${customization.domainExtension}`);
-    customHtml = customHtml.replace(/mailto:outdoor@stonegateindustries\.com\.au/g, `mailto:contact@${customization.companyName.toLowerCase().replace(/\s+/g, '')}${customization.domainExtension}`);
+    customHtml = customHtml.replace(/Kind regards,/g, customization.footerText || '[Footer Text]');
+    customHtml = customHtml.replace(/Best regards,/g, customization.footerText || '[Footer Text]');
+    customHtml = customHtml.replace(/Sincerely,/g, customization.footerText || '[Footer Text]');
+    // Replace Stonegate-specific contact information with customizable values
+    customHtml = customHtml.replace(/0401 924 666/g, customization.contactTel || '[Contact Number]');
+    customHtml = customHtml.replace(/www\.stonegateindustries\.com\.au/g, customization.contactWeb || '[Website]');
+    customHtml = customHtml.replace(/outdoor@stonegateindustries\.com\.au/g, customization.contactEmail || '[Email Address]');
+    customHtml = customHtml.replace(/Unit 1, 739 Boundary Road, Coopers Plains, QLD 4108/g, customization.contactAddress || '[Business Address]');
+    customHtml = customHtml.replace(/https:\/\/www\.stonegateindustries\.com\.au/g, customization.contactWeb ? `https://${customization.contactWeb}` : '[Website]');
+    customHtml = customHtml.replace(/mailto:outdoor@stonegateindustries\.com\.au/g, customization.contactEmail ? `mailto:${customization.contactEmail}` : '[Email Address]');
     customHtml = customHtml.replace(/#1e40af/g, customization.primaryColor);
     customHtml = customHtml.replace(/#3b82f6/g, customization.secondaryColor);
     // Apply card background color first (more specific)
@@ -195,8 +205,8 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     
     placeholderFields.forEach(field => {
       const regex = new RegExp(`\\[${field.key}\\]`, 'g');
-      // Replace with field value or empty string if no value provided
-      updatedContent = updatedContent.replace(regex, field.value || '');
+      // Replace with field value or keep original placeholder if no value provided
+      updatedContent = updatedContent.replace(regex, field.value || `[${field.key}]`);
     });
     
     return updatedContent;
@@ -230,6 +240,9 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     let customizedHtml = generateCustomizedHtml();
     if (mode === 'content' && content) {
       customizedHtml = applyPlaceholderReplacements(content);
+    } else {
+      // Apply placeholder replacements to the customized HTML for template mode
+      customizedHtml = applyPlaceholderReplacements(customizedHtml);
     }
     setPreviewHtml(customizedHtml);
   }, [customization, placeholderFields, generateCustomizedHtml, applyPlaceholderReplacements, mode, content]);
@@ -248,6 +261,9 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     let customizedHtml = generateCustomizedHtml();
     if (mode === 'content' && content) {
       customizedHtml = applyPlaceholderReplacements(content);
+    } else {
+      // Apply placeholder replacements to the customized HTML for template mode
+      customizedHtml = applyPlaceholderReplacements(customizedHtml);
     }
     setPreviewHtml(customizedHtml);
   }, [generateCustomizedHtml, applyPlaceholderReplacements, mode, content]);
@@ -305,8 +321,7 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     // Always show visual customization tabs
     tabs.push(
       { value: 'branding', label: 'Branding', icon: ImageIcon },
-      { value: 'colors', label: 'Colors', icon: Palette },
-      { value: 'content', label: 'Content', icon: Type }
+      { value: 'contact', label: 'Contact', icon: Contact }
     );
     
     // Add placeholders tab if template has placeholders (check both content and template.html)
@@ -359,7 +374,7 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
         <div className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 sm:flex bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/50">
-              {availableTabs.map(tab => {
+              {availableTabs.filter(tab => tab.value !== 'colors').map(tab => {
                 const Icon = tab.icon;
                 return (
                   <TabsTrigger key={tab.value} value={tab.value} className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 rounded-lg font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-blue-600 text-xs sm:text-sm">
@@ -470,180 +485,64 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
               </Card>
             </TabsContent>
             
-            {/* Colors Tab */}
-            <TabsContent value="colors" className="space-y-6">
-              <Card className="border-slate-200/50 shadow-sm bg-gradient-to-br from-white to-slate-50/50">
-                <CardHeader className="border-b border-slate-200/50">
-                  <CardTitle className="text-base flex items-center gap-3 text-slate-900">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
-                      <Palette className="w-4 h-4 text-white" />
-                    </div>
-                    Color Scheme
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6 pt-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="primaryColor" className="text-sm font-medium text-slate-700">Primary Color</Label>
-                      <div className="flex items-center gap-3">
-                        <Input
-                          id="primaryColor"
-                          type="color"
-                          value={customization.primaryColor}
-                          onChange={(e) => handleCustomizationChange('primaryColor', e.target.value)}
-                          className="w-12 h-10 p-1 border-slate-300 rounded-lg cursor-pointer"
-                        />
-                        <Input
-                          value={customization.primaryColor}
-                          onChange={(e) => handleCustomizationChange('primaryColor', e.target.value)}
-                          placeholder="#1e40af"
-                          className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="secondaryColor" className="text-sm font-medium text-slate-700">Secondary Color</Label>
-                      <div className="flex items-center gap-3">
-                        <Input
-                          id="secondaryColor"
-                          type="color"
-                          value={customization.secondaryColor}
-                          onChange={(e) => handleCustomizationChange('secondaryColor', e.target.value)}
-                          className="w-12 h-10 p-1 border-slate-300 rounded-lg cursor-pointer"
-                        />
-                        <Input
-                          value={customization.secondaryColor}
-                          onChange={(e) => handleCustomizationChange('secondaryColor', e.target.value)}
-                          placeholder="#3b82f6"
-                          className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="backgroundColor" className="text-sm font-medium text-slate-700">Background Color</Label>
-                      <div className="flex items-center gap-3">
-                        <Input
-                          id="backgroundColor"
-                          type="color"
-                          value={customization.backgroundColor}
-                          onChange={(e) => handleCustomizationChange('backgroundColor', e.target.value)}
-                          className="w-12 h-10 p-1 border-slate-300 rounded-lg cursor-pointer"
-                        />
-                        <Input
-                          value={customization.backgroundColor}
-                          onChange={(e) => handleCustomizationChange('backgroundColor', e.target.value)}
-                          placeholder="#ffffff"
-                          className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="textColor" className="text-sm font-medium text-slate-700">Text Color</Label>
-                      <div className="flex items-center gap-3">
-                        <Input
-                          id="textColor"
-                          type="color"
-                          value={customization.textColor}
-                          onChange={(e) => handleCustomizationChange('textColor', e.target.value)}
-                          className="w-12 h-10 p-1 border-slate-300 rounded-lg cursor-pointer"
-                        />
-                        <Input
-                          value={customization.textColor}
-                          onChange={(e) => handleCustomizationChange('textColor', e.target.value)}
-                          placeholder="#374151"
-                          className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="previewBackgroundColor" className="text-sm font-medium text-slate-700">Preview Container Background</Label>
-                      <div className="flex items-center gap-3">
-                        <Input
-                          id="previewBackgroundColor"
-                          type="color"
-                          value={customization.previewBackgroundColor}
-                          onChange={(e) => handleCustomizationChange('previewBackgroundColor', e.target.value)}
-                          className="w-12 h-10 p-1 border-slate-300 rounded-lg cursor-pointer"
-                        />
-                        <Input
-                          value={customization.previewBackgroundColor}
-                          onChange={(e) => handleCustomizationChange('previewBackgroundColor', e.target.value)}
-                          placeholder="#ffffff"
-                          className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="cardBackgroundColor" className="text-sm font-medium text-slate-700">Card Background</Label>
-                      <div className="flex items-center gap-3">
-                        <Input
-                          id="cardBackgroundColor"
-                          type="color"
-                          value={customization.cardBackgroundColor}
-                          onChange={(e) => handleCustomizationChange('cardBackgroundColor', e.target.value)}
-                          className="w-12 h-10 p-1 border-slate-300 rounded-lg cursor-pointer"
-                        />
-                        <Input
-                          value={customization.cardBackgroundColor}
-                          onChange={(e) => handleCustomizationChange('cardBackgroundColor', e.target.value)}
-                          placeholder="#ffffff"
-                          className="flex-1 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+
             
-            {/* Content Tab */}
-            <TabsContent value="content" className="space-y-6">
+
+            
+            {/* Contact Tab */}
+            <TabsContent value="contact" className="space-y-6">
               <Card className="border-slate-200/50 shadow-sm bg-gradient-to-br from-white to-slate-50/50">
                 <CardHeader className="border-b border-slate-200/50">
                   <CardTitle className="text-base flex items-center gap-3 text-slate-900">
-                    <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
-                      <Edit3 className="w-4 h-4 text-white" />
-                    </div>
-                    Content Settings
+                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg">
+                       <Contact className="w-4 h-4 text-white" />
+                     </div>
+                    Contact Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-6">
                   <div className="space-y-2">
-                    <Label htmlFor="headerText" className="text-sm font-medium text-slate-700">Header Text</Label>
+                    <Label htmlFor="contactTel" className="text-sm font-medium text-slate-700">Phone Number</Label>
                     <Input
-                      id="headerText"
-                      value={customization.headerText}
-                      onChange={(e) => handleCustomizationChange('headerText', e.target.value)}
-                      placeholder="Professional Communication"
+                      id="contactTel"
+                      value={customization.contactTel}
+                      onChange={(e) => handleCustomizationChange('contactTel', e.target.value)}
+                      placeholder="Enter your contact number"
                       className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="footerText" className="text-sm font-medium text-slate-700">Footer Text</Label>
+                    <Label htmlFor="contactWeb" className="text-sm font-medium text-slate-700">Website</Label>
+                    <Input
+                      id="contactWeb"
+                      value={customization.contactWeb}
+                      onChange={(e) => handleCustomizationChange('contactWeb', e.target.value)}
+                      placeholder="Enter your website"
+                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="contactEmail" className="text-sm font-medium text-slate-700">Email Address</Label>
+                    <Input
+                      id="contactEmail"
+                      value={customization.contactEmail}
+                      onChange={(e) => handleCustomizationChange('contactEmail', e.target.value)}
+                      placeholder="Enter your email address"
+                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="contactAddress" className="text-sm font-medium text-slate-700">Address</Label>
                     <Textarea
-                      id="footerText"
-                      value={customization.footerText}
-                      onChange={(e) => handleCustomizationChange('footerText', e.target.value)}
-                      placeholder="Thank you for your business"
+                      id="contactAddress"
+                      value={customization.contactAddress}
+                      onChange={(e) => handleCustomizationChange('contactAddress', e.target.value)}
+                      placeholder="Enter your business address"
                       rows={3}
                       className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none text-slate-900 font-medium bg-white"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="domainExtension" className="text-sm font-medium text-slate-700">Domain Extension</Label>
-                    <Input
-                      id="domainExtension"
-                      value={customization.domainExtension}
-                      onChange={(e) => handleCustomizationChange('domainExtension', e.target.value)}
-                      placeholder=".com"
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
                     />
                   </div>
                 </CardContent>
@@ -651,18 +550,106 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
             </TabsContent>
             
             {/* Placeholders Tab */}
-            <TabsContent value="placeholders" className="space-y-6">
-              <Card className="border-slate-200/50 shadow-sm bg-gradient-to-br from-white to-slate-50/50">
-                <CardHeader className="border-b border-slate-200/50">
-                  <CardTitle className="text-base flex items-center gap-3 text-slate-900">
-                    <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
-                      <Type className="w-4 h-4 text-white" />
+             <TabsContent value="placeholders" className="space-y-6">
+               <Card className="border-slate-200/50 shadow-sm bg-gradient-to-br from-white to-slate-50/50">
+                 <CardHeader className="border-b border-slate-200/50">
+                   <CardTitle className="text-base flex items-center gap-3 text-slate-900">
+                     <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+                       <Type className="w-4 h-4 text-white" />
                     </div>
                     Placeholders
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-6">
-                  {placeholderFields.length === 0 ? (
+                  {/* Header Text */}
+                  <div className="space-y-2">
+                    <Label htmlFor="headerText" className="text-sm font-medium text-slate-700">Header Text</Label>
+                    <Input
+                      id="headerText"
+                      value={customization.headerText}
+                      onChange={(e) => handleCustomizationChange('headerText', e.target.value)}
+                      placeholder="Enter header text"
+                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
+                    />
+                  </div>
+                  
+                  {/* Recipient-related placeholders */}
+                  {placeholderFields.filter(field => 
+                    field.key.toLowerCase().includes('recipient') || 
+                    field.key.toLowerCase().includes('client') ||
+                    field.key.toLowerCase().includes('customer')
+                  ).map((field) => (
+                    <div key={field.key} className="space-y-2">
+                      <Label htmlFor={field.key} className="text-sm font-medium text-slate-700">
+                        {field.label}
+                      </Label>
+                      <Input
+                        id={field.key}
+                        value={field.value}
+                        onChange={(e) => handlePlaceholderChange(field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
+                      />
+                    </div>
+                  ))}
+                  
+                  {/* Footer Text */}
+                  <div className="space-y-2">
+                    <Label htmlFor="footerText" className="text-sm font-medium text-slate-700">Footer Text</Label>
+                    <Textarea
+                      id="footerText"
+                      value={customization.footerText}
+                      onChange={(e) => handleCustomizationChange('footerText', e.target.value)}
+                      placeholder="Enter footer text"
+                      rows={3}
+                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none text-slate-900 font-medium bg-white"
+                    />
+                  </div>
+                  
+                  {/* Sender-related placeholders (Your Name, etc.) */}
+                  {placeholderFields.filter(field => 
+                    field.key.toLowerCase().includes('your') || 
+                    field.key.toLowerCase().includes('sender') ||
+                    field.key.toLowerCase().includes('author')
+                  ).map((field) => (
+                    <div key={field.key} className="space-y-2">
+                      <Label htmlFor={field.key} className="text-sm font-medium text-slate-700">
+                        {field.label}
+                      </Label>
+                      <Input
+                        id={field.key}
+                        value={field.value}
+                        onChange={(e) => handlePlaceholderChange(field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
+                      />
+                    </div>
+                  ))}
+                  
+                  {/* Other placeholders */}
+                  {placeholderFields.filter(field => 
+                    !field.key.toLowerCase().includes('recipient') && 
+                    !field.key.toLowerCase().includes('client') &&
+                    !field.key.toLowerCase().includes('customer') &&
+                    !field.key.toLowerCase().includes('your') && 
+                    !field.key.toLowerCase().includes('sender') &&
+                    !field.key.toLowerCase().includes('author')
+                  ).map((field) => (
+                    <div key={field.key} className="space-y-2">
+                      <Label htmlFor={field.key} className="text-sm font-medium text-slate-700">
+                        {field.label}
+                      </Label>
+                      <Input
+                        id={field.key}
+                        value={field.value}
+                        onChange={(e) => handlePlaceholderChange(field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
+                      />
+                    </div>
+                  ))}
+                  
+                  {placeholderFields.length === 0 && (
                     <div className="text-center py-8">
                       <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
                         <Edit3 className="w-8 h-8 text-slate-400" />
@@ -671,21 +658,6 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
                         No placeholders found in this template.
                       </p>
                     </div>
-                  ) : (
-                    placeholderFields.map((field) => (
-                      <div key={field.key} className="space-y-2">
-                        <Label htmlFor={field.key} className="text-sm font-medium text-slate-700">
-                          {field.label}
-                        </Label>
-                        <Input
-                          id={field.key}
-                          value={field.value}
-                          onChange={(e) => handlePlaceholderChange(field.key, e.target.value)}
-                          placeholder={field.placeholder}
-                          className="border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 text-slate-900 font-medium bg-white"
-                        />
-                      </div>
-                    ))
                   )}
                 </CardContent>
               </Card>

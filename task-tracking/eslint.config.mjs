@@ -25,6 +25,18 @@ const eslintConfig = [
       "public/**",
     ],
   },
+  // Configuration for JavaScript files
+  {
+    files: ["**/*.js", "**/*.mjs"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+    },
+    rules: {
+      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    },
+  },
+  // Configuration for TypeScript files
   {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {

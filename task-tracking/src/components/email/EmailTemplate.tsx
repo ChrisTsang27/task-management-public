@@ -20,6 +20,11 @@ interface TemplateCustomization {
   footerText: string;
   previewBackgroundColor: string;
   cardBackgroundColor: string;
+  // Contact Information
+  contactTel: string;
+  contactWeb: string;
+  contactEmail: string;
+  contactAddress: string;
 }
 
 interface EmailTemplateProps {
@@ -67,7 +72,7 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
             
             <!-- Main Content -->
             <div style="margin: 20px 0; line-height: 1.6; color: #333333;">
-              CONTENT HERE
+              {Please enter your content here using the rich editor below, not in this template customizer}
             </div>
             
             <!-- Signature -->
@@ -119,7 +124,7 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
             
             <!-- Main Content Placeholder -->
             <div style="margin: 20px 0; color: #374151;">
-              CONTENT HERE
+              {Please enter your content here using the rich editor below, not in this template customizer}
             </div>
           </div>
           
@@ -155,7 +160,7 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
           
           <!-- Content Placeholder -->
           <div style="margin: 20px 0; color: #374151;">
-            CONTENT HERE
+            {Please enter your content here using the rich editor below, not in this template customizer}
           </div>
           
           <!-- Simple Signature -->
@@ -186,7 +191,7 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ onApplyTemplate, currentC
             
             <!-- Announcement Content -->
             <div style="margin: 25px 0; color: #374151;">
-              CONTENT HERE
+              {Please enter your content here using the rich editor below, not in this template customizer}
             </div>
             
             <p style="margin: 20px 0 0 0; font-size: 14px; color: #6b7280;">Thank you for your attention to this matter.</p>
