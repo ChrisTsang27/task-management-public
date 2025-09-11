@@ -156,7 +156,26 @@ export async function POST(request: NextRequest) {
                 user[header] = '';
               } else if (typeof cellValue === 'object') {
                 // Handle Excel formula objects or other complex types
-                user[header] = String(cellValue).trim();
+                if (cellValue && typeof cellValue === 'object') {
+                  // For Excel formulas, use result property
+                  if ('result' in cellValue) {
+                    user[header] = String(cellValue.result || '').trim();
+                  }
+                  // For rich text objects, use text property
+                  else if ('text' in cellValue) {
+                    user[header] = String(cellValue.text || '').trim();
+                  }
+                  // For hyperlinks, use text property
+                  else if ('hyperlink' in cellValue && 'text' in cellValue) {
+                    user[header] = String(cellValue.text || '').trim();
+                  }
+                  // For other objects, try to extract meaningful value
+                  else {
+                    user[header] = String(cellValue.toString ? cellValue.toString() : cellValue).trim();
+                  }
+                } else {
+                  user[header] = String(cellValue).trim();
+                }
               } else {
                 user[header] = String(cellValue).trim();
               }
