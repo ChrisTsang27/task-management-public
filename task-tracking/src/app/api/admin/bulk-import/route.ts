@@ -168,9 +168,14 @@ export async function POST(request: NextRequest) {
             }
           });
           
-          // Only add row if it has at least an email
-          if (user.email && user.email.trim()) {
+          // Only add row if it has at least an email and is not completely empty
+          const hasValidEmail = user.email && user.email.trim() && user.email.includes('@');
+          const hasAnyData = Object.values(user).some(value => value && String(value).trim());
+          
+          if (hasValidEmail && hasAnyData) {
             userData.push(user);
+          } else if (hasAnyData) {
+            console.log('⚠️ Skipping row with invalid email:', user);
           }
         }
         console.log('✅ Excel parsed, rows:', userData.length);
