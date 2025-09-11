@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingCard } from '@/components/ui/LoadingSpinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,9 +11,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/hooks/useRoleAccess';
 import supabase from '@/lib/supabaseBrowserClient';
+import { Trash2 } from 'lucide-react';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 // Lazy load RoleGuard for better code splitting
 const RoleGuard = lazy(() => import('@/components/auth/RoleGuard'));
+const BulkUserImport = lazy(() => import('@/components/admin/BulkUserImport'));
 
 
 interface UserProfile {
@@ -27,6 +31,8 @@ interface UserProfile {
 function AdminPanelContent() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ open: false, userId: '', userName: '' });
+  const [deletingUser, setDeletingUser] = useState(false);
   const { toast } = useToast();
 
 
@@ -79,6 +85,65 @@ function AdminPanelContent() {
         description: 'Failed to update user role',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleDeleteUser = (userId: string, userName: string) => {
+    setDeleteConfirmation({
+      open: true,
+      userId,
+      userName
+    });
+  };
+
+  const confirmDeleteUser = async () => {
+    try {
+      setDeletingUser(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch(`/api/users/${deleteConfirmation.userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Failed to delete user';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(`${errorMessage} (${response.status})`);
+      }
+
+      // Remove user from local state
+      setUsers(prev => prev.filter(user => user.id !== deleteConfirmation.userId));
+      setDeleteConfirmation({ open: false, userId: '', userName: '' });
+      
+      toast({
+        title: 'Success',
+        description: 'User deleted successfully!',
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete user. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingUser(false);
     }
   };
 
@@ -152,25 +217,26 @@ function AdminPanelContent() {
                   <TableHead>Role</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead>Actions</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <TableCell className="font-medium">
+                  <TableRow key={user.id} className="group hover:bg-slate-100 hover:text-slate-900 transition-colors">
+                    <TableCell className="font-medium hover:text-slate-900">
                       {user.full_name || 'Unknown'}
                     </TableCell>
-                    <TableCell>{user.department || '-'}</TableCell>
-                    <TableCell>{user.location || '-'}</TableCell>
+                    <TableCell className="hover:text-slate-900">{user.department || '-'}</TableCell>
+                    <TableCell className="hover:text-slate-900">{user.location || '-'}</TableCell>
                     <TableCell>
                       <Badge 
                         variant={getRoleBadgeVariant(user.role)}
-                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        className="cursor-pointer hover:opacity-80 transition-opacity group-hover:bg-slate-700 group-hover:text-white"
                       >
                         {user.role}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hover:text-slate-900">
                       {new Date(user.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
@@ -180,7 +246,7 @@ function AdminPanelContent() {
                           updateUserRole(user.id, newRole)
                         }
                       >
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-32 group-hover:bg-white group-hover:text-slate-900 group-hover:border-slate-300">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -189,16 +255,46 @@ function AdminPanelContent() {
                         </SelectContent>
                       </Select>
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteUser(user.id, user.full_name || 'Unknown')}
+                        className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
+
+        {/* Bulk User Import */}
+        <Suspense fallback={<LoadingCard />}>
+          <BulkUserImport onImportComplete={fetchUsers} />
+        </Suspense>
       </div>
-    </div>
-  );
-}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteConfirmation.open}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmation({ open: false, userId: '', userName: '' });
+        }}
+        title="Delete User"
+        description={`Are you sure you want to delete "${deleteConfirmation.userName}"? This action cannot be undone and will remove the user from both the application and authentication system.`}
+        confirmText="Delete User"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteUser}
+        loading={deletingUser}
+        variant="destructive"
+      />
+     </div>
+   );
+ }
 
 export default function AdminPage() {
   return (

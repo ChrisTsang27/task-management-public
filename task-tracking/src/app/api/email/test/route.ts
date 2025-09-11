@@ -1,10 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-
 import emailService from '@/lib/emailService';
+import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
+import { rateLimiters } from '@/lib/middleware/rateLimiter';
+import { emailTestSchema, validateAndSanitize, sanitizeHtml } from '@/lib/validation/schemas';
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResult = rateLimiters.auth(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
+    // Authenticate user (only admins should be able to test email)
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.error!;
+    }
+    const { user, supabase } = authResult;
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || profile.role !== 'admin') {
+      return createErrorResponse('Admin access required', 403);
+    }
+
     const body = await request.json();
+    
+    // Validate and sanitize input
+    const validation = validateAndSanitize(body, emailTestSchema);
+    if (!validation.success) {
+      return createErrorResponse('Invalid email test data', 400, validation.errors);
+    }
     const { to, subject, message, type = 'test' } = body;
 
     // Validate required fields

@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { z } from 'zod';
+import { announcementCreateSchema, validateAndSanitize, sanitizeHtml } from '@/lib/validation/schemas';
+import { rateLimiters } from '@/lib/middleware/rateLimiter';
+import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
 
 // Create a Supabase client with service role key to bypass RLS for admin operations
 const supabaseAdmin = createClient(
@@ -15,15 +16,7 @@ const supabaseAdmin = createClient(
   }
 );
 
-// Validation schema for announcement creation/update
-const AnnouncementSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
-  content: z.string().min(1, 'Content is required'),
-  team_id: z.string().uuid().optional().nullable(),
-  priority: z.enum(['low', 'medium', 'high']).default('medium'),
-  pinned: z.boolean().default(false),
-  expires_at: z.string().datetime().optional().nullable()
-});
+
 
 // GET /api/announcements - Fetch all announcements
 export async function GET(request: Request) {
@@ -95,56 +88,49 @@ export async function GET(request: Request) {
     return NextResponse.json({ announcements });
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse('Internal server error', 500);
   }
 }
 
 // POST /api/announcements - Create new announcement
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResult = rateLimiters.general(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
+    // Authenticate user
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.error!;
+    }
+    const { user } = authResult;
+
     const body = await request.json();
-    const parsed = AnnouncementSchema.safeParse(body);
     
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Invalid data', issues: parsed.error.flatten() },
-        { status: 400 }
-      );
+    // Validate and sanitize input data
+    const validation = validateAndSanitize(body, announcementCreateSchema);
+    if (!validation.success) {
+      return createErrorResponse('Invalid announcement data', 400, validation.errors);
     }
 
-    const { title, content, team_id, priority, expires_at } = parsed.data;
+    const { title, content, team_id, priority, expires_at } = validation.data;
     
-    // Get the user ID from the request headers (set by middleware)
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // For now, we'll need to get the user ID from the session
-    // This is a simplified approach - in production you'd want proper auth middleware
-    const userId = request.headers.get('x-user-id');
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID required' },
-        { status: 401 }
-      );
-    }
+    // Sanitize text content to prevent XSS
+    const sanitizedTitle = sanitizeHtml(title);
+    const sanitizedContent = sanitizeHtml(content);
 
     const { data: announcement, error } = await supabaseAdmin
       .from('announcements')
       .insert({
-        title,
-        content,
+        title: sanitizedTitle,
+        content: sanitizedContent,
         team_id,
         priority,
         expires_at,
-        created_by: userId
+        created_by: user.id
       })
       .select(`
         id,
@@ -167,13 +153,10 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Error creating announcement:', error);
-      return NextResponse.json(
-        { error: 'Failed to create announcement' },
-        { status: 500 }
-      );
+      return createErrorResponse('Failed to create announcement', 500);
     }
 
-    return NextResponse.json({ announcement }, { status: 201 });
+    return createSuccessResponse({ announcement }, 201);
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(

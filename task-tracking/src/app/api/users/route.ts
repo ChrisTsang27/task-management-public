@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-
 import { createClient } from '@supabase/supabase-js';
+import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
+import { rateLimiters } from '@/lib/middleware/rateLimiter';
 
 interface Profile {
   id: string;
@@ -25,24 +26,18 @@ const supabaseAdmin = createClient(
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user from session
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Authorization required' },
-        { status: 401 }
-      );
+    // Apply rate limiting
+    const rateLimitResult = rateLimiters.general(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userAuthError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (userAuthError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid authentication' },
-        { status: 401 }
-      );
+    // Authenticate user
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.error!;
     }
+    const { user, supabase: userSupabase } = authResult;
 
     // First, get all profiles
     const { data: profiles, error: profilesError } = await supabaseAdmin
@@ -52,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     if (profilesError) {
       console.error('Error fetching profiles:', profilesError);
-      return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
+      return createErrorResponse('Failed to fetch profiles', 500);
     }
 
     // Then, get all auth users to get their emails
@@ -60,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     if (authError) {
       console.error('Error fetching auth users:', authError);
-      return NextResponse.json({ error: 'Failed to fetch user emails' }, { status: 500 });
+      return createErrorResponse('Failed to fetch user emails', 500);
     }
 
     // Create a map of user ID to email
@@ -83,9 +78,9 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ users: usersWithEmails });
+    return createSuccessResponse({ users: usersWithEmails });
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse('Internal server error', 500);
   }
 }

@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-
+import { NextRequest, NextResponse } from "next/server";
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
-
 import emailService from "@/lib/emailService";
+import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
+import { rateLimiters } from '@/lib/middleware/rateLimiter';
 
 const EmailPayload = z.object({
   title: z.string().max(120).optional().default(""),
@@ -125,8 +125,32 @@ function sanitize(html: string) {
   });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResult = rateLimiters.general(req);
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
+    // Authenticate user (only authenticated users should send emails)
+    const authResult = await authenticateRequest(req);
+    if (!authResult.success) {
+      return authResult.error!;
+    }
+    const { user, supabase } = authResult;
+
+    // Check if user has permission to send emails (admin or manager)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || !['admin', 'manager'].includes(profile.role)) {
+      return createErrorResponse('Insufficient permissions to send emails', 403);
+    }
+
     const json = await req.json();
     const parsed = EmailPayload.safeParse(json);
     if (!parsed.success) {

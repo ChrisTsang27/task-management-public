@@ -1,0 +1,15 @@
+email,full_name,title,department,location,role,team_id
+test1@example.com,John Doe,Officer,Sales,SGI Coopers Plains,member,
+test2@example.com,Jane Smith,Senior Officer,Marketing,SGI Brendale,member,
+test3@example.com,Bob Johnson,Manager,IT,SGI Melbourne,admin,
+test4@example.com,Alice Brown,Assistant,HR,SGI Gold Coast,member,
+test5@example.com,David Wilson,Team Leader,Finance,SGI Toowoomba,member,
+test6@example.com,Sarah Davis,Coordinator,Operations,KAYO Coopers Plains,member,
+test7@example.com,Mike Chen,Specialist,Administration,SGI Coopers Plains,member,
+test8@example.com,Lisa Garcia,Analyst,Customer Service,SGI Brendale,member,
+
+# FIELD LIMITATIONS:
+# title: Manager, Senior Officer, Team Leader, Officer, Assistant, Coordinator, Specialist, Analyst, Executive, Other
+# department: Sales, Marketing, Administration, HR, IT, Finance, Operations, Customer Service
+# location: SGI Coopers Plains, SGI Brendale, SGI Gold Coast, SGI Toowoomba, SGI Melbourne, KAYO Coopers Plains
+# role: admin, member

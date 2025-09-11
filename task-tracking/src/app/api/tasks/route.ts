@@ -13,6 +13,7 @@ import {
   createPaginatedResponse,
   STANDARD_SELECTS
 } from '@/lib/api/utils';
+import { rateLimiters } from '@/lib/middleware/rateLimiter';
 
 // GET /api/tasks - Fetch tasks with filtering and sorting
 export const GET = withErrorHandling(async (request: NextRequest): Promise<NextResponse> => {
@@ -107,6 +108,12 @@ export const GET = withErrorHandling(async (request: NextRequest): Promise<NextR
 
 // POST /api/tasks - Create a new task
 export const POST = withErrorHandling(async (request: NextRequest): Promise<NextResponse> => {
+  // Apply rate limiting
+  const rateLimitResult = rateLimiters.general(request);
+  if (rateLimitResult) {
+    return rateLimitResult;
+  }
+
   // Authenticate user
   const authResult = await authenticateRequest(request);
   if (!authResult.success) {

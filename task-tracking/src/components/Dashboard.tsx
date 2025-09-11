@@ -367,7 +367,7 @@ export default function Dashboard() {
           </div>
           
           {/* Navigation tabs */}
-          <nav className="flex flex-wrap gap-2">
+          <nav className="flex flex-wrap gap-2 items-center">
             {availableTabs.map((tabConfig) => (
               <Tooltip key={tabConfig.key}>
                 <TooltipTrigger asChild>
@@ -389,6 +389,27 @@ export default function Dashboard() {
                 </TooltipContent>
               </Tooltip>
             ))}
+            
+            {/* Admin Panel Button - Only visible to admin users */}
+            {role === 'admin' && (
+              <div className="ml-4 pl-4 border-l border-slate-600/50">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => window.location.href = '/admin'}
+                      variant="outline"
+                      className="h-10 px-4 rounded-lg transition-all duration-200 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border-purple-500/50 text-purple-300 hover:from-purple-600/30 hover:to-indigo-600/30 hover:border-purple-400 hover:text-purple-200 shadow-lg hover:shadow-xl"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Admin Panel
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Access admin panel for user management and system settings</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
           </nav>
         </div>
       </header>

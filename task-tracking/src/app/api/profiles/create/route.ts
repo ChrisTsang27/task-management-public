@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-
 import { createClient } from '@supabase/supabase-js';
+import { profileCreateSchema, validateAndSanitize, sanitizeHtml } from '@/lib/validation/schemas';
+import { rateLimiters } from '@/lib/middleware/rateLimiter';
 
 // Create a Supabase client with service role key to bypass RLS
 const supabaseAdmin = createClient(
@@ -16,6 +17,12 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResult = rateLimiters.auth(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
     // Get user from session
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -35,7 +42,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, userData } = await request.json();
+    const body = await request.json();
+    
+    // Validate and sanitize input data
+    const validation = validateAndSanitize(body, profileCreateSchema);
+    if (!validation.success) {
+      return NextResponse.json({ 
+        error: 'Invalid profile data', 
+        details: validation.errors 
+      }, { status: 400 });
+    }
+
+    const { userId, userData } = validation.data;
     
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -55,14 +73,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create the profile using admin client
+    // Create the profile using admin client with sanitized data
     const profileData = {
       id: userId,
-      full_name: userData?.fullName || userData?.full_name || 'User',
-      title: userData?.title || null,
+      full_name: sanitizeHtml(userData?.fullName || userData?.full_name || 'User'),
+      title: userData?.title ? sanitizeHtml(userData.title) : null,
       role: 'member',
-      department: userData?.department || null,
-      location: userData?.location || null
+      department: userData?.department ? sanitizeHtml(userData.department) : null,
+      location: userData?.location ? sanitizeHtml(userData.location) : null
     };
 
     const { data: newProfile, error } = await supabaseAdmin

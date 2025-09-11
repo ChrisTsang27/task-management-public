@@ -1,9 +1,9 @@
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-
 import { createClient } from '@supabase/supabase-js';
-
 import AIPrioritizationService from '@/lib/services/aiPrioritization';
+import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
+import { rateLimiters } from '@/lib/middleware/rateLimiter';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -17,51 +17,33 @@ const supabase = createClient(
  */
 export async function POST(request: NextRequest) {
   try {
-    // Get authorization header
-    const headersList = await headers();
-    const authorization = headersList.get('authorization');
-    
-    if (!authorization) {
-      return NextResponse.json(
-        { error: 'Authorization header required' },
-        { status: 401 }
-      );
+    // Apply rate limiting
+    const rateLimitResult = rateLimiters.general(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
     }
 
-    // Verify user authentication
-    const token = authorization.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid authentication token' },
-        { status: 401 }
-      );
+    // Authenticate user
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.error!;
     }
+    const { user, supabase: userSupabase } = authResult;
 
     const body = await request.json();
     const { task_id, team_id, action } = body;
 
     // Validate request
     if (!action || !['single', 'team', 'all'].includes(action)) {
-      return NextResponse.json(
-        { error: 'Invalid action. Must be "single", "team", or "all"' },
-        { status: 400 }
-      );
+      return await createErrorResponse('Invalid action. Must be "single", "team", or "all"', 400, undefined, undefined, request, { action, userId: user.id });
     }
 
     if (action === 'single' && !task_id) {
-      return NextResponse.json(
-        { error: 'task_id required for single task prioritization' },
-        { status: 400 }
-      );
+      return await createErrorResponse('task_id required for single task prioritization', 400, undefined, undefined, request, { action, userId: user.id });
     }
 
     if (action === 'team' && !team_id) {
-      return NextResponse.json(
-        { error: 'team_id required for team prioritization' },
-        { status: 400 }
-      );
+      return await createErrorResponse('team_id required for team prioritization', 400, undefined, undefined, request, { action, userId: user.id });
     }
 
     let result;
@@ -77,19 +59,12 @@ export async function POST(request: NextRequest) {
         result = await prioritizeAllUserTasks(user.id);
         break;
       default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        );
+        return await createErrorResponse('Invalid action', 400, undefined, undefined, request, { action, userId: user.id });
     }
 
-    return NextResponse.json(result);
+    return await createSuccessResponse(result, 200, request, { action, userId: user.id });
   } catch (error) {
-    console.error('AI prioritization error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return await createErrorResponse('Internal server error', 500, undefined, error as Error, request, { operation: 'ai_prioritize' });
   }
 }
 
@@ -104,10 +79,7 @@ export async function GET(request: NextRequest) {
     const authorization = headersList.get('authorization');
     
     if (!authorization) {
-      return NextResponse.json(
-        { error: 'Authorization header required' },
-        { status: 401 }
-      );
+      return await createErrorResponse('Authorization header required', 401, undefined, undefined, request);
     }
 
     // Verify user authentication
@@ -115,10 +87,7 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid authentication token' },
-        { status: 401 }
-      );
+      return await createErrorResponse('Invalid authentication token', 401, undefined, authError, request);
     }
 
     const { searchParams } = new URL(request.url);
@@ -126,10 +95,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
 
     if (!team_id) {
-      return NextResponse.json(
-        { error: 'team_id parameter required' },
-        { status: 400 }
-      );
+      return await createErrorResponse('team_id parameter required', 400, undefined, undefined, request, { userId: user.id });
     }
 
     // Verify user has access to this team
@@ -141,27 +107,20 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (teamError || !teamMember) {
-      return NextResponse.json(
-        { error: 'Access denied to this team' },
-        { status: 403 }
-      );
+      return await createErrorResponse('Access denied to this team', 403, undefined, teamError, request, { teamId: team_id, userId: user.id });
     }
 
     // Get AI-prioritized tasks
     const tasks = await AIPrioritizationService.getAIPrioritizedTasks(team_id, limit);
 
-    return NextResponse.json({
+    return await createSuccessResponse({
       tasks,
       total: tasks.length,
       team_id,
       generated_at: new Date().toISOString()
-    });
+    }, 200, request, { teamId: team_id, userId: user.id, tasksCount: tasks.length });
   } catch (error) {
-    console.error('Error fetching AI-prioritized tasks:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return await createErrorResponse('Internal server error', 500, undefined, error as Error, request, { operation: 'get_ai_prioritized_tasks' });
   }
 }
 

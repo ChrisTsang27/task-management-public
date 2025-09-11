@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { logger } from '../logger';
+import { monitoring } from '../monitoring';
 
 // Standardized Supabase client configuration
 export const createSupabaseClient = () => {
@@ -54,7 +56,25 @@ export async function authenticateRequest(request: NextRequest | Request) {
 }
 
 // Standardized error response helper
-export function createErrorResponse(message: string, status: number = 500, details?: unknown) {
+export async function createErrorResponse(
+  message: string, 
+  status: number = 500, 
+  details?: unknown,
+  error?: Error,
+  request?: NextRequest,
+  context?: Record<string, unknown>
+) {
+  // Log the error
+  await logger.error(`API Error: ${message}`, error, {
+    status,
+    endpoint: request?.nextUrl?.pathname,
+    details,
+    ...context
+  }, request);
+
+  // Record error in monitoring
+  monitoring.recordRequest(0, true);
+
   const response: { error: string; details?: unknown } = { error: message };
   if (details) {
     response.details = details;
@@ -63,7 +83,20 @@ export function createErrorResponse(message: string, status: number = 500, detai
 }
 
 // Standardized success response helper
-export function createSuccessResponse(data: unknown, status: number = 200) {
+export async function createSuccessResponse(
+  data: unknown, 
+  status: number = 200,
+  request?: NextRequest,
+  context?: Record<string, unknown>
+) {
+  // Log successful response
+  await logger.info('API Success', {
+    status,
+    endpoint: request?.nextUrl?.pathname,
+    dataType: typeof data,
+    ...context
+  }, request);
+
   return NextResponse.json(data, { status });
 }
 

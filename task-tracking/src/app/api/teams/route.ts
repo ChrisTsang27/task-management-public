@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-
 import { createClient } from '@supabase/supabase-js';
+import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
+import { rateLimiters } from '@/lib/middleware/rateLimiter';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -11,24 +12,18 @@ const supabase = createClient(
 // GET /api/teams - Fetch teams with members
 export async function GET(request: NextRequest) {
   try {
-    // Get user from session
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Authorization required' },
-        { status: 401 }
-      );
+    // Apply rate limiting
+    const rateLimitResult = rateLimiters.general(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid authentication' },
-        { status: 401 }
-      );
+    // Authenticate user
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.error!;
     }
+    const { user, supabase: userSupabase } = authResult;
 
     const { searchParams } = new URL(request.url);
     const include_members = searchParams.get('include_members') === 'true';
@@ -73,33 +68,24 @@ export async function GET(request: NextRequest) {
 // POST /api/teams - Create a new team
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResult = rateLimiters.general(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
+    // Authenticate user
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return authResult.error!;
+    }
+    const { user, supabase: userSupabase } = authResult;
+
     const body = await request.json();
     
-    // Get user from session
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Authorization required' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid authentication' },
-        { status: 401 }
-      );
-    }
-
     // Validate required fields
     if (!body.name) {
-      return NextResponse.json(
-        { error: 'Team name is required' },
-        { status: 400 }
-      );
+      return createErrorResponse('Team name is required', 400);
     }
 
     // Create team
@@ -111,10 +97,7 @@ export async function POST(request: NextRequest) {
 
     if (teamError) {
       console.error('Error creating team:', teamError);
-      return NextResponse.json(
-        { error: 'Failed to create team' },
-        { status: 500 }
-      );
+      return createErrorResponse('Failed to create team', 500);
     }
 
     // Add creator as team admin
@@ -131,12 +114,9 @@ export async function POST(request: NextRequest) {
       // Note: In production, you might want to rollback the team creation
     }
 
-    return NextResponse.json({ team }, { status: 201 });
+    return createSuccessResponse({ team }, 201);
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse('Internal server error', 500);
   }
 }
