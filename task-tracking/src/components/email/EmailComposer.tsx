@@ -542,17 +542,19 @@ const EmailComposer = React.memo(function EmailComposer() {
               />
             </div>
 
-            <div className="space-y-3 max-h-[58vh] overflow-auto pr-1 custom-scrollbar">
+            <div className="max-h-[58vh] overflow-auto pr-1 custom-scrollbar">
               {loading && (
-                <div className="text-sm text-slate-300 flex items-center gap-2">
+                <div className="text-sm text-slate-300 flex items-center gap-2 mb-3">
                   <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
                   Loading users...
                 </div>
               )}
               {!loading && availableUsers.length === 0 && (
-                <div className="text-sm text-slate-300">No users match filters (or already in recipients).</div>
+                <div className="text-sm text-slate-300 mb-3">No users match filters (or already in recipients).</div>
               )}
-              {!loading && availableUsers.map((u) => (
+              {!loading && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {availableUsers.map((u) => (
                 <div
                   key={u.id}
     
@@ -588,7 +590,9 @@ const EmailComposer = React.memo(function EmailComposer() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${locColor[u.location] || locColor.Office}`}>{u.location}</span>
                   </div>
                 </div>
-              ))}
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
