@@ -11,6 +11,7 @@ const EmailTemplate = lazy(() => import("@/components/email/EmailTemplate"));
 import RdxSelect from "@/components/ui/RdxSelect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import supabase from "@/lib/supabaseBrowserClient";
 
 
@@ -492,7 +493,7 @@ const EmailComposer = React.memo(function EmailComposer() {
                   <TooltipTrigger asChild>
                     <button
                       onClick={addAll}
-                      className="text-sm px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border border-blue-500/60 transition-all shadow-md hover:shadow-lg ring-1 ring-blue-400/20 text-white font-medium"
+                      className="text-sm px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm"
                     >
                       Add all
                     </button>
@@ -572,12 +573,17 @@ const EmailComposer = React.memo(function EmailComposer() {
                     </div>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button
+                        <Button
                           onClick={() => addRecipient(u)}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white border border-blue-500/60 hover:from-blue-500 hover:to-blue-600 transition-all shadow-md hover:shadow-lg ring-1 ring-blue-400/20 font-medium cursor-pointer"
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-8 px-3 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all"
                         >
+                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
                           Add
-                        </button>
+                        </Button>
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>Add {u.name} to recipients</p>
@@ -832,7 +838,7 @@ const EmailComposer = React.memo(function EmailComposer() {
             <button
               disabled={sending || recipients.length === 0 || !subject.trim() || contentIsEmpty || contentTooLong}
               onClick={handleSend}
-              className="w-full rounded-lg px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-600 text-white text-glow drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] font-semibold ring-1 ring-cyan-300 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300 shadow-[0_10px_30px_-12px_rgba(16,185,129,.45)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full rounded-lg px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               {sending ? "Sending..." : `Send to ${recipients.length} recipient(s)`}
             </button>
