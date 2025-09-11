@@ -39,10 +39,11 @@ export async function GET(request: NextRequest) {
     }
     const { user, supabase: userSupabase } = authResult;
 
-    // First, get all profiles
+    // First, get all profiles (excluding deleted users)
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
       .select('id, full_name, title, role, department, location')
+      .not('full_name', 'like', '%[DELETED USER]%')
       .order('full_name', { ascending: true });
 
     if (profilesError) {

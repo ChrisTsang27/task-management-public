@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/hooks/useRoleAccess';
 import supabase from '@/lib/supabaseBrowserClient';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ArrowLeft } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 // Lazy load RoleGuard for better code splitting
@@ -41,6 +41,7 @@ function AdminPanelContent() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
+        .not('full_name', 'like', '%[DELETED USER]%')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -166,6 +167,26 @@ function AdminPanelContent() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
+        <div className="flex flex-col gap-2 mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/'}
+            className="flex items-center gap-2 w-fit bg-slate-800/50 border-slate-600 text-white hover:bg-slate-700/50"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Task Management
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/dashboard'}
+            className="flex items-center gap-2 w-fit bg-slate-800/50 border-slate-600 text-white hover:bg-slate-700/50"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
         <h1 className="text-3xl font-bold">Admin Panel</h1>
         <p className="text-gray-600 mt-2">Manage users and system settings</p>
       </div>

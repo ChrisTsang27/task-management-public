@@ -83,6 +83,7 @@ export const TaskManager = React.memo(function TaskManager({
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, title, department')
+        .not('full_name', 'like', '%[DELETED USER]%')
         .order('full_name');
 
       if (error) throw error;

@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 
 import RoleGuard from "@/components/auth/RoleGuard";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import supabase from "@/lib/supabaseBrowserClient";
+import { ArrowLeft, Settings, Users } from "lucide-react";
 
 import type { User } from "@supabase/supabase-js";
 
@@ -46,6 +48,30 @@ function DashboardContent() {
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950">
       <div className="container mx-auto p-6">
         <div className="mb-6">
+          <div className="flex flex-col gap-4 mb-4">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.href = '/'}
+                className="flex items-center gap-2 bg-slate-800/50 border-slate-600 text-white hover:bg-slate-700/50"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Task Management
+              </Button>
+              {userRole === 'admin' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.href = '/admin'}
+                  className="flex items-center gap-2 bg-slate-800/50 border-slate-600 text-white hover:bg-slate-700/50"
+                >
+                  <Settings className="h-4 w-4" />
+                  Admin Panel
+                </Button>
+              )}
+            </div>
+          </div>
           <h1 className="text-3xl font-bold text-white">Dashboard</h1>
         </div>
 
