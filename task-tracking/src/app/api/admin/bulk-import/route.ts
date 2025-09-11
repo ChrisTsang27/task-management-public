@@ -150,12 +150,26 @@ export async function POST(request: NextRequest) {
           row.eachCell((cell, colNumber) => {
             const header = headers[colNumber - 1];
             if (header) {
-              user[header] = cell.value;
+              // Convert cell value to string and handle null/undefined/empty values
+              let cellValue = cell.value;
+              if (cellValue === null || cellValue === undefined) {
+                user[header] = '';
+              } else if (typeof cellValue === 'object') {
+                // Handle Excel formula objects or other complex types
+                user[header] = String(cellValue).trim();
+              } else {
+                user[header] = String(cellValue).trim();
+              }
+              
+              // Convert empty strings to null for optional fields
+              if (user[header] === '' && header !== 'email' && header !== 'full_name') {
+                user[header] = null;
+              }
             }
           });
           
           // Only add row if it has at least an email
-          if (user.email) {
+          if (user.email && user.email.trim()) {
             userData.push(user);
           }
         }
