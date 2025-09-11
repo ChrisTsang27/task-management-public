@@ -26,57 +26,57 @@ type User = {
 
 
 
-// Title/Role colors - maximum contrast across color spectrum
+// Title/Role colors - glass effect like Admin Panel button with unique color palette
 const titleColor: Record<string, string> = {
-  "Manager": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
-  "Senior Officer": "bg-gradient-to-r from-blue-600/60 to-blue-700/60 text-white shadow-lg border border-white/20", 
-  "Team Leader": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
-  "Officer": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
-  "Assistant": "bg-gradient-to-r from-yellow-500/60 to-yellow-600/60 text-white shadow-lg border border-white/20",
-  "Coordinator": "bg-gradient-to-r from-pink-600/60 to-pink-700/60 text-white shadow-lg border border-white/20",
-  "Specialist": "bg-gradient-to-r from-indigo-600/60 to-indigo-700/60 text-white shadow-lg border border-white/20",
-  "Analyst": "bg-gradient-to-r from-teal-600/60 to-teal-700/60 text-white shadow-lg border border-white/20",
-  "Executive": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
-  "Other": "bg-gradient-to-r from-gray-600/60 to-gray-700/60 text-white shadow-lg border border-white/20",
+  "Manager": "bg-gradient-to-r from-red-600/20 to-red-500/20 border-red-500/50 text-red-200 backdrop-blur-xl border",
+  "Senior Officer": "bg-gradient-to-r from-indigo-600/20 to-indigo-500/20 border-indigo-500/50 text-indigo-200 backdrop-blur-xl border", 
+  "Team Leader": "bg-gradient-to-r from-purple-600/20 to-purple-500/20 border-purple-500/50 text-purple-200 backdrop-blur-xl border",
+  "Officer": "bg-gradient-to-r from-emerald-600/20 to-emerald-500/20 border-emerald-500/50 text-emerald-200 backdrop-blur-xl border",
+  "Assistant": "bg-gradient-to-r from-fuchsia-600/20 to-fuchsia-500/20 border-fuchsia-500/50 text-fuchsia-200 backdrop-blur-xl border",
+  "Coordinator": "bg-gradient-to-r from-teal-600/20 to-teal-500/20 border-teal-500/50 text-teal-200 backdrop-blur-xl border",
+  "Specialist": "bg-gradient-to-r from-cyan-600/20 to-cyan-500/20 border-cyan-500/50 text-cyan-200 backdrop-blur-xl border",
+  "Analyst": "bg-gradient-to-r from-lime-600/20 to-lime-500/20 border-lime-500/50 text-lime-200 backdrop-blur-xl border",
+  "Executive": "bg-gradient-to-r from-amber-600/20 to-amber-500/20 border-amber-500/50 text-amber-200 backdrop-blur-xl border",
+  "Other": "bg-gradient-to-r from-stone-600/20 to-stone-500/20 border-stone-500/50 text-stone-200 backdrop-blur-xl border",
   // Legacy role mappings for backward compatibility
-  "member": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
-  "manager": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
-  "lead": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
-  "admin": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
+  "member": "bg-gradient-to-r from-blue-600/20 to-blue-500/20 border-blue-500/50 text-blue-200 backdrop-blur-xl border",
+  "manager": "bg-gradient-to-r from-red-600/20 to-red-500/20 border-red-500/50 text-red-200 backdrop-blur-xl border",
+  "lead": "bg-gradient-to-r from-purple-600/20 to-purple-500/20 border-purple-500/50 text-purple-200 backdrop-blur-xl border",
+  "admin": "bg-gradient-to-r from-slate-600/20 to-slate-500/20 border-slate-500/50 text-slate-200 backdrop-blur-xl border",
 };
 
-// Department colors - completely distinct color families
+// Department colors - glass effect like Admin Panel button with unique color palette
 const deptColor: Record<string, string> = {
-  "Sales": "bg-gradient-to-r from-emerald-600/60 to-emerald-700/60 text-white shadow-lg border border-white/20",
-  "Marketing": "bg-gradient-to-r from-violet-600/60 to-violet-700/60 text-white shadow-lg border border-white/20",
-  "Administration": "bg-gradient-to-r from-amber-600/60 to-amber-700/60 text-white shadow-lg border border-white/20",
-  "HR": "bg-gradient-to-r from-rose-600/60 to-rose-700/60 text-white shadow-lg border border-white/20",
-  "IT": "bg-gradient-to-r from-cyan-600/60 to-cyan-700/60 text-white shadow-lg border border-white/20",
-  "Finance": "bg-gradient-to-r from-lime-600/60 to-lime-700/60 text-white shadow-lg border border-white/20",
-  "Operations": "bg-gradient-to-r from-fuchsia-600/60 to-fuchsia-700/60 text-white shadow-lg border border-white/20",
-  "Customer Service": "bg-gradient-to-r from-sky-600/60 to-sky-700/60 text-white shadow-lg border border-white/20",
+  "Sales": "bg-gradient-to-r from-green-600/20 to-green-500/20 border-green-500/50 text-green-200 backdrop-blur-xl border",
+  "Marketing": "bg-gradient-to-r from-pink-600/20 to-pink-500/20 border-pink-500/50 text-pink-200 backdrop-blur-xl border",
+  "Administration": "bg-gradient-to-r from-yellow-600/20 to-yellow-500/20 border-yellow-500/50 text-yellow-200 backdrop-blur-xl border",
+  "HR": "bg-gradient-to-r from-rose-600/20 to-rose-500/20 border-rose-500/50 text-rose-200 backdrop-blur-xl border",
+  "IT": "bg-gradient-to-r from-violet-600/20 to-violet-500/20 border-violet-500/50 text-violet-200 backdrop-blur-xl border",
+  "Finance": "bg-gradient-to-r from-sky-600/20 to-sky-500/20 border-sky-500/50 text-sky-200 backdrop-blur-xl border",
+  "Operations": "bg-gradient-to-r from-orange-600/20 to-orange-500/20 border-orange-500/50 text-orange-200 backdrop-blur-xl border",
+  "Customer Service": "bg-gradient-to-r from-zinc-600/20 to-zinc-500/20 border-zinc-500/50 text-zinc-200 backdrop-blur-xl border",
   // Legacy mappings for backward compatibility
-  "sales": "bg-gradient-to-r from-emerald-600/60 to-emerald-700/60 text-white shadow-lg border border-white/20",
-  "marketing": "bg-gradient-to-r from-violet-600/60 to-violet-700/60 text-white shadow-lg border border-white/20",
-  "it": "bg-gradient-to-r from-cyan-600/60 to-cyan-700/60 text-white shadow-lg border border-white/20",
-  "hr": "bg-gradient-to-r from-rose-600/60 to-rose-700/60 text-white shadow-lg border border-white/20",
-  "ops": "bg-gradient-to-r from-fuchsia-600/60 to-fuchsia-700/60 text-white shadow-lg border border-white/20",
-  "General": "bg-gradient-to-r from-slate-600/60 to-slate-700/60 text-white shadow-lg border border-white/20",
+  "sales": "bg-gradient-to-r from-green-600/20 to-green-500/20 border-green-500/50 text-green-200 backdrop-blur-xl border",
+  "marketing": "bg-gradient-to-r from-pink-600/20 to-pink-500/20 border-pink-500/50 text-pink-200 backdrop-blur-xl border",
+  "it": "bg-gradient-to-r from-violet-600/20 to-violet-500/20 border-violet-500/50 text-violet-200 backdrop-blur-xl border",
+  "hr": "bg-gradient-to-r from-rose-600/20 to-rose-500/20 border-rose-500/50 text-rose-200 backdrop-blur-xl border",
+  "ops": "bg-gradient-to-r from-orange-600/20 to-orange-500/20 border-orange-500/50 text-orange-200 backdrop-blur-xl border",
+  "General": "bg-gradient-to-r from-gray-600/20 to-gray-500/20 border-gray-500/50 text-gray-200 backdrop-blur-xl border",
 };
 
-// Location colors - extreme contrast using opposite spectrum colors
+// Location colors - glass effect like Admin Panel button with unique color palette
 const locColor: Record<string, string> = {
-  "SGI Gold Coast": "bg-gradient-to-r from-yellow-600/60 to-yellow-700/60 text-white shadow-lg border border-white/20",
-  "SGI Melbourne": "bg-gradient-to-r from-indigo-600/60 to-indigo-700/60 text-white shadow-lg border border-white/20",
-  "KAYO Coopers Plains": "bg-gradient-to-r from-red-600/60 to-red-700/60 text-white shadow-lg border border-white/20",
-  "KAYO Underwood": "bg-gradient-to-r from-teal-600/60 to-teal-700/60 text-white shadow-lg border border-white/20",
-  "KAYO Brendale": "bg-gradient-to-r from-purple-600/60 to-purple-700/60 text-white shadow-lg border border-white/20",
-  "KAYO Yatala": "bg-gradient-to-r from-green-600/60 to-green-700/60 text-white shadow-lg border border-white/20",
+  "SGI Gold Coast": "bg-gradient-to-r from-amber-500/20 to-amber-400/20 border-amber-400/50 text-amber-200 backdrop-blur-xl border",
+  "SGI Melbourne": "bg-gradient-to-r from-purple-700/20 to-purple-600/20 border-purple-600/50 text-purple-200 backdrop-blur-xl border",
+  "KAYO Coopers Plains": "bg-gradient-to-r from-red-700/20 to-red-600/20 border-red-600/50 text-red-200 backdrop-blur-xl border",
+  "KAYO Underwood": "bg-gradient-to-r from-blue-700/20 to-blue-600/20 border-blue-600/50 text-blue-200 backdrop-blur-xl border",
+  "KAYO Brendale": "bg-gradient-to-r from-emerald-700/20 to-emerald-600/20 border-emerald-600/50 text-emerald-200 backdrop-blur-xl border",
+  "KAYO Yatala": "bg-gradient-to-r from-indigo-700/20 to-indigo-600/20 border-indigo-600/50 text-indigo-200 backdrop-blur-xl border",
   // Additional SGI locations with unique colors
-  "SGI Coopers Plains": "bg-gradient-to-r from-orange-600/60 to-orange-700/60 text-white shadow-lg border border-white/20",
-  "SGI Brendale": "bg-gradient-to-r from-blue-600/60 to-blue-700/60 text-white shadow-lg border border-white/20",
-  "SGI Toowoomba": "bg-gradient-to-r from-pink-600/60 to-pink-700/60 text-white shadow-lg border border-white/20",
-  "Office": "bg-gradient-to-r from-gray-600/60 to-gray-700/60 text-white shadow-lg border border-white/20",
+  "SGI Coopers Plains": "bg-gradient-to-r from-orange-700/20 to-orange-600/20 border-orange-600/50 text-orange-200 backdrop-blur-xl border",
+  "SGI Brendale": "bg-gradient-to-r from-teal-700/20 to-teal-600/20 border-teal-600/50 text-teal-200 backdrop-blur-xl border",
+  "SGI Toowoomba": "bg-gradient-to-r from-fuchsia-700/20 to-fuchsia-600/20 border-fuchsia-600/50 text-fuchsia-200 backdrop-blur-xl border",
+  "Office": "bg-gradient-to-r from-neutral-600/20 to-neutral-500/20 border-neutral-500/50 text-neutral-200 backdrop-blur-xl border",
 };
 
 // State management with useReducer for better performance
@@ -465,12 +465,12 @@ const EmailComposer = React.memo(function EmailComposer() {
 
   return (
     <TooltipProvider delayDuration={300}>
-    <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto space-y-4 text-white bg-slate-800/60 backdrop-blur-sm border border-slate-600/50 shadow-xl p-4 sm:p-6 rounded-xl">
+    <div className="w-full max-w-[1800px] 2xl:max-w-[2000px] mx-auto space-y-4 text-white bg-slate-800/60 backdrop-blur-sm border border-slate-600/50 shadow-xl p-4 sm:p-6 rounded-xl overflow-visible">
       <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Email Composer</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Users Pool */}
-          <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-600/50 shadow-xl">
+          <Card className="bg-slate-800/90 backdrop-blur-sm border-slate-600/50 shadow-xl overflow-visible relative z-50">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-lg">Users Pool</CardTitle>
@@ -498,7 +498,7 @@ const EmailComposer = React.memo(function EmailComposer() {
                       Add all
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="z-[99999]" side="top" sideOffset={8}>
                     <p>Add all filtered users to recipients</p>
                   </TooltipContent>
                 </Tooltip>
@@ -577,7 +577,7 @@ const EmailComposer = React.memo(function EmailComposer() {
                           onClick={() => addRecipient(u)}
                           size="sm"
                           variant="outline"
-                          className="text-xs h-8 px-3 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all"
+                          className="text-sm px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm border-0"
                         >
                           <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -591,10 +591,10 @@ const EmailComposer = React.memo(function EmailComposer() {
                     </Tooltip>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${titleColor[u.occupation] || titleColor.Officer}`}>{u.occupation}</span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${deptColor[u.department] || deptColor.IT}`}>{u.department}</span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${locColor[u.location] || locColor.Office}`}>{u.location}</span>
-                  </div>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${titleColor[u.occupation] || titleColor.Officer}`}>{u.occupation}</span>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${deptColor[u.department] || deptColor.IT}`}>{u.department}</span>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${locColor[u.location] || locColor.Office}`}>{u.location}</span>
+                            </div>
                 </div>
                   ))}
                 </div>
