@@ -140,6 +140,11 @@ export async function POST(req: NextRequest) {
     }
     const { user, supabase } = authResult;
 
+    // Ensure user and supabase are defined
+    if (!user || !supabase) {
+      return createErrorResponse('Authentication failed', 401);
+    }
+
     // Check if user has permission to send emails (admin or manager)
     const { data: profile } = await supabase
       .from('profiles')

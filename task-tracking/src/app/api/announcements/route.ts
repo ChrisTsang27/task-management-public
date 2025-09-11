@@ -108,12 +108,22 @@ export async function POST(request: NextRequest) {
     }
     const { user } = authResult;
 
+    // Ensure user is defined
+    if (!user) {
+      return createErrorResponse('User not authenticated', 401);
+    }
+
     const body = await request.json();
     
     // Validate and sanitize input data
     const validation = validateAndSanitize(body, announcementCreateSchema);
     if (!validation.success) {
       return createErrorResponse('Invalid announcement data', 400, validation.errors);
+    }
+
+    // Ensure validation data is not null
+    if (!validation.data) {
+      return createErrorResponse('No valid announcement data provided', 400);
     }
 
     const { title, content, team_id, priority, expires_at } = validation.data;

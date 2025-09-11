@@ -29,6 +29,11 @@ export const DELETE = withErrorHandling(async (
   if (!validation.success) {
     return createErrorResponse('Invalid user ID format', 400);
   }
+
+  // Ensure validation data is not null
+  if (!validation.data) {
+    return createErrorResponse('No valid user ID provided', 400);
+  }
   
   const userIdToDelete = validation.data.id;
 
@@ -38,6 +43,11 @@ export const DELETE = withErrorHandling(async (
     return authResult.error!;
   }
   const { user: requestingUser, supabase } = authResult;
+
+  // Ensure user and supabase are defined
+  if (!requestingUser || !supabase) {
+    return createErrorResponse('Authentication failed', 401);
+  }
 
   // Check if the requesting user is an admin
   const { data: requestingUserProfile, error: profileError } = await supabase
@@ -136,7 +146,7 @@ export const DELETE = withErrorHandling(async (
               })
               .eq('id', task.id);
           } catch (error) {
-            console.log(`Failed to update task ${task.id}:`, error.message);
+            console.log(`Failed to update task ${task.id}:`, error instanceof Error ? error.message : String(error));
             // Continue with other tasks
           }
         }

@@ -208,46 +208,13 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
       worksheet.getColumn(6).width = 10; // role
       worksheet.getColumn(7).width = 10; // team_id
       
-      // Add data validation for dropdown lists (rows 2-1000)
-      // Title column (C)
-      worksheet.dataValidations.add('C2:C1000', {
-        type: 'list',
-        allowBlank: true,
-        formulae: [`"${titleOptions.join(',')}"`],
-        showErrorMessage: true,
-        errorTitle: 'Invalid Title',
-        error: 'Please select a valid title from the dropdown list.'
-      });
+      // Note: Data validation for dropdown lists is not supported in this version of ExcelJS
+      // Users should refer to the allowed values in the header comments
+      // Title options: ${titleOptions.join(', ')}
+      // Department options: ${departmentOptions.join(', ')}
+      // Location options: ${locationOptions.join(', ')}
       
-      // Department column (D)
-      worksheet.dataValidations.add('D2:D1000', {
-        type: 'list',
-        allowBlank: true,
-        formulae: [`"${departmentOptions.join(',')}"`],
-        showErrorMessage: true,
-        errorTitle: 'Invalid Department',
-        error: 'Please select a valid department from the dropdown list.'
-      });
-      
-      // Location column (E)
-      worksheet.dataValidations.add('E2:E1000', {
-        type: 'list',
-        allowBlank: true,
-        formulae: [`"${locationOptions.join(',')}"`],
-        showErrorMessage: true,
-        errorTitle: 'Invalid Location',
-        error: 'Please select a valid location from the dropdown list.'
-      });
-      
-      // Role column (F)
-      worksheet.dataValidations.add('F2:F1000', {
-        type: 'list',
-        allowBlank: true,
-        formulae: [`"${roleOptions.join(',')}"`],
-        showErrorMessage: true,
-        errorTitle: 'Invalid Role',
-        error: 'Please select a valid role from the dropdown list.'
-      });
+      // Role options: ${roleOptions.join(', ')}
       
       // Style the header row
       const headerRow = worksheet.getRow(1);

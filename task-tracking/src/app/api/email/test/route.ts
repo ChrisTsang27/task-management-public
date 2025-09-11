@@ -19,6 +19,11 @@ export async function POST(request: NextRequest) {
     }
     const { user, supabase } = authResult;
 
+    // Ensure user and supabase are defined
+    if (!user || !supabase) {
+      return createErrorResponse('Authentication failed', 401);
+    }
+
     // Check if user is admin
     const { data: profile } = await supabase
       .from('profiles')

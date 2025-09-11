@@ -50,6 +50,11 @@ export async function POST(request: NextRequest) {
     }
     const { user, supabase } = authResult;
 
+    // Ensure supabase client is available
+    if (!supabase) {
+      return await createErrorResponse('Authentication service unavailable', 500, undefined, undefined, request);
+    }
+
     // Check if user is admin
     const { data: profile } = await supabase
       .from('profiles')
@@ -120,16 +125,41 @@ export async function POST(request: NextRequest) {
     const validUsers = validation.data;
     const errors: string[] = [];
     
+    // Ensure validUsers is not null
+    if (!validUsers) {
+      return await createErrorResponse('No valid user data found', 400, undefined, undefined, request, { userId: user.id });
+    }
+    
     // Additional sanitization for text fields
     validUsers.forEach((user, index) => {
       const rowNum = index + 1;
       
       // Sanitize text fields to prevent XSS
-       user.full_name = sanitizeHtml(user.full_name);
-       if (user.title) user.title = sanitizeHtml(user.title);
-       if (user.department) user.department = sanitizeHtml(user.department);
-       if (user.location) user.location = sanitizeHtml(user.location);
-     });
+      user.full_name = sanitizeHtml(user.full_name);
+      
+      // For enum fields, sanitize but preserve the original value if it's valid
+      if (user.title) {
+        const sanitizedTitle = sanitizeHtml(user.title);
+        // Only update if sanitization didn't change the value (meaning it was clean)
+        if (sanitizedTitle === user.title) {
+          user.title = sanitizedTitle as typeof user.title;
+        }
+      }
+      
+      if (user.department) {
+        const sanitizedDept = sanitizeHtml(user.department);
+        if (sanitizedDept === user.department) {
+          user.department = sanitizedDept as typeof user.department;
+        }
+      }
+      
+      if (user.location) {
+        const sanitizedLocation = sanitizeHtml(user.location);
+        if (sanitizedLocation === user.location) {
+          user.location = sanitizedLocation as typeof user.location;
+        }
+      }
+    });
 
     if (validUsers.length === 0) {
       return await createErrorResponse('No valid users found in file', 400, errors, undefined, request, { userId: user.id });

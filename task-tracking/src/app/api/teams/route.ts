@@ -25,6 +25,11 @@ export async function GET(request: NextRequest) {
     }
     const { user, supabase: userSupabase } = authResult;
 
+    // Ensure user is defined
+    if (!user) {
+      return createErrorResponse('User not authenticated', 401);
+    }
+
     const { searchParams } = new URL(request.url);
     const include_members = searchParams.get('include_members') === 'true';
     
@@ -80,6 +85,11 @@ export async function POST(request: NextRequest) {
       return authResult.error!;
     }
     const { user, supabase: userSupabase } = authResult;
+
+    // Ensure user is defined
+    if (!user) {
+      return createErrorResponse('User not authenticated', 401);
+    }
 
     const body = await request.json();
     

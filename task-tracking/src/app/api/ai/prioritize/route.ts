@@ -30,6 +30,11 @@ export async function POST(request: NextRequest) {
     }
     const { user, supabase: userSupabase } = authResult;
 
+    // Ensure user is available
+    if (!user) {
+      return await createErrorResponse('User authentication failed', 401, undefined, undefined, request);
+    }
+
     const body = await request.json();
     const { task_id, team_id, action } = body;
 
@@ -87,7 +92,7 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
-      return await createErrorResponse('Invalid authentication token', 401, undefined, authError, request);
+      return await createErrorResponse('Invalid authentication token', 401, undefined, authError || undefined, request);
     }
 
     const { searchParams } = new URL(request.url);
@@ -107,7 +112,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (teamError || !teamMember) {
-      return await createErrorResponse('Access denied to this team', 403, undefined, teamError, request, { teamId: team_id, userId: user.id });
+      return await createErrorResponse('Access denied to this team', 403, undefined, teamError || undefined, request, { teamId: team_id, userId: user.id });
     }
 
     // Get AI-prioritized tasks

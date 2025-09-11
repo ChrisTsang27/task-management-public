@@ -53,11 +53,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const { userId, userData } = validation.data;
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    // Add null check for validation data
+    if (!validation.data) {
+      return NextResponse.json({ error: 'No valid profile data provided' }, { status: 400 });
     }
+
+    const userData = validation.data;
+    const userId = user.id; // Use authenticated user's ID
 
     // Check if profile already exists
     const { data: existingProfile } = await supabaseAdmin
@@ -76,11 +78,11 @@ export async function POST(request: NextRequest) {
     // Create the profile using admin client with sanitized data
     const profileData = {
       id: userId,
-      full_name: sanitizeHtml(userData?.fullName || userData?.full_name || 'User'),
-      title: userData?.title ? sanitizeHtml(userData.title) : null,
+      full_name: sanitizeHtml(userData.full_name),
+      title: userData.title ? sanitizeHtml(userData.title) : null,
       role: 'member',
-      department: userData?.department ? sanitizeHtml(userData.department) : null,
-      location: userData?.location ? sanitizeHtml(userData.location) : null
+      department: userData.department ? sanitizeHtml(userData.department) : null,
+      location: userData.location ? sanitizeHtml(userData.location) : null
     };
 
     const { data: newProfile, error } = await supabaseAdmin
