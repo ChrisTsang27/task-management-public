@@ -57,7 +57,8 @@ function getCORSConfig(): CORSConfig {
       // Default production origins if not specified
       config.allowedOrigins = [
         process.env.NEXTAUTH_URL || 'https://yourdomain.com',
-        process.env.FRONTEND_URL || 'https://app.yourdomain.com'
+        process.env.FRONTEND_URL || 'https://app.yourdomain.com',
+        'https://task-manager-eta-livid-23.vercel.app' // Add Vercel deployment URL
       ].filter(Boolean);
     }
     
