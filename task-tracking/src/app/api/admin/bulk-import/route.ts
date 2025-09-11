@@ -183,10 +183,12 @@ export async function POST(request: NextRequest) {
     // Validate and sanitize user data using schema
     console.log('🔍 Starting validation for', userData.length, 'users');
     console.log('📋 Sample user data:', userData[0]);
+    console.log('📋 All user data:', JSON.stringify(userData, null, 2));
     const validation = validateAndSanitize(userData, bulkUserImportSchema);
     
     if (!validation.success) {
       console.log('❌ Validation failed:', validation.errors);
+      console.error('❌ Raw validation errors:', JSON.stringify(validation.errors, null, 2));
       return await createErrorResponse('Invalid user data format', 400, validation.errors, undefined, request, { userId: user.id });
     }
     console.log('✅ Validation passed');
