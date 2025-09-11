@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback } from 'react';
 import { Upload, Download, Users, AlertCircle, CheckCircle, X } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 
 import { Button } from '@/components/ui/button';
@@ -208,13 +207,53 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
       worksheet.getColumn(6).width = 10; // role
       worksheet.getColumn(7).width = 10; // team_id
       
-      // Note: Data validation for dropdown lists is not supported in this version of ExcelJS
-      // Users should refer to the allowed values in the header comments
-      // Title options: ${titleOptions.join(', ')}
-      // Department options: ${departmentOptions.join(', ')}
-      // Location options: ${locationOptions.join(', ')}
+      // Add data validation for dropdown lists using range-based approach
+      // This ensures dropdowns work for all rows, not just existing ones
+      // Note: Using type assertion due to missing TypeScript definitions in ExcelJS 4.4.0
       
-      // Role options: ${roleOptions.join(', ')}
+      // Title dropdown (column C) - apply to rows 2-1000
+      (worksheet as any).dataValidations.add('C2:C1000', {
+        type: 'list',
+        allowBlank: true,
+        formulae: [`"${titleOptions.join(',')}"`],
+        showErrorMessage: true,
+        errorStyle: 'error',
+        errorTitle: 'Invalid Title',
+        error: `Please select from: ${titleOptions.join(', ')}`
+      });
+      
+      // Department dropdown (column D) - apply to rows 2-1000
+      (worksheet as any).dataValidations.add('D2:D1000', {
+        type: 'list',
+        allowBlank: true,
+        formulae: [`"${departmentOptions.join(',')}"`],
+        showErrorMessage: true,
+        errorStyle: 'error',
+        errorTitle: 'Invalid Department',
+        error: `Please select from: ${departmentOptions.join(', ')}`
+      });
+      
+      // Location dropdown (column E) - apply to rows 2-1000
+      (worksheet as any).dataValidations.add('E2:E1000', {
+        type: 'list',
+        allowBlank: true,
+        formulae: [`"${locationOptions.join(',')}"`],
+        showErrorMessage: true,
+        errorStyle: 'error',
+        errorTitle: 'Invalid Location',
+        error: `Please select from: ${locationOptions.join(', ')}`
+      });
+      
+      // Role dropdown (column F) - apply to rows 2-1000
+      (worksheet as any).dataValidations.add('F2:F1000', {
+        type: 'list',
+        allowBlank: true,
+        formulae: [`"${roleOptions.join(',')}"`],
+        showErrorMessage: true,
+        errorStyle: 'error',
+        errorTitle: 'Invalid Role',
+        error: `Please select from: ${roleOptions.join(', ')}`
+      });
       
       // Style the header row
       const headerRow = worksheet.getRow(1);
@@ -230,7 +269,7 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
       instructionsSheet.addRow(['BULK USER IMPORT INSTRUCTIONS']);
       instructionsSheet.addRow([]);
       instructionsSheet.addRow(['1. Fill in user data in the "Users" sheet starting from row 2']);
-      instructionsSheet.addRow(['2. Use the dropdown lists for Title, Department, Location, and Role']);
+      instructionsSheet.addRow(['2. Click on cells in Title, Department, Location, and Role columns to see dropdown options']);
       instructionsSheet.addRow(['3. Email must be unique and in valid format']);
       instructionsSheet.addRow(['4. Full name is required for all users']);
       instructionsSheet.addRow(['5. Leave team_id empty - users can be assigned to teams later via admin panel']);

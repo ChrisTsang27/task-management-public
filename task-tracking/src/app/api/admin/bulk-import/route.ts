@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { rateLimiters } from '@/lib/middleware/rateLimiter';
 import { bulkUserImportSchema, validateAndSanitize, sanitizeHtml } from '@/lib/validation/schemas';
 import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
@@ -91,25 +91,39 @@ export async function POST(request: NextRequest) {
         });
         userData = parseResult.data as UserData[];
       } else {
-        const workbook = XLSX.read(fileBuffer, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(fileBuffer);
+        const worksheet = workbook.getWorksheet(1);
         
-        if (jsonData.length < 2) {
+        if (!worksheet || worksheet.rowCount < 2) {
           return await createErrorResponse('File must contain headers and at least one data row', 400, undefined, undefined, request, { userId: user.id });
         }
 
-        const headers = (jsonData[0] as string[]).map(h => h.toLowerCase().trim());
-        const rows = jsonData.slice(1) as any[][];
-        
-        userData = rows.map(row => {
-          const user: any = {};
-          headers.forEach((header, index) => {
-            user[header] = row[index];
-          });
-          return user;
+        // Extract headers from first row
+        const headerRow = worksheet.getRow(1);
+        const headers: string[] = [];
+        headerRow.eachCell((cell, colNumber) => {
+          headers[colNumber - 1] = String(cell.value || '').toLowerCase().trim();
         });
+        
+        // Extract data rows
+        userData = [];
+        for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+          const row = worksheet.getRow(rowNumber);
+          const user: any = {};
+          
+          row.eachCell((cell, colNumber) => {
+            const header = headers[colNumber - 1];
+            if (header) {
+              user[header] = cell.value;
+            }
+          });
+          
+          // Only add row if it has at least an email
+          if (user.email) {
+            userData.push(user);
+          }
+        }
       }
     } catch (parseError) {
       return await createErrorResponse('Failed to parse file', 400, undefined, parseError as Error, request, { fileExtension, userId: user.id });
