@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingCard } from '@/components/ui/LoadingSpinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/hooks/useRoleAccess';
 import supabase from '@/lib/supabaseBrowserClient';
@@ -337,7 +337,7 @@ function AdminPanelContent() {
                   <SelectContent className="border-slate-600 bg-slate-700">
                      <SelectItem value="all" className="text-slate-200 hover:bg-slate-600">All titles</SelectItem>
                     {uniqueTitles.map(title => (
-                      <SelectItem key={title} value={title} className="text-slate-200 hover:bg-slate-600">
+                      <SelectItem key={title} value={title!} className="text-slate-200 hover:bg-slate-600">
                         {title}
                       </SelectItem>
                     ))}
@@ -358,7 +358,7 @@ function AdminPanelContent() {
                   <SelectContent className="border-slate-600 bg-slate-700">
                      <SelectItem value="all" className="text-slate-200 hover:bg-slate-600">All departments</SelectItem>
                     {uniqueDepartments.map(department => (
-                      <SelectItem key={department} value={department} className="text-slate-200 hover:bg-slate-600">
+                      <SelectItem key={department} value={department!} className="text-slate-200 hover:bg-slate-600">
                         {department}
                       </SelectItem>
                     ))}
@@ -379,7 +379,7 @@ function AdminPanelContent() {
                   <SelectContent className="border-slate-600 bg-slate-700">
                      <SelectItem value="all" className="text-slate-200 hover:bg-slate-600">All locations</SelectItem>
                     {uniqueLocations.map(location => (
-                      <SelectItem key={location} value={location} className="text-slate-200 hover:bg-slate-600">
+                      <SelectItem key={location} value={location!} className="text-slate-200 hover:bg-slate-600">
                         {location}
                       </SelectItem>
                     ))}
