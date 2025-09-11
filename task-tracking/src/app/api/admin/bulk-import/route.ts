@@ -194,7 +194,16 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       console.log('❌ Validation failed:', validation.errors);
       console.error('❌ Raw validation errors:', JSON.stringify(validation.errors, null, 2));
-      return await createErrorResponse('Invalid user data format', 400, validation.errors, undefined, request, { userId: user.id });
+      console.error('❌ User data that failed validation:', JSON.stringify(userData, null, 2));
+      
+      // Create more detailed error response
+      const errorDetails = {
+        validationErrors: validation.errors,
+        userData: userData,
+        userCount: userData.length
+      };
+      
+      return await createErrorResponse('Invalid user data format', 400, errorDetails, undefined, request, { userId: user.id });
     }
     console.log('✅ Validation passed');
 
