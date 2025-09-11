@@ -92,7 +92,22 @@ export default function BulkUserImport({ onImportComplete }: BulkUserImportProps
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file) {
+      toast({
+        title: 'No file selected',
+        description: 'Please select a file first',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    console.log('🚀 Starting upload process');
+    console.log('📁 File details:', {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      lastModified: file.lastModified
+    });
     
     setUploading(true);
     setProgress(0);
@@ -105,9 +120,11 @@ export default function BulkUserImport({ onImportComplete }: BulkUserImportProps
       if (!session?.access_token) {
         throw new Error('Authentication required. Please sign in again.');
       }
+      console.log('✅ Authentication token obtained');
 
       const formData = new FormData();
       formData.append('file', file);
+      console.log('📤 FormData created, making API call...');
       
       // Simulate progress
       const progressInterval = setInterval(() => {
@@ -119,16 +136,43 @@ export default function BulkUserImport({ onImportComplete }: BulkUserImportProps
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: formData
+        body: formData,
+        // Add timeout to prevent hanging requests
+        signal: AbortSignal.timeout(30000) // 30 second timeout
+      });
+      
+      console.log('📥 Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
       });
       
       clearInterval(progressInterval);
       setProgress(100);
       
-      const data = await response.json();
-      
+      // Check if response is ok before trying to parse JSON
       if (!response.ok) {
-        throw new Error(data.error || 'Upload failed');
+        const errorText = await response.text();
+        console.log('❌ Error response text:', errorText);
+        let errorMessage = `Upload failed (${response.status})`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          errorMessage = errorText || `Upload failed (${response.status}): ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      let data;
+      try {
+        data = await response.json();
+        console.log('✅ Success response:', data);
+      } catch (parseError) {
+        console.error('Failed to parse response JSON:', parseError);
+        throw new Error('Invalid response from server');
       }
       
       setResult(data);
@@ -148,15 +192,28 @@ export default function BulkUserImport({ onImportComplete }: BulkUserImportProps
       }
       
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error details:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      // Keep progress bar visible for a moment to show the error state
+      setProgress(100);
+      
       toast({
         title: 'Upload failed',
         description: error instanceof Error ? error.message : 'An unexpected error occurred',
         variant: 'destructive'
       });
+      
+      // Delay hiding the progress bar to show error state
+      setTimeout(() => {
+        setProgress(0);
+      }, 2000);
     } finally {
       setUploading(false);
-      setProgress(0);
+      console.log('🏁 Upload process completed');
     }
   };
 

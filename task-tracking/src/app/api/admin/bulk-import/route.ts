@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import Papa from 'papaparse';
-import ExcelJS from 'exceljs';
+import * as Papa from 'papaparse';
+import * as ExcelJS from 'exceljs';
 import { rateLimiters } from '@/lib/middleware/rateLimiter';
 import { bulkUserImportSchema, validateAndSanitize, sanitizeHtml } from '@/lib/validation/schemas';
 import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
@@ -36,22 +36,34 @@ interface ImportResult {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('🚀 Bulk import API called');
   try {
     // Apply rate limiting for uploads
     const rateLimitResult = rateLimiters.upload(request);
     if (rateLimitResult) {
+      console.log('❌ Rate limit exceeded');
       return rateLimitResult;
     }
+    console.log('✅ Rate limit check passed');
 
     // Authenticate user (only admins should be able to bulk import)
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {
+      console.log('❌ Authentication failed:', authResult.error);
       return authResult.error!;
     }
     const { user, supabase } = authResult;
+    
+    if (!user) {
+      console.log('❌ User object is null');
+      return await createErrorResponse('Authentication failed - no user', 401, undefined, undefined, request);
+    }
+    
+    console.log('✅ User authenticated:', user.id);
 
     // Ensure supabase client is available
     if (!supabase) {
+      console.log('❌ Supabase client unavailable');
       return await createErrorResponse('Authentication service unavailable', 500, undefined, undefined, request);
     }
 
@@ -63,39 +75,61 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!profile || profile.role !== 'admin') {
+      console.log('❌ Admin access denied. Profile:', profile);
       return await createErrorResponse('Admin access required', 403, undefined, undefined, request, { userId: user.id });
     }
+    console.log('✅ Admin access confirmed');
 
     const formData = await request.formData();
+    console.log('📄 FormData received');
     const file = formData.get('file') as File;
     
     if (!file) {
+      console.log('❌ No file in formData');
       return await createErrorResponse('No file provided', 400, undefined, undefined, request, { userId: user.id });
     }
+    console.log('📁 File received:', file.name, 'Size:', file.size, 'Type:', file.type);
 
+    // Validate file type and size
+    const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    const allowedExtensions = ['csv', 'xlsx', 'xls'];
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    if (!['csv', 'xlsx', 'xls'].includes(fileExtension || '')) {
+
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
+      console.log('❌ Invalid file type:', file.type, 'Extension:', fileExtension);
       return await createErrorResponse('Invalid file format. Only CSV and Excel files are supported.', 400, undefined, undefined, request, { fileExtension, userId: user.id });
     }
 
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      console.log('❌ File too large:', file.size);
+      return await createErrorResponse('File too large. Maximum size is 10MB.', 400, undefined, undefined, request, { fileSize: file.size, userId: user.id });
+    }
+    console.log('✅ File validation passed');
+
     let userData: UserData[] = [];
     const fileBuffer = await file.arrayBuffer();
+    console.log('📊 File buffer size:', fileBuffer.byteLength);
 
     try {
       if (fileExtension === 'csv') {
+        console.log('📄 Parsing CSV file');
         const csvText = new TextDecoder().decode(fileBuffer);
+        console.log('📝 CSV text length:', csvText.length);
         const parseResult = Papa.parse(csvText, {
           header: true,
           skipEmptyLines: true,
           transformHeader: (header) => header.toLowerCase().trim()
         });
         userData = parseResult.data as UserData[];
+        console.log('✅ CSV parsed, rows:', userData.length);
       } else {
+        console.log('📊 Parsing Excel file');
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(fileBuffer);
         const worksheet = workbook.getWorksheet(1);
         
         if (!worksheet || worksheet.rowCount < 2) {
+          console.log('❌ Excel file too short');
           return await createErrorResponse('File must contain headers and at least one data row', 400, undefined, undefined, request, { userId: user.id });
         }
 
@@ -105,6 +139,7 @@ export async function POST(request: NextRequest) {
         headerRow.eachCell((cell, colNumber) => {
           headers[colNumber - 1] = String(cell.value || '').toLowerCase().trim();
         });
+        console.log('📋 Headers:', headers);
         
         // Extract data rows
         userData = [];
@@ -124,17 +159,23 @@ export async function POST(request: NextRequest) {
             userData.push(user);
           }
         }
+        console.log('✅ Excel parsed, rows:', userData.length);
       }
     } catch (parseError) {
+      console.error('❌ File parsing error:', parseError);
       return await createErrorResponse('Failed to parse file', 400, undefined, parseError as Error, request, { fileExtension, userId: user.id });
     }
 
     // Validate and sanitize user data using schema
+    console.log('🔍 Starting validation for', userData.length, 'users');
+    console.log('📋 Sample user data:', userData[0]);
     const validation = validateAndSanitize(userData, bulkUserImportSchema);
     
     if (!validation.success) {
+      console.log('❌ Validation failed:', validation.errors);
       return await createErrorResponse('Invalid user data format', 400, validation.errors, undefined, request, { userId: user.id });
     }
+    console.log('✅ Validation passed');
 
     const validUsers = validation.data;
     const errors: string[] = [];
@@ -227,7 +268,7 @@ export async function POST(request: NextRequest) {
               continue;
             }
             
-            const existingUser = existingUsers.users.find(u => u.email === user.email);
+            const existingUser = existingUsers?.users?.find((u: any) => u.email === user.email);
             if (!existingUser) {
               console.error(`Could not find existing user ${user.email}`);
               importErrors.push(`${user.email}: Could not find existing user`);
