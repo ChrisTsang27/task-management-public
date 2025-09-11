@@ -8,11 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingCard } from "@/components/ui/LoadingSpinner";
 
-// Lazy load heavy components
+// Lazy load heavy components with preload hints
 const EmailComposer = lazy(() => import("@/components/email/EmailComposer"));
 const AnnouncementManager = lazy(() => import("@/components/announcements/AnnouncementManager"));
 const TaskManager = lazy(() => import("@/components/tasks/TaskManager"));
 const CalendarView = lazy(() => import("./calendar/CalendarView").then(module => ({ default: module.CalendarView })));
+
+// Preload components on hover to improve perceived performance
+const preloadComponent = (componentName: string) => {
+  switch (componentName) {
+    case 'Email':
+      import("@/components/email/EmailComposer");
+      break;
+    case 'Announcements':
+      import("@/components/announcements/AnnouncementManager");
+      break;
+    case 'Tasks':
+      import("@/components/tasks/TaskManager");
+      break;
+    case 'Calendar':
+      import("./calendar/CalendarView");
+      break;
+  }
+};
 import { TeamSelector } from "@/components/ui/team-selector";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
@@ -373,6 +391,7 @@ export default function Dashboard() {
                 <TooltipTrigger asChild>
                   <Button
                     onClick={() => handleTabChange(tabConfig.key)}
+                    onMouseEnter={() => preloadComponent(tabConfig.key)}
                     variant={tab === tabConfig.key ? "default" : "ghost"}
                     className={`h-10 px-4 rounded-lg transition-all duration-200 ${
                       tab === tabConfig.key 

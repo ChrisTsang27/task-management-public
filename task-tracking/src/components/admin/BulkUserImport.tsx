@@ -370,29 +370,29 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
   };
 
   return (
-    <Card>
+    <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-slate-100">
           <Users className="h-5 w-5" />
           Bulk User Import
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-slate-400">
           Upload a CSV or Excel file to import multiple users at once. Only admins can access this feature.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Template Download */}
-        <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="flex items-center justify-between p-4 bg-slate-700 rounded-lg border border-slate-600">
           <div>
-            <h4 className="font-medium text-blue-900">Need a template?</h4>
-            <p className="text-sm text-blue-700">Download our template with the required columns</p>
+            <h4 className="font-medium text-slate-200">Need a template?</h4>
+            <p className="text-sm text-slate-300">Download our template with the required columns</p>
           </div>
           <div className="flex gap-2">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => downloadTemplate('csv')}
-              className="hover:bg-blue-50 hover:border-blue-300 transition-colors"
+              className="bg-slate-600 border-slate-500 text-slate-200 hover:bg-slate-500 hover:border-slate-400 transition-colors"
             >
               <Download className="h-4 w-4 mr-2" />
               CSV Template
@@ -401,7 +401,7 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
               variant="outline" 
               size="sm" 
               onClick={() => downloadTemplate('excel')}
-              className="hover:bg-blue-50 hover:border-blue-300 transition-colors"
+              className="bg-slate-600 border-slate-500 text-slate-200 hover:bg-slate-500 hover:border-slate-400 transition-colors"
             >
               <Download className="h-4 w-4 mr-2" />
               Excel Template
@@ -413,10 +413,10 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
         <div
           className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
             dragActive
-              ? 'border-blue-400 bg-blue-50'
+              ? 'border-blue-400 bg-slate-700'
               : file
-              ? 'border-green-400 bg-green-50'
-              : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50/50 hover:shadow-md'
+              ? 'border-green-400 bg-slate-700'
+              : 'border-slate-600 hover:border-blue-400 hover:bg-slate-700 hover:shadow-md'
           }`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
@@ -433,10 +433,10 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
           
           {file ? (
             <div className="space-y-2">
-              <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
+              <CheckCircle className="h-12 w-12 text-green-400 mx-auto" />
               <div>
-                <p className="font-medium text-green-700">{file.name}</p>
-                <p className="text-sm text-green-600">
+                <p className="font-medium text-green-300">{file.name}</p>
+                <p className="text-sm text-green-400">
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
@@ -444,7 +444,7 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
                 variant="ghost"
                 size="sm"
                 onClick={clearFile}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                className="text-red-400 hover:text-red-300 hover:bg-slate-600 transition-colors"
               >
                 <X className="h-4 w-4 mr-1" />
                 Remove
@@ -452,12 +452,12 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
             </div>
           ) : (
             <div className="space-y-2">
-              <Upload className="h-12 w-12 text-gray-400 mx-auto" />
+              <Upload className="h-12 w-12 text-slate-400 mx-auto" />
               <div>
-                <p className="text-lg font-medium text-gray-700">
+                <p className="text-lg font-medium text-slate-300">
                   {dragActive ? 'Drop your file here' : 'Drag & drop your file here'}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-slate-400">
                   or click to browse • CSV, XLSX, XLS files only • Max 10MB
                 </p>
               </div>
@@ -468,11 +468,11 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
         {/* Upload Progress */}
         {uploading && (
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-sm text-slate-300">
               <span>Uploading and processing...</span>
               <span>{progress}%</span>
             </div>
-            <Progress value={progress} className="w-full" />
+            <Progress value={progress} className="w-full bg-slate-700" />
           </div>
         )}
 
@@ -480,7 +480,7 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
         <Button
           onClick={handleUpload}
           disabled={!file || uploading}
-          className="w-full"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           size="lg"
         >
           {uploading ? (
@@ -501,45 +501,45 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               {result.success ? (
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-green-400" />
               ) : (
-                <AlertCircle className="h-5 w-5 text-yellow-500" />
+                <AlertCircle className="h-5 w-5 text-yellow-400" />
               )}
-              <h4 className="font-medium">
+              <h4 className="font-medium text-slate-200">
                 Import {result.success ? 'Completed' : 'Completed with Issues'}
               </h4>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{result.imported}</div>
-                <div className="text-sm text-green-700">Users Imported</div>
+              <div className="text-center p-4 bg-slate-700 rounded-lg border border-slate-600">
+                <div className="text-2xl font-bold text-green-400">{result.imported}</div>
+                <div className="text-sm text-slate-300">Users Imported</div>
               </div>
               
               {result.duplicates.length > 0 && (
-                <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">{result.duplicates.length}</div>
-                  <div className="text-sm text-yellow-700">Duplicates Skipped</div>
+                <div className="text-center p-4 bg-slate-700 rounded-lg border border-slate-600">
+                  <div className="text-2xl font-bold text-yellow-400">{result.duplicates.length}</div>
+                  <div className="text-sm text-slate-300">Duplicates Skipped</div>
                 </div>
               )}
               
               {result.errors.length > 0 && (
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <div className="text-2xl font-bold text-red-600">{result.errors.length}</div>
-                  <div className="text-sm text-red-700">Errors</div>
+                <div className="text-center p-4 bg-slate-700 rounded-lg border border-slate-600">
+                  <div className="text-2xl font-bold text-red-400">{result.errors.length}</div>
+                  <div className="text-sm text-slate-300">Errors</div>
                 </div>
               )}
             </div>
 
             {/* Duplicates */}
             {result.duplicates.length > 0 && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Duplicate emails skipped:</strong>
+              <Alert className="bg-slate-700 border-slate-600">
+                <AlertCircle className="h-4 w-4 text-yellow-400" />
+                <AlertDescription className="text-slate-300">
+                  <strong className="text-yellow-400">Duplicate emails skipped:</strong>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {result.duplicates.map((email, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
+                      <Badge key={index} variant="secondary" className="text-xs bg-slate-600 text-slate-200">
                         {email}
                       </Badge>
                     ))}
@@ -550,16 +550,16 @@ admin@example.com,Jane Admin,Manager,IT,SGI Melbourne,admin,
 
             {/* Errors */}
             {result.errors.length > 0 && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Errors encountered:</strong>
+              <Alert variant="destructive" className="bg-red-900/20 border-red-800">
+                <AlertCircle className="h-4 w-4 text-red-400" />
+                <AlertDescription className="text-slate-300">
+                  <strong className="text-red-400">Errors encountered:</strong>
                   <ul className="mt-2 list-disc list-inside text-sm space-y-1">
                     {result.errors.slice(0, 10).map((error, index) => (
-                      <li key={index}>{error}</li>
+                      <li key={index} className="text-slate-300">{error}</li>
                     ))}
                     {result.errors.length > 10 && (
-                      <li className="text-gray-600">... and {result.errors.length - 10} more errors</li>
+                      <li className="text-slate-400">... and {result.errors.length - 10} more errors</li>
                     )}
                   </ul>
                 </AlertDescription>

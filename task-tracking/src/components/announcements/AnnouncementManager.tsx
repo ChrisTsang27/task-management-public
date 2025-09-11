@@ -42,7 +42,7 @@ interface AnnouncementStats {
   active: number;
 }
 
-export default function AnnouncementManager() {
+const AnnouncementManager = React.memo(function AnnouncementManager() {
   const { profile } = useSupabaseProfile();
   const [currentView, setCurrentView] = useState<View>("list");
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
@@ -260,4 +260,6 @@ export default function AnnouncementManager() {
       </ReactionsProvider>
     </div>
   );
-}
+});
+
+export default AnnouncementManager;

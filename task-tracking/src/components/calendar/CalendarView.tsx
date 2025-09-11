@@ -20,7 +20,7 @@ interface CalendarViewProps {
   teamId?: string;
 }
 
-export function CalendarView({ teamId }: CalendarViewProps) {
+export const CalendarView = React.memo(function CalendarView({ teamId }: CalendarViewProps) {
   const { user, profile } = useSupabaseProfile();
   const { events, categories, loading, createEvent, updateEvent, deleteEvent } = useCalendarEvents(teamId);
   
@@ -354,4 +354,4 @@ export function CalendarView({ teamId }: CalendarViewProps) {
       )}
     </div>
   );
-}
+});

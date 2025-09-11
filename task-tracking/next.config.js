@@ -41,14 +41,15 @@ const nextConfig = {
   // },
   
   // Webpack optimizations - temporarily simplified
-  webpack: (config, { dev: _dev, isServer: _isServer }) => {
-    // Basic configuration only
-    /*
+  webpack: (config, { dev, isServer }) => {
+    // Optimized configuration for better performance
     if (!dev && !isServer) {
-      // Simplified optimization
+      // Enhanced optimization for production
       config.optimization = config.optimization || {};
       config.optimization.splitChunks = {
         chunks: 'all',
+        maxInitialRequests: 25,
+        maxAsyncRequests: 25,
         cacheGroups: {
           default: {
            minChunks: 2,
@@ -60,36 +61,63 @@ const nextConfig = {
            name: 'vendors',
            priority: -10,
            chunks: 'all',
+           enforce: true,
          },
          // Separate chunk for UI components
          ui: {
            test: /[\\/]node_modules[\\/](@radix-ui|lucide-react)[\\/]/,
            name: 'ui-components',
-           priority: 10,
+           priority: 15,
            chunks: 'all',
+           enforce: true,
          },
          // Separate chunk for TipTap editor
          editor: {
            test: /[\\/]node_modules[\\/]@tiptap[\\/]/,
            name: 'editor',
-           priority: 10,
+           priority: 20,
            chunks: 'all',
+           enforce: true,
          },
          // Separate chunk for Supabase
          supabase: {
            test: /[\\/]node_modules[\\/]@supabase[\\/]/,
            name: 'supabase',
-           priority: 10,
+           priority: 18,
            chunks: 'all',
+           enforce: true,
+         },
+         // Calendar libraries chunk
+         calendar: {
+           test: /[\\/]node_modules[\\/](react-big-calendar|moment|date-fns)[\\/]/,
+           name: 'calendar',
+           priority: 16,
+           chunks: 'all',
+           enforce: true,
+         },
+         // DnD Kit chunk
+         dnd: {
+           test: /[\\/]node_modules[\\/]@dnd-kit[\\/]/,
+           name: 'dnd-kit',
+           priority: 14,
+           chunks: 'all',
+           enforce: true,
+         },
+         // Excel processing chunk
+         excel: {
+           test: /[\\/]node_modules[\\/](exceljs|papaparse)[\\/]/,
+           name: 'excel',
+           priority: 12,
+           chunks: 'all',
+           enforce: true,
          },
        },
      };
+     
+     // Tree shaking optimizations
+     config.optimization.usedExports = true;
+     config.optimization.sideEffects = false;
    }
-   
-   // Tree shaking optimizations
-   config.optimization.usedExports = true;
-   config.optimization.sideEffects = false;
-   */
    
    return config;
  },
