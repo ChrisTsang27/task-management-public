@@ -12,6 +12,8 @@ import {
   GripVertical
 } from 'lucide-react';
 
+import { useDraggable } from '@dnd-kit/core';
+
 import { cn } from '@/lib/utils';
 import {
   Task,
@@ -27,9 +29,9 @@ interface AssistanceRequestCardProps {
   onApprove?: (taskId: string) => void;
   onReject?: (taskId: string) => void;
   onAssign?: (taskId: string) => void;
+  canApprove?: boolean;
   isDragging?: boolean;
   dragHandleProps?: Record<string, unknown>;
-  canApprove?: boolean;
 }
 
 export function AssistanceRequestCard({
@@ -39,10 +41,24 @@ export function AssistanceRequestCard({
   onApprove,
   onReject,
   onAssign,
+  canApprove = false,
   isDragging = false,
-  dragHandleProps,
-  canApprove = false
+  dragHandleProps
 }: AssistanceRequestCardProps) {
+  // Drag functionality
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+  } = useDraggable({ id: task.id });
+
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0 : 1,
+    visibility: isDragging ? 'hidden' : 'visible',
+    zIndex: isDragging ? 1000 : 'auto',
+  } as React.CSSProperties;
   const isOverdue = task.due_date && isAfter(new Date(), new Date(task.due_date));
   const isDueSoon = task.due_date && 
     isBefore(new Date(), new Date(task.due_date)) && 
@@ -71,14 +87,17 @@ export function AssistanceRequestCard({
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
       className={cn(
         'group relative overflow-hidden rounded-2xl transition-all duration-300 cursor-pointer border-l-4',
         'bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border-blue-500/50 backdrop-blur-xl',
         'hover:scale-[1.02] hover:shadow-2xl hover:border-blue-400/70',
-        isDragging && 'opacity-60 rotate-3 scale-110 z-50',
         isOverdue && 'border-l-red-500/70 bg-gradient-to-br from-red-900/40 to-pink-900/40 shadow-lg shadow-red-500/20',
         isDueSoon && 'border-l-yellow-500/70 bg-gradient-to-br from-yellow-900/40 to-orange-900/40 shadow-lg shadow-yellow-500/20',
-        task.status === 'awaiting_approval' && 'border-l-purple-500/70 bg-gradient-to-br from-purple-900/40 to-violet-900/40 shadow-lg shadow-purple-500/20'
+        task.status === 'awaiting_approval' && 'border-l-purple-500/70 bg-gradient-to-br from-purple-900/40 to-violet-900/40 shadow-lg shadow-purple-500/20',
+        isDragging && 'scale-105 rotate-2 shadow-2xl shadow-blue-500/30 ring-2 ring-blue-400/50 bg-gradient-to-br from-blue-800/95 via-indigo-800/75 to-blue-900/95'
       )}
       onClick={onClick}
     >
@@ -90,7 +109,12 @@ export function AssistanceRequestCard({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 flex-1">
             {/* Drag Handle */}
-            <div {...dragHandleProps} className="opacity-0 group-hover:opacity-100 transition-all duration-200 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 cursor-grab active:cursor-grabbing transform hover:scale-110">
+            <div 
+              {...dragHandleProps}
+              {...listeners}
+              className="opacity-0 group-hover:opacity-100 transition-all duration-200 p-1.5 rounded-lg hover:text-white hover:bg-slate-700/50 cursor-grab active:cursor-grabbing transform hover:scale-110 text-slate-400"
+              onClick={(e) => e.stopPropagation()}
+            >
               <GripVertical className="w-4 h-4" />
             </div>
             

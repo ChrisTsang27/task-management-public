@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createClient } from '@supabase/supabase-js';
 
-import { UpdateTaskData, TASK_STATUS_TRANSITIONS, TaskStatus } from '@/types/tasks';
+import { UpdateTaskData, TaskStatus } from '@/types/tasks';
+import { isValidStatusTransition } from '@/utils/workflow';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -121,12 +122,10 @@ export async function PUT(
 
     // Validate status transition if status is being updated
     if (body.status && body.status !== currentTask.status) {
-      const allowedTransitions = TASK_STATUS_TRANSITIONS[currentTask.status as TaskStatus];
-      if (!allowedTransitions.includes(body.status)) {
+      if (!isValidStatusTransition(currentTask.status as TaskStatus, body.status)) {
         return NextResponse.json(
           { 
-            error: `Invalid status transition from ${currentTask.status} to ${body.status}`,
-            allowed_transitions: allowedTransitions
+            error: `Invalid status transition from ${currentTask.status} to ${body.status}`
           },
           { status: 400 }
         );
@@ -157,12 +156,7 @@ export async function PUT(
       .from('tasks')
       .update(updateData)
       .eq('id', id)
-      .select(`
-        *,
-        team:teams(id, name),
-        created_by_profile:profiles!tasks_created_by_fkey(id, full_name, title, department),
-        assignee_profile:profiles!tasks_assignee_id_fkey(id, full_name, title, department)
-      `)
+      .select('*')
       .single();
 
     if (error) {

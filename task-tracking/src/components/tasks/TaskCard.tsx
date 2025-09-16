@@ -1,8 +1,7 @@
 "use client";
 import React, { useMemo, useCallback } from 'react';
 
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useDraggable } from '@dnd-kit/core';
 import { format } from 'date-fns';
 import { Calendar, User, Clock, GripVertical, CheckCircle, XCircle, Brain, Zap, Users, AlertTriangle, TrendingUp, Trash2 } from 'lucide-react';
 
@@ -19,13 +18,13 @@ interface TaskCardProps {
   task: Task;
   teams?: Team[];
   onClick?: (task: Task) => void;
-  onStatusChange?: (taskId: string, newStatus: string) => void;
+  onStatusChange?: (taskId: string, newStatus: string, comment?: string) => void;
   onApproveRequest?: (taskId: string) => void;
   onRejectRequest?: (taskId: string) => void;
   onDeleteTask?: (taskId: string) => void;
-  isDragging?: boolean;
   className?: string;
   activeUsers?: string[]; // Users currently viewing/editing this task
+  isDragging?: boolean;
 }
 
 export const TaskCard = React.memo(function TaskCard({
@@ -37,21 +36,23 @@ export const TaskCard = React.memo(function TaskCard({
   onRejectRequest,
   onDeleteTask,
   activeUsers = [],
-  isDragging = false,
-  className = ''
+  className = '',
+  isDragging = false
 }: TaskCardProps) {
+  // Drag functionality
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
-    transition,
-  } = useSortable({ id: task.id });
+  } = useDraggable({ id: task.id });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0 : 1,
+    visibility: isDragging ? 'hidden' : 'visible',
+    zIndex: isDragging ? 1000 : 'auto',
+  } as React.CSSProperties;
 
   const handleClick = useCallback(() => {
     onClick?.(task);
@@ -148,9 +149,9 @@ export const TaskCard = React.memo(function TaskCard({
     onDeleteTask?.(task.id);
   }, [onDeleteTask, task.id]);
 
-  const handleStatusChange = useCallback((status: string) => (e: React.MouseEvent) => {
+  const handleStatusChange = useCallback((status: string, comment?: string) => (e: React.MouseEvent) => {
     e.stopPropagation();
-    onStatusChange?.(task.id, status);
+    onStatusChange?.(task.id, status, comment);
   }, [onStatusChange, task.id]);
 
   // Memoize status transition buttons
@@ -161,6 +162,7 @@ export const TaskCard = React.memo(function TaskCard({
     <div 
       ref={setNodeRef}
       style={style}
+      {...attributes}
       className={`
         group relative bg-gradient-to-br from-slate-800/80 via-slate-800/60 to-slate-900/80 
         border border-slate-600/50 rounded-xl p-5 cursor-pointer
@@ -171,11 +173,10 @@ export const TaskCard = React.memo(function TaskCard({
         before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-br 
         before:from-white/8 before:via-blue-500/5 before:to-purple-500/5 before:opacity-0
         hover:before:opacity-100 before:transition-all before:duration-500 before:ease-out
-        ${isDragging ? 'opacity-50 scale-95' : ''}
+        ${isDragging ? 'scale-105 rotate-2 shadow-2xl shadow-blue-500/30 ring-2 ring-blue-400/50 bg-gradient-to-br from-slate-700/95 via-slate-800/75 to-slate-900/95' : ''}
         ${className}
       `}
       onClick={handleClick}
-      {...attributes}
     >
       {/* Enhanced Glow Effect */}
       <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/8 via-purple-500/6 to-emerald-500/8 opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out" />
@@ -209,7 +210,7 @@ export const TaskCard = React.memo(function TaskCard({
         <div className="flex items-start gap-3 flex-1">
           <button
             {...listeners}
-            className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-700/50 transition-all duration-300 ease-out group-hover:text-blue-400 hover:scale-110"
+            className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-700/50 cursor-grab active:cursor-grabbing transition-all duration-200 transform hover:scale-110"
             onClick={(e) => e.stopPropagation()}
           >
             <GripVertical className="w-4 h-4" />
@@ -360,13 +361,13 @@ export const TaskCard = React.memo(function TaskCard({
          </div>
        ) : (
         onStatusChange && (
-          <div className="relative flex gap-3 mt-4 pt-4 border-t border-slate-600/50">
+          <div className="relative flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-600/50">
             {statusButtons.map((button) => (
               <Button
                 key={button.status}
                 size="sm"
                 variant="outline"
-                className="flex-1 text-slate-200 border-slate-500/50 hover:bg-slate-600/30 hover:border-slate-400/60 bg-slate-800/30 transition-all duration-300 ease-out hover:scale-105 active:scale-95 font-medium"
+                className="flex-shrink-0 min-w-0 px-3 py-1.5 text-xs text-slate-200 border-slate-500/50 hover:bg-slate-600/30 hover:border-slate-400/60 bg-slate-800/30 transition-all duration-300 ease-out hover:scale-105 active:scale-95 font-medium whitespace-nowrap"
                 onClick={handleStatusChange(button.status)}
               >
                 {button.label}

@@ -3,10 +3,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
 import { useDroppable } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
 import { Plus, Sparkles, Target, Clock, CheckCircle2 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +23,7 @@ interface KanbanColumnProps {
   column: KanbanColumnType;
   teams?: Team[];
   onTaskClick?: (task: Task) => void;
-  onTaskStatusChange?: (taskId: string, newStatus: string) => void;
+  onTaskStatusChange?: (taskId: string, newStatus: string, comment?: string) => void;
   onApproveRequest?: (taskId: string) => void;
   onRejectRequest?: (taskId: string) => void;
   onDeleteTask?: (taskId: string) => void;
@@ -35,6 +31,7 @@ interface KanbanColumnProps {
   currentUserId?: string;
   activeTaskUsers?: Record<string, string[]>;
   aiPriorityEnabled?: boolean;
+  activeId?: string | null;
 }
 
 export const KanbanColumn = React.memo(function KanbanColumn({
@@ -46,8 +43,10 @@ export const KanbanColumn = React.memo(function KanbanColumn({
   onRejectRequest,
   onDeleteTask,
   className = '',
-  activeTaskUsers
+  activeTaskUsers,
+  activeId
 }: KanbanColumnProps) {
+  // Droppable functionality
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
   });
@@ -99,8 +98,8 @@ export const KanbanColumn = React.memo(function KanbanColumn({
     onTaskClick?.(task);
   }, [onTaskClick]);
 
-  const handleTaskStatusChange = useCallback((taskId: string, newStatus: string) => {
-    onTaskStatusChange?.(taskId, newStatus);
+  const handleTaskStatusChange = useCallback((taskId: string, newStatus: string, comment?: string) => {
+    onTaskStatusChange?.(taskId, newStatus, comment);
   }, [onTaskStatusChange]);
 
   const handleApproveRequest = useCallback((taskId: string) => {
@@ -115,27 +114,21 @@ export const KanbanColumn = React.memo(function KanbanColumn({
     onDeleteTask?.(taskId);
   }, [onDeleteTask]);
 
-  // Trigger effects on drop
-  useEffect(() => {
-    if (isOver) {
-      setRippleEffect(true);
-      setParticleAnimation(true);
-      const timer = setTimeout(() => {
-        setRippleEffect(false);
-        setParticleAnimation(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isOver]);
+  // Drag effects removed
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        'relative p-6 space-y-4 min-h-[600px] transition-all duration-500 transform',
+        'relative p-6 space-y-4 min-h-[600px] transition-all duration-300 transform',
         columnStyling,
-        isOver && 'scale-105 shadow-2xl ring-2 ring-blue-400/50 ring-offset-2 ring-offset-slate-900',
         rippleEffect && 'animate-pulse',
+        // Enhanced entire column drop zone styling
+        isOver && 'scale-[1.02] shadow-2xl border-4 border-dashed',
+        isOver && column.id === 'awaiting_approval' && 'ring-4 ring-amber-400/60 border-amber-400/80 shadow-amber-500/40 bg-gradient-to-br from-amber-500/10 via-amber-400/5 to-orange-500/10',
+        isOver && column.id === 'in_progress' && 'ring-4 ring-blue-400/60 border-blue-400/80 shadow-blue-500/40 bg-gradient-to-br from-blue-500/10 via-blue-400/5 to-cyan-500/10',
+        isOver && column.id === 'pending_review' && 'ring-4 ring-purple-400/60 border-purple-400/80 shadow-purple-500/40 bg-gradient-to-br from-purple-500/10 via-purple-400/5 to-pink-500/10',
+        isOver && column.id === 'done' && 'ring-4 ring-emerald-400/60 border-emerald-400/80 shadow-emerald-500/40 bg-gradient-to-br from-emerald-500/10 via-emerald-400/5 to-green-500/10',
         className
       )}
     >
@@ -143,12 +136,85 @@ export const KanbanColumn = React.memo(function KanbanColumn({
       <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/20 rounded-2xl" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent rounded-2xl" />
       
-      {/* Animated Border Glow */}
-      <div className={cn(
-        'absolute inset-0 rounded-2xl transition-opacity duration-500',
-        isOver ? 'opacity-100' : 'opacity-0',
-        'bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-cyan-500/20 blur-xl'
-      )} />
+      {/* Enhanced Full Column Drop Zone Overlay */}
+      {isOver && (
+        <div className={cn(
+          "absolute inset-0 rounded-2xl border-4 border-dashed animate-pulse pointer-events-none z-10",
+          column.id === 'awaiting_approval' && 'border-amber-400/90 shadow-[0_0_30px_rgba(251,191,36,0.4)] bg-gradient-to-br from-amber-400/15 via-amber-500/8 to-orange-400/12',
+          column.id === 'in_progress' && 'border-blue-400/90 shadow-[0_0_30px_rgba(96,165,250,0.4)] bg-gradient-to-br from-blue-400/15 via-blue-500/8 to-cyan-400/12',
+          column.id === 'pending_review' && 'border-purple-400/90 shadow-[0_0_30px_rgba(196,181,253,0.4)] bg-gradient-to-br from-purple-400/15 via-purple-500/8 to-pink-400/12',
+          column.id === 'done' && 'border-emerald-400/90 shadow-[0_0_30px_rgba(52,211,153,0.4)] bg-gradient-to-br from-emerald-400/15 via-emerald-500/8 to-green-400/12'
+        )} />
+      )}
+      
+      {/* Prominent Full Column Drop Indicator */}
+      {isOver && (
+        <div className="absolute top-8 left-8 right-8 flex items-center justify-center py-6 bg-black/40 border-2 border-white/30 rounded-2xl backdrop-blur-md pointer-events-none z-20 shadow-2xl">
+          <div className="flex items-center gap-4">
+            <div className={cn(
+              "w-8 h-8 rounded-full flex items-center justify-center animate-bounce",
+              column.id === 'awaiting_approval' && 'bg-amber-400',
+              column.id === 'in_progress' && 'bg-blue-400',
+              column.id === 'pending_review' && 'bg-purple-400',
+              column.id === 'done' && 'bg-emerald-400'
+            )}>
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </div>
+            <div className="text-xl text-white font-bold tracking-wide">
+              Drop anywhere in this column
+            </div>
+            <div className={cn(
+              "w-8 h-8 rounded-full flex items-center justify-center animate-bounce",
+              column.id === 'awaiting_approval' && 'bg-amber-400',
+              column.id === 'in_progress' && 'bg-blue-400',
+              column.id === 'pending_review' && 'bg-purple-400',
+              column.id === 'done' && 'bg-emerald-400'
+            )} style={{animationDelay: '0.2s'}}>
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Enhanced Corner Indicators */}
+      {isOver && (
+        <>
+          <div className={cn(
+            "absolute top-2 left-2 w-6 h-6 rounded-full animate-ping pointer-events-none z-15",
+            column.id === 'awaiting_approval' && 'bg-amber-400/80',
+            column.id === 'in_progress' && 'bg-blue-400/80',
+            column.id === 'pending_review' && 'bg-purple-400/80',
+            column.id === 'done' && 'bg-emerald-400/80'
+          )} />
+          <div className={cn(
+            "absolute top-2 right-2 w-6 h-6 rounded-full animate-ping pointer-events-none z-15",
+            column.id === 'awaiting_approval' && 'bg-amber-400/80',
+            column.id === 'in_progress' && 'bg-blue-400/80',
+            column.id === 'pending_review' && 'bg-purple-400/80',
+            column.id === 'done' && 'bg-emerald-400/80'
+          )} style={{animationDelay: '0.3s'}} />
+          <div className={cn(
+            "absolute bottom-2 left-2 w-6 h-6 rounded-full animate-ping pointer-events-none z-15",
+            column.id === 'awaiting_approval' && 'bg-amber-400/80',
+            column.id === 'in_progress' && 'bg-blue-400/80',
+            column.id === 'pending_review' && 'bg-purple-400/80',
+            column.id === 'done' && 'bg-emerald-400/80'
+          )} style={{animationDelay: '0.6s'}} />
+          <div className={cn(
+            "absolute bottom-2 right-2 w-6 h-6 rounded-full animate-ping pointer-events-none z-15",
+            column.id === 'awaiting_approval' && 'bg-amber-400/80',
+            column.id === 'in_progress' && 'bg-blue-400/80',
+            column.id === 'pending_review' && 'bg-purple-400/80',
+            column.id === 'done' && 'bg-emerald-400/80'
+          )} style={{animationDelay: '0.9s'}} />
+        </>
+      )}
+      
+      {/* Drag effects removed */}
       
       {/* Floating Particles Effect */}
       {particleAnimation && (
@@ -199,94 +265,114 @@ export const KanbanColumn = React.memo(function KanbanColumn({
         
 
       </div>
-      {/* Enhanced Task List Container */}
-      <div className="relative space-y-4">
-        <SortableContext 
-          items={taskIds} 
-          strategy={verticalListSortingStrategy}
-        >
-          {column.tasks.map((task, index) => (
-            <div
-              key={task.id}
-              className="transform transition-all duration-300"
-              style={{
-                animationDelay: `${index * 0.05}s`
-              }}
-            >
-              <TaskCard
-                task={task}
-                teams={memoizedTeams}
-                onClick={() => handleTaskClick(task)}
-                onStatusChange={handleTaskStatusChange}
-                onApproveRequest={handleApproveRequest}
-                onRejectRequest={handleRejectRequest}
-                onDeleteTask={handleDeleteTask}
-                activeUsers={memoizedActiveTaskUsers[task.id] || []}
-                className="cursor-pointer hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 animate-fade-in"
-              />
-            </div>
-          ))}
-        </SortableContext>
+      
+      {/* Task List Container - Subtle inner drop zone */}
+      <div 
+        className={cn(
+          "relative space-y-4 min-h-[200px] p-2 rounded-lg transition-all duration-300 ease-out flex-1",
+          // Subtle inner styling - main drop zone is now the entire column
+          "border border-slate-600/20",
+          // Minimal additional styling when dragging over since column handles main feedback
+          isOver && "border-slate-500/40"
+        )}
+      >
+        
+        {column.tasks.map((task, index) => (
+          <div
+            key={task.id}
+            className="transform transition-all duration-300 relative z-20"
+            style={{
+              animationDelay: `${index * 0.05}s`
+            }}
+          >
+            <TaskCard
+              task={task}
+              teams={memoizedTeams}
+              onClick={() => handleTaskClick(task)}
+              onStatusChange={handleTaskStatusChange}
+              onApproveRequest={handleApproveRequest}
+              onRejectRequest={handleRejectRequest}
+              onDeleteTask={handleDeleteTask}
+              activeUsers={memoizedActiveTaskUsers[task.id] || []}
+              isDragging={activeId === task.id}
+              className="cursor-pointer hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 animate-fade-in"
+            />
+          </div>
+        ))}
+        
+        {/* Spacer to ensure drop zone extends to bottom */}
+        <div className="flex-1 min-h-[60px]" />
       </div>
       
-      {/* Premium Empty State for Column */}
+      {/* Empty State for Column */}
       {column.tasks.length === 0 && (
         <div className={cn(
-          'relative flex flex-col items-center justify-center h-48 text-slate-400 text-sm transition-all duration-500',
-          isOver && 'scale-110 text-slate-300'
+          "relative flex flex-col items-center justify-center h-48 text-slate-400 text-sm transition-all duration-300 border-2 border-dashed border-slate-600/30 rounded-lg",
+          isOver && "transform scale-105 border-blue-400/80 bg-gradient-to-br from-blue-500/15 via-purple-500/10 to-cyan-500/15 shadow-xl shadow-blue-500/40"
         )}>
-          {/* Animated Background Glow */}
+          {/* Enhanced Background with border effects */}
           <div className={cn(
-            'absolute inset-0 rounded-2xl transition-all duration-500',
-            isOver ? 'bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-cyan-500/10' : 'bg-transparent'
+            "absolute inset-0 rounded-lg transition-all duration-300",
+            isOver && "bg-gradient-to-br from-blue-400/10 via-blue-500/5 to-purple-400/10 border-2 border-blue-400/60"
           )} />
           
           {/* Enhanced Drop Zone */}
           <div className={cn(
-            'relative w-20 h-20 rounded-3xl border-2 border-dashed flex items-center justify-center mb-4 transition-all duration-500 backdrop-blur-sm',
+            "relative w-24 h-24 rounded-3xl border-3 border-dashed flex items-center justify-center mb-6 backdrop-blur-sm group cursor-pointer transition-all duration-300",
             isOver 
-              ? 'border-blue-400/70 bg-blue-500/10 shadow-lg shadow-blue-500/25 scale-110' 
-              : 'border-slate-600/50 bg-slate-700/20',
-            'group cursor-pointer'
+              ? "border-blue-400/90 bg-blue-500/25 shadow-xl shadow-blue-500/50 scale-125 animate-bounce" 
+              : "border-slate-600/60 bg-slate-700/30 hover:border-slate-500/80 hover:bg-slate-600/40"
           )}>
-            {/* Floating Icon with Animation */}
+            {/* Icon */}
             <div className={cn(
-              'transition-all duration-300',
-              isOver ? 'animate-bounce' : ''
+              "transition-all duration-300",
+              isOver ? "text-blue-300 scale-150" : "text-slate-500"
             )}>
               {columnIcon}
             </div>
-            
-            {/* Ripple Effect */}
-            {isOver && (
-              <div className="absolute inset-0 rounded-3xl border-2 border-blue-400/30 animate-ping" />
-            )}
           </div>
           
-          {/* Enhanced Text with Gradient */}
+          {/* Prominent drop message when dragging */}
+          {isOver && (
+            <div className="absolute top-4 left-4 right-4 flex items-center justify-center py-3 bg-blue-500/20 border-2 border-blue-400/70 rounded-xl backdrop-blur-sm pointer-events-none z-10 shadow-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-blue-400 flex items-center justify-center animate-pulse">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+                <div className="text-sm text-blue-300 font-semibold">
+                  Drop your task here
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Edge highlights for empty state */}
+          {isOver && (
+            <>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 animate-pulse pointer-events-none rounded-t-lg" />
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 animate-pulse pointer-events-none rounded-b-lg" />
+              <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-blue-400 via-purple-400 to-blue-400 animate-pulse pointer-events-none rounded-l-lg" />
+              <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-b from-blue-400 via-purple-400 to-blue-400 animate-pulse pointer-events-none rounded-r-lg" />
+            </>
+          )}
+          
+          {/* Text */}
           <div className="text-center space-y-2 relative z-10">
-            <p className={cn(
-              `${TYPOGRAPHY_PRESETS.content.body} ${typography().setWeight('semibold').setAnimation('fade-in').build()} transition-all duration-300`,
-              isOver 
-                ? 'text-blue-300' 
-                : 'text-slate-400'
-            )}>
-              {isOver ? 'Release to drop here' : 'Drop tasks here'}
+            <p className={`${TYPOGRAPHY_PRESETS.content.body} ${typography().setWeight('semibold').setAnimation('fade-in').build()} text-slate-400`}>
+              No tasks yet
             </p>
-            <p className={cn(
-              `${getContextualTypography('muted', 'caption-md')} transition-all duration-300`,
-              isOver ? 'text-blue-400/80' : 'text-slate-500'
-            )}>
-              {isOver ? 'Perfect!' : 'or drag from other columns'}
+            <p className={`${getContextualTypography('muted', 'caption-md')} text-slate-500`}>
+              Tasks will appear here
             </p>
             
             {/* Animated Dots */}
-            {!isOver && (
-              <div className="flex justify-center gap-1 mt-3">
-                {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-1 h-1 bg-slate-500 rounded-full animate-pulse"
+            <div className="flex justify-center gap-1 mt-3">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-1 h-1 bg-slate-500 rounded-full animate-pulse"
                     style={{
                       animationDelay: `${i * 0.2}s`,
                       animationDuration: '1.5s'
@@ -294,10 +380,7 @@ export const KanbanColumn = React.memo(function KanbanColumn({
                   />
                 ))}
               </div>
-            )}
           </div>
-          
-
         </div>
       )}
     </div>

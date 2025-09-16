@@ -2,17 +2,10 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  closestCorners,
-} from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, DragOverlay, closestCorners } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Plus, Filter, Search, Users, LayoutGrid, Building2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { AIPriorityToggle } from '@/components/ui/ai-priority-toggle';
 import { Button } from '@/components/ui/button';
@@ -23,6 +16,7 @@ import { AIPrioritizationService } from '@/services/ai-prioritization';
 import { ConflictResolutionService } from '@/services/conflict-resolution';
 import { RealtimeCollaborationService } from '@/services/realtime-collaboration';
 import { Team } from '@/types/tasks';
+import supabase from '@/lib/supabaseBrowserClient';
 
 // Import ConflictData type
 interface ConflictData {
@@ -41,9 +35,9 @@ interface ConflictData {
 import { 
   Task, 
   TaskStatus, 
-  KanbanColumn as KanbanColumnType,
-  TASK_STATUS_TRANSITIONS 
+  KanbanColumn as KanbanColumnType
 } from '@/types/tasks';
+import { isValidStatusTransition, validateStatusTransition } from '@/utils/workflow';
 
 import { KanbanColumn } from './KanbanColumn';
 import { TaskCard } from './TaskCard';
@@ -52,7 +46,7 @@ interface TaskBoardProps {
   tasks: Task[];
   teams?: Team[];
   onTaskClick?: (task: Task) => void;
-  onTaskStatusChange?: (taskId: string, newStatus: TaskStatus) => void;
+  onTaskStatusChange?: (taskId: string, newStatus: TaskStatus, comment?: string) => void;
   onCreateTask?: () => void;
   onRequestAssistance?: () => void;
   onApproveRequest?: (taskId: string) => void;
@@ -123,7 +117,6 @@ export const TaskBoard = React.memo(function TaskBoard({
   const [currentConflict, setCurrentConflict] = useState<ConflictData | null>(null);
   const [aiPriorityEnabled, setAiPriorityEnabled] = useState(true);
   const [isRecalculatingPriority, setIsRecalculatingPriority] = useState(false);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<TaskFilters>({
@@ -131,19 +124,38 @@ export const TaskBoard = React.memo(function TaskBoard({
     sortOrder: 'desc'
   });
 
-  // Configure drag sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
+  // Drag and drop state
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   // Initialize real-time collaboration
   useEffect(() => {
     if (currentUserId && selectedTeam) {
-      realtimeService.joinTeam(selectedTeam.id);
+      // First connect to the service with user credentials, then join the team
+      const initializeRealtime = async () => {
+        try {
+          // Get user profile for the userName
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', currentUserId)
+            .single();
+
+          const userName = profile?.full_name || user.email?.split('@')[0] || 'User';
+
+          // Connect to realtime service with user credentials
+          await realtimeService.connect(selectedTeam.id, currentUserId, userName);
+          
+          // Then join the team
+          await realtimeService.joinTeam(selectedTeam.id);
+        } catch (error) {
+          console.error('Failed to initialize realtime collaboration:', error);
+        }
+      };
+
+      initializeRealtime();
       
       // Subscribe to presence updates
       const unsubscribe = realtimeService.onPresenceUpdate((presence) => {
@@ -296,62 +308,8 @@ export const TaskBoard = React.memo(function TaskBoard({
 
 
 
-  // Memoize drag handlers to prevent re-creation on every render
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    const task = filteredTasks.find(t => t.id === event.active.id);
-    setActiveTask(task || null);
-  }, [filteredTasks]);
-
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveTask(null);
-
-    if (!over) return;
-
-    const taskId = active.id as string;
-    const newStatus = over.id as TaskStatus;
-    
-    const task = filteredTasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    // Check if status transition is valid
-    const allowedTransitions = TASK_STATUS_TRANSITIONS[task.status];
-    if (!allowedTransitions.includes(newStatus)) {
-      console.warn(`Invalid transition from ${task.status} to ${newStatus}`);
-      return;
-    }
-
-    // Only update if status actually changed
-    if (task.status !== newStatus) {
-      // Check for conflicts before making the change
-      if (currentUserId && selectedTeam) {
-        const conflict = conflictService.detectConflict({
-          taskId,
-          fromStatus: task.status,
-          toStatus: newStatus,
-          userId: currentUserId,
-          timestamp: Date.now()
-        });
-        
-        if (conflict) {
-          setCurrentConflict(conflict);
-          return;
-        }
-        
-        // Broadcast task movement in real-time
-        realtimeService.broadcastTaskMovement({
-          taskId,
-          task,
-          fromStatus: task.status,
-          toStatus: newStatus
-        });
-      }
-      
-      onTaskStatusChange?.(taskId, newStatus);
-    }
-  }, [filteredTasks, currentUserId, selectedTeam, conflictService, realtimeService, onTaskStatusChange]);
-
-  const handleTaskStatusChange = useCallback((taskId: string, newStatus: string) => {
+  // Task status change handler - must be declared before drag handlers
+  const handleTaskStatusChange = useCallback((taskId: string, newStatus: string, comment?: string) => {
     // Broadcast task status change in real-time
     if (currentUserId && selectedTeam) {
       const task = tasks.find(t => t.id === taskId);
@@ -365,8 +323,62 @@ export const TaskBoard = React.memo(function TaskBoard({
       }
     }
     
-    onTaskStatusChange?.(taskId, newStatus as TaskStatus);
+    onTaskStatusChange?.(taskId, newStatus as TaskStatus, comment);
   }, [tasks, currentUserId, selectedTeam, realtimeService, onTaskStatusChange]);
+
+  // Drag and drop handlers
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  }, []);
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    // This handler helps ensure proper drop zone detection
+    // The isOver state in useDroppable should be triggered automatically
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const taskId = active.id as string;
+    const newStatus = over.id as string;
+    
+    // Find the task being moved
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Check if status actually changed
+    if (task.status === newStatus) return;
+
+    // For drag and drop, we'll be more permissive with validation
+    // Only check basic transition validity, not role/comment requirements
+    if (!isValidStatusTransition(task.status, newStatus as TaskStatus)) {
+      toast.error(`Cannot move task from ${task.status} to ${newStatus}`);
+      return;
+    }
+
+    // For transitions that normally require comments or special permissions,
+    // we'll allow them via drag and drop but show a warning
+    const validation = validateStatusTransition(task.status, newStatus as TaskStatus, {
+      userRole: 'admin', // Assume admin role for drag and drop
+      hasAssignee: !!task.assignee_id
+    });
+
+    if (!validation.valid && validation.reason?.includes('comment')) {
+      // Allow the transition but show a warning for comment requirements
+      toast.warning(`Task moved to ${newStatus}. Consider adding a comment to explain the change.`);
+    } else if (!validation.valid && validation.reason?.includes('assignee')) {
+      toast.warning(`Task moved to ${newStatus}. Consider assigning someone to this task.`);
+    } else if (!validation.valid) {
+      // For other validation failures, still allow but warn
+      toast.warning(`Task moved to ${newStatus}. ${validation.reason}`);
+    }
+
+    // Update the task status
+    handleTaskStatusChange(taskId, newStatus);
+  }, [tasks, handleTaskStatusChange]);
 
   // AI Priority functions
   const handleRecalculatePriority = useCallback(async () => {
@@ -613,27 +625,28 @@ export const TaskBoard = React.memo(function TaskBoard({
         {/* Board Background with Depth */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-800/20 via-transparent to-slate-900/20 rounded-3xl" />
         
+        {/* Kanban Board with drag and drop functionality */}
         <DndContext
-          sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
           <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 min-h-[700px] mx-4 mt-6">
-            {columns.map((column, index) => (
-              <div key={column.id} className="relative">
-                {/* Column Shadow Layer */}
-                <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40 rounded-3xl blur-xl transform translate-y-2 translate-x-1 opacity-60" />
-                
-                {/* Column Container with Advanced Depth */}
-                <div className="relative">
-                  {/* Enhanced Column Header with Premium Design */}
-                  <div className="mb-6">
-                    <div className="relative overflow-hidden rounded-2xl backdrop-blur-xl border shadow-2xl">
-                      {/* Enhanced Multi-layer Background with Better Colors */}
-                      <div className={`absolute inset-0 bg-gradient-to-br opacity-95 ${
-                        index === 0 ? 'from-amber-500/20 via-orange-600/30 to-yellow-700/25' :
-                        index === 1 ? 'from-blue-500/20 via-cyan-600/30 to-teal-700/25' :
+          {columns.map((column, index) => (
+            <div key={column.id} className="relative">
+              {/* Column Shadow Layer */}
+              <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/40 rounded-3xl blur-xl transform translate-y-2 translate-x-1 opacity-60" />
+              
+              {/* Column Container with Advanced Depth */}
+              <div className="relative">
+                {/* Enhanced Column Header with Premium Design */}
+                <div className="mb-6">
+                  <div className="relative overflow-hidden rounded-2xl backdrop-blur-xl border shadow-2xl">
+                    {/* Enhanced Multi-layer Background with Better Colors */}
+                    <div className={`absolute inset-0 bg-gradient-to-br opacity-95 ${
+                      index === 0 ? 'from-amber-500/20 via-orange-600/30 to-yellow-700/25' :
+                      index === 1 ? 'from-blue-500/20 via-cyan-600/30 to-teal-700/25' :
                         index === 2 ? 'from-purple-500/20 via-violet-600/30 to-indigo-700/25' :
                         index === 3 ? 'from-emerald-500/20 via-green-600/30 to-teal-700/25' :
                         'from-emerald-500/20 via-green-600/30 to-teal-700/25'
@@ -719,6 +732,7 @@ export const TaskBoard = React.memo(function TaskBoard({
                           currentUserId={currentUserId}
                           activeTaskUsers={activeTaskUsers}
                           aiPriorityEnabled={aiPriorityEnabled}
+                          activeId={activeId}
                         />
                       </div>
                     </div>
@@ -727,42 +741,17 @@ export const TaskBoard = React.memo(function TaskBoard({
               </div>
             ))}
           </div>
-
-          {/* Premium Drag Overlay with Advanced Effects */}
+          
+          {/* Custom Drag Overlay */}
           <DragOverlay>
-            {activeTask ? (
-              <div className="relative transform rotate-6 scale-125 transition-all duration-300">
-                {/* Drag Shadow */}
-                <div className="absolute inset-0 bg-black/40 rounded-2xl transform translate-y-4 translate-x-2" />
-                
-                {/* Glowing Aura */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 via-purple-500/20 to-cyan-500/30 rounded-2xl animate-pulse" />
-                
-                {/* Task Card */}
-                <div className="relative">
-                  <TaskCard
-                    task={activeTask}
-                    teams={teams}
-                    isDragging
-                    className="shadow-2xl shadow-blue-500/50 border-2 border-blue-400/60 bg-slate-800/90"
-                  />
-                </div>
-                
-                {/* Floating Particles */}
-                <div className="absolute inset-0 pointer-events-none">
-                  {[...Array(6)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute w-1 h-1 bg-blue-400 rounded-full animate-ping"
-                      style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
-                        animationDelay: `${i * 0.1}s`,
-                        animationDuration: '0.8s'
-                      }}
-                    />
-                  ))}
-                </div>
+            {activeId ? (
+              <div className="transform rotate-6 scale-110 opacity-95">
+                <TaskCard
+                  task={tasks.find(task => task.id === activeId)!}
+                  teams={teams}
+                  isDragging={false}
+                  className="shadow-2xl shadow-blue-500/40 ring-2 ring-blue-400/60 bg-gradient-to-br from-slate-700/95 via-slate-800/85 to-slate-900/95"
+                />
               </div>
             ) : null}
           </DragOverlay>

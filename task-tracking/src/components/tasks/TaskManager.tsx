@@ -557,6 +557,7 @@ export const TaskManager = React.memo(function TaskManager({
             onRejectRequest={handleRejectRequest}
             onDeleteTask={handleDeleteTask}
             loading={loading}
+            currentUserId={currentUserId}
             selectedTeam={selectedTeam}
           />
         );
@@ -657,6 +658,7 @@ export const TaskManager = React.memo(function TaskManager({
             onRejectRequest={handleRejectRequest}
             onDeleteTask={handleDeleteTask}
             loading={loading}
+            currentUserId={currentUserId}
           />
         );
     }
