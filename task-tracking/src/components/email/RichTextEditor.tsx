@@ -123,7 +123,6 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
         showOnlyCurrent: false,
         includeChildren: true,
         emptyEditorClass: 'is-editor-empty',
-        considerDocument: true,
       }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Table.configure({ resizable: true, lastColumnResizable: true }),

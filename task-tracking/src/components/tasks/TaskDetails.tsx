@@ -201,19 +201,20 @@ export function TaskDetails({
         console.log('Task updated successfully:', updatedTask);
         
         // Update the local task state immediately
-        task.assignee_id = newAssigneeId;
+        task.assignee_id = newAssigneeId || undefined;
         
         // If we have user data, update the assignee profile
         if (newAssigneeId && users.length > 0) {
           const assignedUser = users.find(u => u.id === newAssigneeId);
           if (assignedUser) {
             task.assignee_profile = {
+              id: newAssigneeId,
               full_name: assignedUser.name,
-              email: assignedUser.email || ''
+              title: assignedUser.email || undefined // Using email as title since that's what we have
             };
           }
         } else {
-          task.assignee_profile = null;
+          task.assignee_profile = undefined;
         }
         
         // Trigger a refresh in the parent component
