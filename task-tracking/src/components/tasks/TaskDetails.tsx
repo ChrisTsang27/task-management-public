@@ -12,7 +12,9 @@ import {
   Activity,
   CheckCircle2,
   AlertCircle,
-  Clock3
+  Clock3,
+  Check,
+  X
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -28,6 +30,13 @@ import {
 } from '@/components/ui/dialog';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import supabase from '@/lib/supabaseBrowserClient';
 import { cn } from '@/lib/utils';
 import { 
@@ -59,6 +68,13 @@ export function TaskDetails({
 }: TaskDetailsProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [teams, setTeams] = useState<{id: string, name: string}[]>([]);
+  const [isEditingAssignee, setIsEditingAssignee] = useState(false);
+  const [users, setUsers] = useState<{id: string, name: string, email: string}[]>([]);
+  const [isUpdatingAssignee, setIsUpdatingAssignee] = useState(false);
+  const [assigneeProfile, setAssigneeProfile] = useState<{id: string, full_name: string} | null>(null);
+  const [teamInfo, setTeamInfo] = useState<{id: string, name: string} | null>(null);
+
+
 
   // Fetch teams for name lookup
   useEffect(() => {
@@ -82,6 +98,140 @@ export function TaskDetails({
     };
     fetchTeams();
   }, []);
+
+  // Fetch assignee profile if missing
+  useEffect(() => {
+    const fetchAssigneeProfile = async () => {
+      if (task?.assignee_id && !task.assignee_profile) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .eq('id', task.assignee_id)
+            .single();
+
+          if (error) throw error;
+          setAssigneeProfile(data);
+        } catch (error) {
+          console.error('Error fetching assignee profile:', error);
+          setAssigneeProfile(null);
+        }
+      } else {
+        setAssigneeProfile(null);
+      }
+    };
+
+    fetchAssigneeProfile();
+  }, [task?.assignee_id, task?.assignee_profile]);
+
+  // Fetch team info if missing
+  useEffect(() => {
+    const fetchTeamInfo = async () => {
+      if (task?.team_id && !task.team) {
+        try {
+          const { data, error } = await supabase
+            .from('teams')
+            .select('id, name')
+            .eq('id', task.team_id)
+            .single();
+
+          if (error) throw error;
+          setTeamInfo(data);
+        } catch (error) {
+          console.error('Error fetching team info:', error);
+          setTeamInfo(null);
+        }
+      } else {
+        setTeamInfo(null);
+      }
+    };
+
+    fetchTeamInfo();
+  }, [task?.team_id, task?.team]);
+
+  // Fetch users for assignee selection
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, title, department')
+        .not('full_name', 'like', '%[DELETED USER]%')
+        .order('full_name');
+
+      if (error) throw error;
+      
+      const formattedUsers = (data || []).map(user => ({
+        id: user.id,
+        name: user.full_name || 'Unknown User',
+        email: user.title || user.department || 'No details'
+      }));
+      
+      setUsers(formattedUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  // Update task assignee
+  const updateAssignee = async (newAssigneeId: string | null) => {
+    if (!task) return;
+    
+    setIsUpdatingAssignee(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.error('No session found');
+        return;
+      }
+
+      console.log('Updating assignee to:', newAssigneeId);
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          assignee_id: newAssigneeId
+        }),
+      });
+
+      if (response.ok) {
+        const updatedTask = await response.json();
+        console.log('Task updated successfully:', updatedTask);
+        
+        // Update the local task state immediately
+        task.assignee_id = newAssigneeId;
+        
+        // If we have user data, update the assignee profile
+        if (newAssigneeId && users.length > 0) {
+          const assignedUser = users.find(u => u.id === newAssigneeId);
+          if (assignedUser) {
+            task.assignee_profile = {
+              full_name: assignedUser.name,
+              email: assignedUser.email || ''
+            };
+          }
+        } else {
+          task.assignee_profile = null;
+        }
+        
+        // Trigger a refresh in the parent component
+        if (onStatusChange) {
+          onStatusChange(task.id, task.status);
+        }
+        
+        setIsEditingAssignee(false);
+      } else {
+        const errorData = await response.text();
+        console.error('Failed to update assignee:', response.status, errorData);
+      }
+    } catch (error) {
+      console.error('Error updating assignee:', error);
+    } finally {
+      setIsUpdatingAssignee(false);
+    }
+  };
 
   // Early return after all hooks are defined
   if (!task) return null;
@@ -229,20 +379,85 @@ export function TaskDetails({
               {/* Assignee */}
               <div className="flex items-center gap-3">
                 <User className="w-4 h-4 text-slate-400" />
-                <div>
-                  <div className="text-sm text-slate-400">Assignee</div>
-                  {task.assignee_id ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <Avatar className="w-6 h-6">
-                        <AvatarImage src={`/api/users/${task.assignee_id}/avatar`} />
-                        <AvatarFallback className="bg-slate-700 text-slate-300 text-xs">
-                          {getInitials(task.assignee_profile?.full_name || task.assignee_id)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{task.assignee_profile?.full_name || task.assignee_id}</span>
+                <div className="flex-1">
+                  <div className="text-sm text-slate-400 mb-1">Assignee</div>
+                  
+                  {isEditingAssignee ? (
+                    <div className="space-y-2">
+                      <Select
+                        value={task.assignee_id || "unassigned"}
+                        onValueChange={(value) => {
+                          const newAssigneeId = value === "unassigned" ? null : value;
+                          updateAssignee(newAssigneeId);
+                        }}
+                        disabled={isUpdatingAssignee}
+                      >
+                        <SelectTrigger className="h-8 text-sm bg-slate-800 border-slate-600">
+                          <SelectValue placeholder="Select assignee..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-600">
+                          <SelectItem value="unassigned" className="text-slate-400">
+                            Unassigned
+                          </SelectItem>
+                          {users.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="w-4 h-4">
+                                  <AvatarFallback className="bg-slate-700 text-slate-300 text-xs">
+                                    {getInitials(user.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span>{user.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsEditingAssignee(false)}
+                          className="h-6 w-6 p-0 text-slate-400 hover:text-white"
+                          disabled={isUpdatingAssignee}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                   ) : (
-                    <span className="text-sm text-slate-500">Unassigned</span>
+                    <div className="flex items-center justify-between group">
+                      <div className="flex items-center gap-2">
+                        {task.assignee_id ? (
+                          <>
+                            <Avatar className="w-6 h-6">
+                              <AvatarImage src={`/api/users/${task.assignee_id}/avatar`} />
+                              <AvatarFallback className="bg-slate-700 text-slate-300 text-xs">
+                                {getInitials(task.assignee_profile?.full_name || assigneeProfile?.full_name || task.assignee_id)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{task.assignee_profile?.full_name || assigneeProfile?.full_name || task.assignee_id}</span>
+                          </>
+                        ) : (
+                          <span className="text-sm text-slate-500">Unassigned</span>
+                        )}
+                      </div>
+                      
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setIsEditingAssignee(true);
+                            fetchUsers();
+                          }}
+                          className="h-6 w-6 p-0 text-slate-400 hover:text-white transition-colors"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -276,7 +491,7 @@ export function TaskDetails({
 
 
               {/* Team */}
-              {(task.team?.name || task.team_id) && (
+              {(task.team?.name || teamInfo?.name || task.team_id) && (
                 <div className="flex items-center gap-3">
                   <User className="w-4 h-4 text-slate-400" />
                   <div>
@@ -290,7 +505,7 @@ export function TaskDetails({
                             const requestingTeam = teams.find(t => t.id === requestingTeamId);
                             return requestingTeam?.name || requestingTeamId || 'Unknown Team';
                           })()
-                        : (task.team?.name || task.team_id)
+                        : (task.team?.name || teamInfo?.name || task.team_id)
                       }
                     </div>
                   </div>
