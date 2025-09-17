@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsMiddleware, corsResponseMiddleware } from './lib/middleware/cors';
+
 import { logger } from './lib/logger';
+import { corsMiddleware, corsResponseMiddleware } from './lib/middleware/cors';
 import { monitoring } from './lib/monitoring';
 
 // Paths that should be excluded from middleware processing

@@ -1,16 +1,17 @@
 "use client";
 
 import React, { useState, useCallback } from 'react';
-import { Upload, Download, Users, AlertCircle, CheckCircle, X } from 'lucide-react';
-import ExcelJS from 'exceljs';
 
-import { Button } from '@/components/ui/button';
-import supabase from '@/lib/supabaseBrowserClient';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import ExcelJS from 'exceljs';
+import { Upload, Download, Users, AlertCircle, CheckCircle, X } from 'lucide-react';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import supabase from '@/lib/supabaseBrowserClient';
 
 interface ImportResult {
   success: boolean;

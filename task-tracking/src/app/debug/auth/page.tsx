@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseBrowserClient";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import supabase from "@/lib/supabaseBrowserClient";
 
 export default function AuthDebugPage() {
   const [authState, setAuthState] = useState<any>(null);

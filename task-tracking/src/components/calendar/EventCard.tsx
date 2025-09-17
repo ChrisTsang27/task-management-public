@@ -1,13 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Card } from '../ui/card';
-import { CalendarEvent, EventCategory } from '../../types/calendar';
+
 import { format } from 'date-fns';
 import { Calendar, Clock, User, Edit, Trash2, X } from 'lucide-react';
+
+import { CalendarEvent, EventCategory } from '../../types/calendar';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 
 interface EventCardProps {
   event: CalendarEvent;

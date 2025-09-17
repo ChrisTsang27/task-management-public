@@ -25,11 +25,11 @@ import { Button } from '@/components/ui/button';
 import { ConflictResolutionModal } from '@/components/ui/conflict-resolution-modal';
 import { Input } from '@/components/ui/input';
 import { TaskFiltersPanel, TaskFilters } from '@/components/ui/task-filters';
+import supabase from '@/lib/supabaseBrowserClient';
 import { AIPrioritizationService } from '@/services/ai-prioritization';
 import { ConflictResolutionService } from '@/services/conflict-resolution';
 import { RealtimeCollaborationService } from '@/services/realtime-collaboration';
 import { Team } from '@/types/tasks';
-import supabase from '@/lib/supabaseBrowserClient';
 
 // Import ConflictData type
 interface ConflictData {

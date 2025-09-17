@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { ArrowLeft, Settings, Users } from "lucide-react";
+
 import RoleGuard from "@/components/auth/RoleGuard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useSupabaseProfile } from "@/hooks/useSupabaseProfile";
 import supabase from "@/lib/supabaseBrowserClient";
-import { ArrowLeft, Settings, Users } from "lucide-react";
 
 import type { User } from "@supabase/supabase-js";
 

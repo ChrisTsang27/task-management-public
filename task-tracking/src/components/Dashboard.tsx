@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState, useCallback, lazy, Suspense } from "react";
 
-import { Menu, X, LayoutGrid, List, Calendar, Filter, Search, Settings } from "lucide-react";
+import { Menu, X, LayoutGrid, List, Calendar, Filter, Search, Settings, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,7 @@ const EmailComposer = lazy(() => import("@/components/email/EmailComposer"));
 const AnnouncementManager = lazy(() => import("@/components/announcements/AnnouncementManager"));
 const TaskManager = lazy(() => import("@/components/tasks/TaskManager"));
 const CalendarView = lazy(() => import("./calendar/CalendarView").then(module => ({ default: module.CalendarView })));
+const MyTasks = lazy(() => import("@/components/tasks/MyTasks"));
 
 // Preload components on hover to improve perceived performance
 const preloadComponent = (componentName: string) => {
@@ -29,6 +30,9 @@ const preloadComponent = (componentName: string) => {
     case 'Calendar':
       import("./calendar/CalendarView");
       break;
+    case 'My Tasks':
+      import("@/components/tasks/MyTasks");
+      break;
   }
 };
 import { TeamSelector } from "@/components/ui/team-selector";
@@ -38,7 +42,7 @@ import supabase from "@/lib/supabaseBrowserClient";
 import { Team } from "@/types/tasks";
 
 type Role = "admin" | "user";
-type Tab = "Announcements" | "Email" | "Tasks" | "Calendar";
+type Tab = "Announcements" | "Email" | "Tasks" | "Calendar" | "My Tasks";
 type TaskView = "kanban" | "list" | "calendar";
 
 interface TabConfig {
@@ -105,6 +109,14 @@ export default function Dashboard() {
         tooltip: "Manage tasks and project workflow"
       },
       { 
+        key: "My Tasks", 
+        roles: ["admin", "user"],
+        icon: (
+          <User className="w-5 h-5" />
+        ),
+        tooltip: "View and manage your personal tasks"
+      },
+      { 
         key: "Calendar", 
         roles: ["admin", "user"],
         icon: (
@@ -127,12 +139,12 @@ export default function Dashboard() {
       // Check URL params first
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get('tab') as Tab;
-      if (tabParam && ['Announcements', 'Email', 'Tasks', 'Calendar'].includes(tabParam)) {
+      if (tabParam && ['Announcements', 'Email', 'Tasks', 'Calendar', 'My Tasks'].includes(tabParam)) {
         return tabParam;
       }
       // Then check localStorage
       const savedTab = localStorage.getItem('dashboard-tab') as Tab;
-      if (savedTab && ['Announcements', 'Email', 'Tasks', 'Calendar'].includes(savedTab)) {
+      if (savedTab && ['Announcements', 'Email', 'Tasks', 'Calendar', 'My Tasks'].includes(savedTab)) {
         return savedTab;
       }
     }
@@ -597,6 +609,16 @@ export default function Dashboard() {
                     <CardContent className="p-6">
                       <Suspense fallback={<LoadingCard title="Loading Calendar..." description="Please wait while we load the calendar" />}>
                         <CalendarView teamId={selectedTeam?.id} />
+                      </Suspense>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {tab === "My Tasks" && (
+                  <Card className="bg-slate-800/50 border-slate-700">
+                    <CardContent className="p-6">
+                      <Suspense fallback={<LoadingCard title="Loading My Tasks..." description="Please wait while we load your personal tasks" />}>
+                        <MyTasks currentUserId={user?.id} />
                       </Suspense>
                     </CardContent>
                   </Card>

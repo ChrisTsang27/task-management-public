@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import emailService from '@/lib/emailService';
+
 import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
+import emailService from '@/lib/emailService';
 import { rateLimiters } from '@/lib/middleware/rateLimiter';
 import { emailTestSchema, validateAndSanitize, sanitizeHtml } from '@/lib/validation/schemas';
 

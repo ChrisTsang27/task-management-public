@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+
 import supabase from '@/lib/supabaseBrowserClient';
-import { CalendarEvent, EventCategory, CreateEventData, UpdateEventData } from '../types/calendar';
+
 import { useSupabaseProfile } from './useSupabaseProfile';
+import { CalendarEvent, EventCategory, CreateEventData, UpdateEventData } from '../types/calendar';
 
 export function useCalendarEvents(teamId?: string) {
   const { user, profile } = useSupabaseProfile();

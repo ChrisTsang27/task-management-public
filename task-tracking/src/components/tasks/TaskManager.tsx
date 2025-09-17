@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useToast } from '@/hooks/use-toast';
+import supabase from '@/lib/supabaseBrowserClient';
 import {
     Task,
     TaskStatus,
@@ -17,20 +18,17 @@ import {
     CreateAssistanceRequestData,
     Team
   } from '@/types/tasks';
-
 import { validateStatusTransition } from '@/utils/workflow';
+
 import { AssistanceRequestForm } from './AssistanceRequestForm';
 import { StatusTransitionDialog } from './StatusTransitionDialog';
 import { TaskBoard } from './TaskBoard';
-import { TaskForm } from './TaskForm';
 import { TaskDetails } from './TaskDetails';
-
-
+import { TaskForm } from './TaskForm';
 import TeamOverview from '../TeamOverview';
 
 
 
-import supabase from '@/lib/supabaseBrowserClient';
 
 interface TaskManagerProps {
   className?: string;

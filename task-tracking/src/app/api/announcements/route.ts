@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@supabase/supabase-js';
-import { announcementCreateSchema, validateAndSanitize, sanitizeHtml } from '@/lib/validation/schemas';
-import { rateLimiters } from '@/lib/middleware/rateLimiter';
+
 import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
+import { rateLimiters } from '@/lib/middleware/rateLimiter';
+import { announcementCreateSchema, validateAndSanitize, sanitizeHtml } from '@/lib/validation/schemas';
 
 // Create a Supabase client with service role key to bypass RLS for admin operations
 const supabaseAdmin = createClient(

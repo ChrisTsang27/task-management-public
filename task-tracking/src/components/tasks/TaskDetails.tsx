@@ -29,7 +29,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -37,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import supabase from '@/lib/supabaseBrowserClient';
 import { cn } from '@/lib/utils';
 import { 

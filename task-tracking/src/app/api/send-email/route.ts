@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
-import emailService from "@/lib/emailService";
+
 import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
+import emailService from "@/lib/emailService";
 import { rateLimiters } from '@/lib/middleware/rateLimiter';
 
 const EmailPayload = z.object({

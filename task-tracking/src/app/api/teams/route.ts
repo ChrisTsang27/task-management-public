@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@supabase/supabase-js';
+
 import { authenticateRequest, createErrorResponse, createSuccessResponse } from '@/lib/api/utils';
 import { rateLimiters } from '@/lib/middleware/rateLimiter';
 

@@ -2,17 +2,17 @@
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 
+import { Trash2, ArrowLeft, Filter, X } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { LoadingCard } from '@/components/ui/LoadingSpinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/hooks/useRoleAccess';
 import supabase from '@/lib/supabaseBrowserClient';
-import { Trash2, ArrowLeft, Filter, X } from 'lucide-react';
-import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 // Lazy load RoleGuard for better code splitting
 const RoleGuard = lazy(() => import('@/components/auth/RoleGuard'));

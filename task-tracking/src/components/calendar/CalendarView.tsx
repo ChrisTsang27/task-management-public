@@ -1,18 +1,21 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Calendar, momentLocalizer, View, Views } from 'react-big-calendar';
+
 import moment from 'moment';
+import { Calendar, momentLocalizer, View, Views } from 'react-big-calendar';
+
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Card } from '../ui/card';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { CalendarIcon, Plus, Filter, Calendar as CalendarSelectIcon } from 'lucide-react';
-import { EventForm } from './EventForm';
+
 import { EventCard } from './EventCard';
+import { EventForm } from './EventForm';
 import { useCalendarEvents } from '../../hooks/useCalendarEvents';
 import { useSupabaseProfile } from '../../hooks/useSupabaseProfile';
 import { CalendarEvent, EventCategory, UpdateEventData } from '../../types/calendar';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 
 const localizer = momentLocalizer(moment);
 

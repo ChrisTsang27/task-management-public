@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { monitoring } from '@/lib/monitoring';
-import { logger } from '@/lib/logger';
+
 import { createSuccessResponse, createErrorResponse } from '@/lib/api/utils';
+import { logger } from '@/lib/logger';
+import { monitoring } from '@/lib/monitoring';
 
 // Health check endpoint - no authentication required for monitoring
 export async function GET(request: NextRequest) {
