@@ -98,11 +98,23 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
 
   // Extract placeholders from content
   const extractPlaceholders = useCallback((htmlContent: string): PlaceholderField[] => {
-    const placeholderRegex = /\[([^\]]+)\]/g;
-    const matches = [...htmlContent.matchAll(placeholderRegex)];
-    const uniquePlaceholders = [...new Set(matches.map(match => match[1]))];
+    // Match both square brackets [placeholder] and curly braces {placeholder}
+    const squareBracketRegex = /\[([^\]]+)\]/g;
+    const curlyBraceRegex = /\{([^}]+)\}/g;
     
-    return uniquePlaceholders.map(placeholder => ({
+    const squareMatches = [...htmlContent.matchAll(squareBracketRegex)];
+    const curlyMatches = [...htmlContent.matchAll(curlyBraceRegex)];
+    
+    // Combine all matches and get unique placeholders
+    const allMatches = [...squareMatches.map(match => match[1]), ...curlyMatches.map(match => match[1])];
+    const uniquePlaceholders = [...new Set(allMatches)];
+    
+    // Filter out the content placeholder that should only be editable in the compose email editor
+    const editablePlaceholders = uniquePlaceholders.filter(placeholder => 
+      !placeholder.toLowerCase().includes('please enter your content here')
+    );
+    
+    return editablePlaceholders.map(placeholder => ({
       key: placeholder,
       label: placeholder.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
       placeholder: `Enter ${placeholder.toLowerCase()}`,
@@ -171,17 +183,44 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     // Conditional logo replacement - only replace if logo is uploaded
     if (customization.logoUrl && template.id === 'stonegate') {
       // Replace the header Stonegate logo placeholder with uploaded logo
-      const headerLogoHtml = `<img src="${customization.logoUrl}" alt="${customization.companyName}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #ff6b35;" />`;
+      const headerLogoHtml = `<div style="display: inline-block; margin-bottom: 10px;">
+              <img src="${customization.logoUrl}" alt="${customization.companyName}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #ff6b35;" />
+            </div>`;
       
       // Use a more targeted approach - look for the specific placeholder text
       const headerPlaceholder = 'LOGO<br/>HERE';
       if (customHtml.includes(headerPlaceholder)) {
-        // Find the div containing the 120px width and replace the entire logo container
-        const headerStart = customHtml.indexOf('<div style="width: 120px; height: 120px;');
+        // Find the div containing the inline-block style and replace only that container
+        const headerStart = customHtml.indexOf('<div style="display: inline-block; margin-bottom: 10px;">');
         if (headerStart !== -1) {
-          const headerEnd = customHtml.indexOf('</div>', customHtml.indexOf('</div>', headerStart) + 6) + 6;
-          const headerSection = customHtml.substring(headerStart, headerEnd);
-          customHtml = customHtml.replace(headerSection, headerLogoHtml);
+          // Find the matching closing div for the inline-block container
+          let divCount = 1;
+          let searchPos = headerStart + '<div style="display: inline-block; margin-bottom: 10px;">'.length;
+          let headerEnd = -1;
+          
+          while (divCount > 0 && searchPos < customHtml.length) {
+            const nextOpenDiv = customHtml.indexOf('<div', searchPos);
+            const nextCloseDiv = customHtml.indexOf('</div>', searchPos);
+            
+            if (nextCloseDiv !== -1 && (nextOpenDiv === -1 || nextCloseDiv < nextOpenDiv)) {
+              divCount--;
+              if (divCount === 0) {
+                headerEnd = nextCloseDiv + 6; // Include the </div>
+                break;
+              }
+              searchPos = nextCloseDiv + 6;
+            } else if (nextOpenDiv !== -1) {
+              divCount++;
+              searchPos = nextOpenDiv + 4;
+            } else {
+              break;
+            }
+          }
+          
+          if (headerEnd !== -1) {
+            const headerSection = customHtml.substring(headerStart, headerEnd);
+            customHtml = customHtml.replace(headerSection, headerLogoHtml);
+          }
         }
       }
       
@@ -204,9 +243,13 @@ const UnifiedTemplateCustomizer: React.FC<UnifiedTemplateCustomizerProps> = ({
     let updatedContent = htmlContent;
     
     placeholderFields.forEach(field => {
-      const regex = new RegExp(`\\[${field.key}\\]`, 'g');
+      // Handle both square brackets [placeholder] and curly braces {placeholder}
+      const squareBracketRegex = new RegExp(`\\[${field.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g');
+      const curlyBraceRegex = new RegExp(`\\{${field.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`, 'g');
+      
       // Replace with field value or keep original placeholder if no value provided
-      updatedContent = updatedContent.replace(regex, field.value || `[${field.key}]`);
+      updatedContent = updatedContent.replace(squareBracketRegex, field.value || `[${field.key}]`);
+      updatedContent = updatedContent.replace(curlyBraceRegex, field.value || `{${field.key}}`);
     });
     
     return updatedContent;

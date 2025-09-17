@@ -350,6 +350,14 @@ const EmailComposer = React.memo(function EmailComposer() {
     dispatch({ type: 'SET_STATUS', payload: null });
     
     try {
+      // Get the current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        dispatch({ type: 'SET_STATUS', payload: { ok: false, msg: "Authentication required" } });
+        return;
+      }
+
       const payload = {
         recipients: recipients.map(r => ({ name: r.name, email: r.email })),
         title,
@@ -359,7 +367,10 @@ const EmailComposer = React.memo(function EmailComposer() {
       };
       const res = await fetch("/api/send-email", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -392,6 +403,9 @@ const EmailComposer = React.memo(function EmailComposer() {
   // Helper function to replace placeholders with actual data
   const replacePlaceholders = useCallback((html: string) => {
     let processedHtml = html;
+    
+    // Replace the content placeholder with CONTENT HERE so RichTextEditor can handle template mode
+    processedHtml = processedHtml.replace(/\{Please enter your content here using the rich editor below, not in this template customizer\}/g, 'CONTENT HERE');
     
     // Replace common placeholders with recipient data if available
     if (recipients.length > 0) {
@@ -826,7 +840,11 @@ const EmailComposer = React.memo(function EmailComposer() {
                 )}
               </div>
               <Suspense fallback={<LoadingCard title="Loading Editor..." description="Please wait while we load the rich text editor" />}>
-                <RichTextEditor value={contentHTML} onChange={(value) => dispatch({ type: 'SET_CONTENT', payload: value })} placeholder="Write rich content (text, images, links, lists, tables, emojis)..." />
+                <RichTextEditor 
+                  value={contentHTML} 
+                  onChange={(value) => dispatch({ type: 'SET_CONTENT', payload: value })} 
+                  placeholder="Enter your message here..." 
+                />
               </Suspense>
               <p className="text-xs text-slate-400">Timestamp is added on send. {appliedTemplate && `Template "${appliedTemplate}" is active.`}</p>
             </div>

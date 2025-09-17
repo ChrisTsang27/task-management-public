@@ -81,7 +81,7 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
       if (isTemplateMode && rawHtmlContent) {
         // Template mode: Replace CONTENT HERE placeholder with editor content
         // Use the editor content as-is - no cleaning needed since we control what goes into the editor
-        let editorContent = html && html.trim() ? html : '<p></p>';
+        let editorContent = html && html.trim() ? html : '';
         
         const templateWithContent = rawHtmlContent.replace(
           /CONTENT HERE/g, 
@@ -118,9 +118,12 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
       // Allow base64 images for template logos and uploaded images
       Image.configure({ inline: false, allowBase64: true }),
       Placeholder.configure({
-        placeholder: "Enter your message here...",
+        placeholder: placeholder || "Enter your message here...",
         showOnlyWhenEditable: true,
-        showOnlyCurrent: true,
+        showOnlyCurrent: false,
+        includeChildren: true,
+        emptyEditorClass: 'is-editor-empty',
+        considerDocument: true,
       }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Table.configure({ resizable: true, lastColumnResizable: true }),
@@ -131,7 +134,7 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
       Dropcursor.configure({ class: "tiptap-dropcursor" }),
       Gapcursor,
     ],
-    content: value || "<p></p>",
+    content: value || undefined,
     onUpdate: ({ editor }) => onUpdateDebounced(editor.getHTML(), editor),
     parseOptions: {
       preserveWhitespace: 'full',
@@ -139,12 +142,25 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
     editorProps: {
       attributes: {
         class:
-          "min-h-[260px] w-full rounded-b-xl bg-transparent px-4 py-3 outline-none max-w-none rte custom-text-cursor cursor-text [&_img]:max-w-full [&_img]:max-h-[400px] [&_img]:object-contain [&_img]:rounded-md [&_code]:text-violet-300 [&_pre]:bg-slate-800/80",
+          "min-h-[260px] w-full rounded-b-xl bg-transparent px-4 py-3 outline-none max-w-none rte custom-text-cursor cursor-text [&_img]:max-w-full [&_img]:max-h-[400px] [&_img]:object-contain [&_img]:rounded-md [&_code]:text-violet-300 [&_pre]:bg-slate-800/80 [&.is-editor-empty]:before:text-slate-400 [&.is-editor-empty]:before:opacity-60",
         style: "cursor: inherit !important;",
       },
     },
     immediatelyRender: false,
   });
+
+  // Debug: Log editor state for placeholder troubleshooting
+  useEffect(() => {
+    if (editor) {
+      console.log('Editor Debug:', {
+        isEmpty: editor.isEmpty,
+        content: editor.getHTML(),
+        text: editor.getText(),
+        hasContent: editor.getHTML() !== '<p></p>',
+        placeholderVisible: editor.view.dom.querySelector('.is-empty')
+      });
+    }
+  }, [editor, value]);
 
   // Update editor content when value prop changes (for template application)
   useEffect(() => {
@@ -172,19 +188,19 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = value;
         
-        // Simplified template content initialization
+        // Universal placeholder approach - extract only user content, leave empty if none exists
         let editableContent = '';
         
-        if (value.includes('CONTENT HERE')) {
-          // Fresh template application - provide starter content without Hi since template already has it
-          editableContent = '<p>Enter your message here...</p>';
+        // Check if this is a fresh template (contains placeholder text)
+        if (value.includes('CONTENT HERE') || value.includes('{Please enter your content here using the rich editor below, not in this template customizer}')) {
+          // Fresh template - leave editor empty so universal placeholder shows
+          editableContent = '';
         } else {
-          // Template has been used before - extract only the content that was inserted
-          // Look for content between template structure elements
+          // Template may have user content - extract only the user-added content
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = value;
           
-          // Find paragraphs that don't contain template-specific text
+          // Find paragraphs that contain actual user content (not template boilerplate)
           const paragraphs = Array.from(tempDiv.querySelectorAll('p'));
           const userParagraphs = paragraphs.filter(p => {
             const text = p.textContent || '';
@@ -197,13 +213,17 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
           
           if (userParagraphs.length > 0) {
             editableContent = userParagraphs.map(p => p.outerHTML).join('');
-          } else {
-            editableContent = '<p>Enter your message here...</p>';
           }
+          // If no user content found, leave editableContent empty - placeholder will show
         }
         
         // Set the content in the editor without aggressive cleaning
-        editor.commands.setContent(editableContent || '<p></p>', false);
+        if (editableContent) {
+          editor.commands.setContent(editableContent, false);
+        } else {
+          // For empty content, clear the editor completely so placeholder shows
+          editor.commands.clearContent(false);
+        }
       } else {
         setRawHtmlContent('');
         // Use insertContent with emitUpdate: false to preserve HTML structure better
@@ -349,6 +369,40 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
     }
   }, [editor]);
 
+  // Add placeholder styles - must be before conditional return
+  useEffect(() => {
+    const styleId = 'rich-text-editor-placeholder-styles';
+    
+    // Remove existing style if it exists
+    const existingStyle = document.getElementById(styleId);
+    if (existingStyle) {
+      existingStyle.remove();
+    }
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      .ProseMirror p.is-empty::before {
+        content: attr(data-placeholder);
+        float: left;
+        color: rgb(148 163 184);
+        pointer-events: none;
+        height: 0;
+      }
+      .ProseMirror.is-editor-empty p.is-empty:first-child::before {
+        content: attr(data-placeholder);
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      const styleToRemove = document.getElementById(styleId);
+      if (styleToRemove) {
+        styleToRemove.remove();
+      }
+    };
+  }, []);
+
   // Conditional return after all hooks have been called
   if (!editor) {
     return (
@@ -360,13 +414,13 @@ const RichTextEditor = React.memo(function RichTextEditor({ value, onChange, pla
 
   return (
     <TooltipProvider delayDuration={300}>
-    <div className="space-y-2">
-      <div 
-        className={`relative rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-850/95 to-slate-900/90 border-2 border-slate-500/60 focus-within:border-violet-400/70 focus-within:ring-2 focus-within:ring-violet-500/20 transition-all duration-300 overflow-visible ${isDraggingOverEditor ? 'ring-2 ring-blue-400 ring-opacity-50' : ''}`}
-        onDragOver={handleEditorDragOver}
-        onDragLeave={handleEditorDragLeave}
-        onDrop={handleEditorDrop}
-      >
+      <div className="space-y-2">
+        <div 
+          className={`relative rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-850/95 to-slate-900/90 border-2 border-slate-500/60 focus-within:border-violet-400/70 focus-within:ring-2 focus-within:ring-violet-500/20 transition-all duration-300 overflow-visible ${isDraggingOverEditor ? 'ring-2 ring-blue-400 ring-opacity-50' : ''}`}
+          onDragOver={handleEditorDragOver}
+          onDragLeave={handleEditorDragLeave}
+          onDrop={handleEditorDrop}
+        >
         <div
           role="toolbar"
           aria-label="Rich text editor toolbar"
