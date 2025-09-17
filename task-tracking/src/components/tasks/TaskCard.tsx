@@ -45,13 +45,21 @@ export const TaskCard = React.memo(function TaskCard({
     listeners,
     setNodeRef,
     transform,
-  } = useDraggable({ id: task.id });
+  } = useDraggable({ 
+    id: task.id,
+    data: {
+      type: 'task',
+      task: task,
+      currentStatus: task.status
+    }
+  });
 
   const style = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    opacity: isDragging ? 0 : 1,
-    visibility: isDragging ? 'hidden' : 'visible',
+    opacity: isDragging ? 0.3 : 1,
+    visibility: isDragging ? 'visible' : 'visible',
     zIndex: isDragging ? 1000 : 'auto',
+    transition: isDragging ? 'none' : 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   } as React.CSSProperties;
 
   const handleClick = useCallback(() => {
@@ -163,9 +171,10 @@ export const TaskCard = React.memo(function TaskCard({
       ref={setNodeRef}
       style={style}
       {...attributes}
+      {...listeners}
       className={`
         group relative bg-gradient-to-br from-slate-800/80 via-slate-800/60 to-slate-900/80 
-        border border-slate-600/50 rounded-xl p-5 cursor-pointer
+        border border-slate-600/50 rounded-xl p-5 cursor-grab active:cursor-grabbing
         shadow-lg hover:shadow-2xl hover:shadow-blue-500/20
         transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
         hover:bg-gradient-to-br hover:from-slate-700/90 hover:via-slate-800/70 hover:to-slate-900/90
@@ -208,13 +217,12 @@ export const TaskCard = React.memo(function TaskCard({
       {/* Header */}
       <div className="relative flex items-start justify-between gap-3 mb-4">
         <div className="flex items-start gap-3 flex-1">
-          <button
-            {...listeners}
-            className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-700/50 cursor-grab active:cursor-grabbing transition-all duration-200 transform hover:scale-110"
-            onClick={(e) => e.stopPropagation()}
+          <div
+            className="text-slate-400 hover:text-blue-300 p-2 rounded-lg hover:bg-slate-700/60 transition-all duration-200 transform hover:scale-110 group pointer-events-none"
+            title="Drag to move task"
           >
-            <GripVertical className="w-4 h-4" />
-          </button>
+            <GripVertical className="w-4 h-4 group-hover:drop-shadow-lg" />
+          </div>
           
           <div className="flex-1">
             <h3 className="text-white font-semibold text-sm mb-2 line-clamp-2 group-hover:text-blue-100 transition-all duration-400 ease-out">

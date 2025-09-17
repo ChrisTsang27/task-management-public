@@ -1,8 +1,21 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 
-import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, DragOverlay, closestCorners } from '@dnd-kit/core';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  DragOverlay,
+  closestCorners,
+  rectIntersection,
+  pointerWithin,
+  PointerSensor,
+  MouseSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Plus, Filter, Search, Users, LayoutGrid, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -37,7 +50,7 @@ import {
   TaskStatus, 
   KanbanColumn as KanbanColumnType
 } from '@/types/tasks';
-import { isValidStatusTransition, validateStatusTransition } from '@/utils/workflow';
+import { isValidStatusTransition, validateStatusTransition, VALID_STATUS_TRANSITIONS } from '@/utils/workflow';
 
 import { KanbanColumn } from './KanbanColumn';
 import { TaskCard } from './TaskCard';
@@ -126,6 +139,10 @@ export const TaskBoard = React.memo(function TaskBoard({
 
   // Drag and drop state
   const [activeId, setActiveId] = useState<string | null>(null);
+  
+  // Ref to store current tasks to avoid stale closures
+  const tasksRef = useRef(tasks);
+  tasksRef.current = tasks;
 
   // Initialize real-time collaboration
   useEffect(() => {
@@ -310,10 +327,15 @@ export const TaskBoard = React.memo(function TaskBoard({
 
   // Task status change handler - must be declared before drag handlers
   const handleTaskStatusChange = useCallback((taskId: string, newStatus: string, comment?: string) => {
+    console.log('🔧 [TaskBoard] handleTaskStatusChange called:', { taskId, newStatus, comment });
+    console.log('🔧 [TaskBoard] onTaskStatusChange prop:', !!onTaskStatusChange);
+    
     // Broadcast task status change in real-time
     if (currentUserId && selectedTeam) {
-      const task = tasks.find(t => t.id === taskId);
+      // Use current tasks from ref to avoid stale closure
+      const task = tasksRef.current.find(t => t.id === taskId);
       if (task) {
+        console.log('📡 [TaskBoard] Broadcasting task movement');
         realtimeService.broadcastTaskMovement({
           taskId,
           task,
@@ -323,41 +345,119 @@ export const TaskBoard = React.memo(function TaskBoard({
       }
     }
     
+    console.log('🚀 [TaskBoard] Calling parent onTaskStatusChange');
     onTaskStatusChange?.(taskId, newStatus as TaskStatus, comment);
-  }, [tasks, currentUserId, selectedTeam, realtimeService, onTaskStatusChange]);
+    console.log('✅ [TaskBoard] Parent onTaskStatusChange called');
+  }, [currentUserId, selectedTeam, realtimeService, onTaskStatusChange]);
+
+  // Optimized sensors for smooth drag performance
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 3, // Reduced distance for better responsiveness
+      },
+    }),
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 3, // Same distance for consistency
+      },
+    })
+  );
+
+  // Simplified collision detection for better reliability
+  const customCollisionDetection = useCallback((args: any) => {
+    // Use rectangle intersection as primary method - more reliable for drop zones
+    const rectCollisions = rectIntersection(args);
+    if (rectCollisions.length > 0) {
+      console.log('📦 Rectangle collision found:', rectCollisions.map((c: any) => c.id));
+      return rectCollisions;
+    }
+
+    // Fallback to pointer detection
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) {
+      console.log('👆 Pointer collision found:', pointerCollisions.map((c: any) => c.id));
+      return pointerCollisions;
+    }
+
+    // Final fallback to closest corners
+    const cornerCollisions = closestCorners(args);
+    if (cornerCollisions.length > 0) {
+      console.log('📐 Corner collision found:', cornerCollisions.map((c: any) => c.id));
+    }
+    return cornerCollisions;
+  }, []);
 
   // Drag and drop handlers
   const handleDragStart = useCallback((event: DragStartEvent) => {
+    console.log('🚀 Drag started:', event.active.id);
     setActiveId(event.active.id as string);
   }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
+    console.log('🔄 Drag over:', event.over?.id);
     // This handler helps ensure proper drop zone detection
     // The isOver state in useDroppable should be triggered automatically
   }, []);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
+    console.log('🎯 Drag end event:', event);
+    
     const { active, over } = event;
+    console.log('🎯 Active item:', active);
+    console.log('🎯 Over target:', over);
+    console.log('🎯 Event details:', {
+      activeId: event.active?.id,
+      overId: event.over?.id,
+      activeDraggableId: event.active?.data?.current?.sortable?.containerId,
+      overDroppableId: event.over?.data?.current?.sortable?.containerId || event.over?.id
+    });
+    
     setActiveId(null);
 
-    if (!over) return;
+    if (!over) {
+      console.log('❌ No drop target found - over is null/undefined');
+      return;
+    }
+    
+    console.log('✅ Drop target found:', over.id);
 
     const taskId = active.id as string;
     const newStatus = over.id as string;
     
-    // Find the task being moved
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
+    console.log('🔄 Processing drop:', { taskId, newStatus });
+    
+    // Find the task being moved using ref to avoid stale closure
+    const task = tasksRef.current.find(t => t.id === taskId);
+    if (!task) {
+      console.log('❌ Task not found:', taskId);
+      return;
+    }
+    
+    console.log('📋 Task found:', { 
+      taskId: task.id, 
+      currentStatus: task.status, 
+      newStatus,
+      hasAssignee: !!task.assignee_id,
+      assigneeId: task.assignee_id 
+    });
 
     // Check if status actually changed
-    if (task.status === newStatus) return;
+    if (task.status === newStatus) {
+      console.log('⚠️ Status unchanged, skipping update');
+      return;
+    }
 
     // For drag and drop, we'll be more permissive with validation
     // Only check basic transition validity, not role/comment requirements
     if (!isValidStatusTransition(task.status, newStatus as TaskStatus)) {
+      console.log('❌ Invalid status transition:', { from: task.status, to: newStatus });
+      console.log('❌ Valid transitions for', task.status, ':', VALID_STATUS_TRANSITIONS[task.status as TaskStatus]);
       toast.error(`Cannot move task from ${task.status} to ${newStatus}`);
       return;
     }
+    
+    console.log('✅ Status transition valid:', { from: task.status, to: newStatus });
 
     // For transitions that normally require comments or special permissions,
     // we'll allow them via drag and drop but show a warning
@@ -377,8 +477,10 @@ export const TaskBoard = React.memo(function TaskBoard({
     }
 
     // Update the task status
+    console.log('🚀 Calling handleTaskStatusChange:', { taskId, newStatus });
     handleTaskStatusChange(taskId, newStatus);
-  }, [tasks, handleTaskStatusChange]);
+    console.log('✅ handleDragEnd completed successfully');
+  }, [handleTaskStatusChange]);
 
   // AI Priority functions
   const handleRecalculatePriority = useCallback(async () => {
@@ -391,10 +493,19 @@ export const TaskBoard = React.memo(function TaskBoard({
       for (const task of teamTasks) {
         await aiService.calculateTaskPriority(task);
       }
-      // Trigger a refresh of tasks to get updated priority scores
-      window.location.reload(); // Simple refresh - in production, you'd want to refetch data
+      
+      // Show success message instead of reloading
+      toast.success('AI priorities recalculated successfully');
+      
+      // Note: In a production environment, you would want to:
+      // 1. Update the task priorities in the database
+      // 2. Refetch the tasks from the parent component
+      // 3. Or use a state management solution to update the local state
+      // For now, we'll avoid the page reload to prevent disrupting drag and drop
+      
     } catch (error) {
       console.error('Failed to recalculate priorities:', error);
+      toast.error('Failed to recalculate priorities');
     } finally {
       setIsRecalculatingPriority(false);
     }
@@ -627,7 +738,8 @@ export const TaskBoard = React.memo(function TaskBoard({
         
         {/* Kanban Board with drag and drop functionality */}
         <DndContext
-          collisionDetection={closestCorners}
+          sensors={sensors}
+          collisionDetection={customCollisionDetection}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
@@ -742,16 +854,30 @@ export const TaskBoard = React.memo(function TaskBoard({
             ))}
           </div>
           
-          {/* Custom Drag Overlay */}
-          <DragOverlay>
+          {/* Enhanced Custom Drag Overlay */}
+          <DragOverlay
+            dropAnimation={{
+              duration: 300,
+              easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+            }}
+          >
             {activeId ? (
-              <div className="transform rotate-6 scale-110 opacity-95">
-                <TaskCard
-                  task={tasks.find(task => task.id === activeId)!}
-                  teams={teams}
-                  isDragging={false}
-                  className="shadow-2xl shadow-blue-500/40 ring-2 ring-blue-400/60 bg-gradient-to-br from-slate-700/95 via-slate-800/85 to-slate-900/95"
-                />
+              <div className="transform rotate-3 scale-105 opacity-95 transition-all duration-200 ease-out">
+                <div className="relative">
+                  {/* Enhanced glow effect */}
+                  <div className="absolute inset-0 bg-blue-500/30 rounded-xl blur-xl scale-110" />
+                  <div className="absolute inset-0 bg-purple-500/20 rounded-xl blur-2xl scale-125" />
+                  
+                  <TaskCard
+                    task={tasks.find(task => task.id === activeId)!}
+                    teams={teams}
+                    isDragging={true}
+                    className="relative z-10 shadow-2xl shadow-blue-500/50 ring-2 ring-blue-400/80 bg-gradient-to-br from-slate-700/98 via-slate-800/95 to-slate-900/98 backdrop-blur-sm border border-blue-400/30"
+                  />
+                  
+                  {/* Trailing effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-xl animate-pulse" />
+                </div>
               </div>
             ) : null}
           </DragOverlay>

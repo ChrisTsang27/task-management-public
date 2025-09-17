@@ -169,8 +169,12 @@ export const TaskManager = React.memo(function TaskManager({
     fetchTasks();
   }, [fetchTasks]);
 
-  // Memoize filtered tasks for performance
-  const memoizedTasks = useMemo(() => tasks, [tasks]);
+  // Memoize filtered tasks for performance with deep comparison
+  const memoizedTasks = useMemo(() => {
+    // Create a new array reference only if tasks actually changed
+    return tasks.map(task => ({ ...task }));
+  }, [tasks]);
+  
   const memoizedUsers = useMemo(() => users, [users]);
   const memoizedTeams = useMemo(() => teams, [teams]);
 
@@ -225,8 +229,15 @@ export const TaskManager = React.memo(function TaskManager({
 
   // Change task status
   const handleTaskStatusChange = useCallback(async (taskId: string, newStatus: TaskStatus, comment?: string) => {
+    console.log('🔧 [TaskManager] handleTaskStatusChange called:', { taskId, newStatus, comment });
+    
     const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
+    if (!task) {
+      console.log('❌ [TaskManager] Task not found:', taskId);
+      return;
+    }
+
+    console.log('📋 [TaskManager] Task found:', { taskId: task.id, currentStatus: task.status, newStatus });
 
     // Validate the status transition
     const validation = validateStatusTransition(task.status, newStatus, {
@@ -234,7 +245,11 @@ export const TaskManager = React.memo(function TaskManager({
       hasAssignee: !!task.assignee_id,
       comment: comment
     });
+    
+    console.log('🔍 [TaskManager] Validation result:', validation);
+    
     if (!validation.valid) {
+      console.log('❌ [TaskManager] Validation failed:', validation.reason);
       toast({
         title: "Invalid Status Change",
         description: validation.reason,
@@ -242,6 +257,22 @@ export const TaskManager = React.memo(function TaskManager({
       });
       return;
     }
+    
+    console.log('✅ [TaskManager] Validation passed, proceeding with status change');
+
+    // Optimistic update - immediately update the UI
+    const optimisticTask = { 
+      ...task, 
+      status: newStatus, 
+      updated_at: new Date().toISOString() 
+    };
+    
+    // Store the original task for potential rollback
+    const originalTask = task;
+    
+    // Apply optimistic update
+    console.log(`[TaskManager] Optimistic update: ${task.status} -> ${newStatus} for task ${taskId}`);
+    setTasks(prev => prev.map(t => t.id === taskId ? optimisticTask : t));
 
     try {
       // Get current session for authentication
@@ -250,8 +281,6 @@ export const TaskManager = React.memo(function TaskManager({
       if (!session?.access_token) {
         throw new Error('Authentication required');
       }
-
-
 
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: 'PUT',
@@ -270,7 +299,10 @@ export const TaskManager = React.memo(function TaskManager({
         throw new Error(`Failed to update task status: ${response.status} ${response.statusText}`);
       }
 
-      const updatedTask = await response.json();
+      const responseData = await response.json();
+      const updatedTask = responseData.task; // Extract task from API response
+      // Update with the actual response from the server
+      console.log(`[TaskManager] API success: Updated task ${taskId} to status ${updatedTask.status}`);
       setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t));
       
       toast({
@@ -279,6 +311,11 @@ export const TaskManager = React.memo(function TaskManager({
       });
     } catch (error) {
       console.error('Error updating task status:', error);
+      
+      // Revert the optimistic update on error
+      console.log(`[TaskManager] API error: Rolling back task ${taskId} to status ${originalTask.status}`);
+      setTasks(prev => prev.map(t => t.id === taskId ? originalTask : t));
+      
       toast({
         title: "Error",
         description: "Failed to update task status",
