@@ -326,13 +326,16 @@ export const TaskManager = React.memo(function TaskManager({
 
   // Handle assistance request approval - now goes directly to in_progress
   const handleApproveRequest = useCallback(async (taskId: string) => {
+    console.log('🟢 [TaskManager] handleApproveRequest called for task:', taskId);
     await handleTaskStatusChange(taskId, 'in_progress');
   }, [handleTaskStatusChange]);
 
   // Show reject confirmation dialog
   const handleRejectRequest = useCallback((taskId: string) => {
+    console.log('🟡 [TaskManager] handleRejectRequest called for task:', taskId);
     const task = tasks.find(t => t.id === taskId);
     if (task) {
+      console.log('🟡 [TaskManager] Setting reject confirmation dialog');
       setRejectConfirmation({
         open: true,
         taskId,

@@ -139,17 +139,27 @@ export const TaskCard = React.memo(function TaskCard({
 
   // Memoize action handlers
   const handleApprove = useCallback((e: React.MouseEvent) => {
+    console.log('🔵 [TaskCard] Approve button clicked for task:', task.id);
+    console.log('🔵 [TaskCard] onApproveRequest prop:', !!onApproveRequest);
+    console.log('🔵 [TaskCard] onStatusChange prop:', !!onStatusChange);
     e.stopPropagation();
     if (onApproveRequest) {
+      console.log('🔵 [TaskCard] Calling onApproveRequest');
       onApproveRequest(task.id);
     } else if (onStatusChange) {
+      console.log('🔵 [TaskCard] Calling onStatusChange');
       onStatusChange(task.id, 'in_progress');
     }
   }, [onApproveRequest, onStatusChange, task.id]);
 
   const handleReject = useCallback((e: React.MouseEvent) => {
+    console.log('🔴 [TaskCard] Reject button clicked for task:', task.id);
+    console.log('🔴 [TaskCard] onRejectRequest prop:', !!onRejectRequest);
     e.stopPropagation();
-    onRejectRequest?.(task.id);
+    if (onRejectRequest) {
+      console.log('🔴 [TaskCard] Calling onRejectRequest');
+      onRejectRequest(task.id);
+    }
   }, [onRejectRequest, task.id]);
 
   const handleDelete = useCallback((e: React.MouseEvent) => {
@@ -163,8 +173,10 @@ export const TaskCard = React.memo(function TaskCard({
   }, [onStatusChange, task.id]);
 
   // Memoize status transition buttons
-  const statusButtons = useMemo(() => 
-    getStatusTransitionButtons(task.status).slice(0, 2), [task.status]);
+  const statusButtons = useMemo(() => {
+    const buttons = getStatusTransitionButtons(task.status).slice(0, 2);
+    return buttons;
+  }, [task.status]);
 
   return (
     <div 

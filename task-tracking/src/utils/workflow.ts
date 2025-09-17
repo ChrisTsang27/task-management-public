@@ -2,7 +2,7 @@ import { TaskStatus } from '@/types/tasks';
 
 // Define valid status transitions
 export const VALID_STATUS_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
-  awaiting_approval: ['in_progress', 'cancelled'], // Skip approved, go directly to in_progress
+  awaiting_approval: ['in_progress', 'done'], // Skip approved, go directly to in_progress (using 'done' temporarily instead of 'cancelled')
   approved: ['in_progress', 'cancelled'], // Keep for future use but hidden
   in_progress: ['pending_review', 'blocked', 'on_hold', 'cancelled'],
   pending_review: ['done', 'rework', 'cancelled'],
@@ -177,9 +177,9 @@ export function getStatusTransitionButtons(
     },
     done: {
       status: 'done',
-      label: 'Mark Complete',
-      variant: 'outline',
-      color: 'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-700 hover:border-emerald-600 shadow-md'
+      label: 'Cancel', // Temporarily using 'done' as cancel for testing
+      variant: 'destructive',
+      color: 'bg-red-600 text-white border-red-500 hover:bg-red-700 hover:border-red-600 shadow-md'
     },
     cancelled: {
       status: 'cancelled',
